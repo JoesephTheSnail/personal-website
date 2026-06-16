@@ -60,7 +60,7 @@ export default function SiteWrapper({ children }: { children: React.ReactNode })
 
       <div className="flex min-h-screen">
         <Sidebar onContactClick={() => setContactOpen(true)} />
-        <main className="flex-1 min-w-0 overflow-x-hidden lg:ml-60 min-h-screen py-14 lg:py-20 px-6 sm:px-8 lg:px-10">
+        <main className="flex-1 min-w-0 overflow-x-hidden lg:ml-64 min-h-screen py-14 lg:py-20 px-6 sm:px-8 lg:px-10">
           {children}
         </main>
       </div>

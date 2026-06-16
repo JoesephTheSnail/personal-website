@@ -3,6 +3,7 @@ import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 import SiteWrapper from '@/components/SiteWrapper';
 import CustomCursor from '@/components/CustomCursor';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-[#0D0D0D] text-white font-sans" suppressHydrationWarning>
         <CustomCursor />
         <SiteWrapper>{children}</SiteWrapper>
+        <Analytics />
       </body>
     </html>
   );

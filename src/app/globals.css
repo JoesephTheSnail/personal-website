@@ -5,7 +5,7 @@
 /* ── Theme variables ─────────────────────────────── */
 :root {
   --bg: #0D0D0D;
-  --sidebar-bg: #0D0D0D;
+  --sidebar-bg: #161616;
   --sheet-bg: #111111;
   --fg: #ffffff;
   --fg-70: rgba(255,255,255,0.7);

@@ -31,8 +31,14 @@ export default function Sidebar({ onContactClick }: Props) {
 
   return (
     <aside
-      className="sidebar-root hidden lg:flex flex-col fixed top-0 left-0 h-screen w-60 py-10 px-5 z-30"
-      style={{ borderRight: '1px solid var(--border)', background: 'var(--sidebar-bg)' }}
+      className="sidebar-root hidden lg:flex flex-col fixed top-4 left-4 z-30 w-56 py-8 px-4"
+      style={{
+        background: 'var(--sidebar-bg)',
+        border: '1px solid var(--border)',
+        borderRadius: '20px',
+        height: 'calc(100vh - 2rem)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      }}
     >
       <Link
         href="/"
