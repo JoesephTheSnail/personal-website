@@ -13,11 +13,27 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
     document.documentElement.classList.toggle('light', !dark);
   }, []);
 
-  const toggle = () => {
+  const toggle = (e: React.MouseEvent<HTMLButtonElement>) => {
     const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle('light', !next);
-    localStorage.setItem('theme', next ? 'dark' : 'light');
+    const rect = e.currentTarget.getBoundingClientRect();
+    const root = document.documentElement;
+    root.style.setProperty('--theme-x', `${rect.left + rect.width / 2}px`);
+    root.style.setProperty('--theme-y', `${rect.top + rect.height / 2}px`);
+
+    // Direction: to-light = expand, to-dark = rewind
+    root.setAttribute('data-theme-dir', next ? 'to-dark' : 'to-light');
+
+    const apply = () => {
+      setIsDark(next);
+      root.classList.toggle('light', !next);
+      localStorage.setItem('theme', next ? 'dark' : 'light');
+    };
+
+    if (typeof (document as any).startViewTransition !== 'function') {
+      apply();
+      return;
+    }
+    (document as any).startViewTransition(apply);
   };
 
   return (

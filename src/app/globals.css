@@ -5,7 +5,7 @@
 /* ── Theme variables ─────────────────────────────── */
 :root {
   --bg: #0D0D0D;
-  --sidebar-bg: #161616;
+  --sidebar-bg: #0a0a0a;
   --sheet-bg: #111111;
   --fg: #ffffff;
   --fg-70: rgba(255,255,255,0.7);
@@ -25,6 +25,23 @@
   --card-bg-hover: rgba(255,255,255,0.04);
   --hover-bg: rgba(255,255,255,0.08);
   --scrollbar: rgba(255,255,255,0.12);
+
+  /* ── Brand palette (dark mode) ── */
+  --indigo:        #818cf8;
+  --indigo-bg:     rgba(99,102,241,0.12);
+  --indigo-border: rgba(129,140,248,0.28);
+  --amber:         #fbbf24;
+  --amber-bg:      rgba(251,191,36,0.10);
+  --amber-border:  rgba(251,191,36,0.28);
+  --emerald:       #34d399;
+  --emerald-bg:    rgba(52,211,153,0.10);
+  --emerald-border:rgba(52,211,153,0.25);
+  --rose:          #fb7185;
+  --rose-bg:       rgba(251,113,133,0.10);
+  --rose-border:   rgba(251,113,133,0.28);
+  --gold:          #f59e0b;
+  --gold-bg:       rgba(245,158,11,0.10);
+  --gold-border:   rgba(245,158,11,0.28);
 }
 
 html.light {
@@ -49,9 +66,85 @@ html.light {
   --card-bg-hover: rgba(0,0,0,0.05);
   --hover-bg: rgba(0,0,0,0.06);
   --scrollbar: rgba(0,0,0,0.15);
+
+  /* ── Brand palette (light mode — darker for contrast) ── */
+  --indigo:        #4f46e5;
+  --indigo-bg:     rgba(99,102,241,0.07);
+  --indigo-border: rgba(79,70,229,0.22);
+  --amber:         #d97706;
+  --amber-bg:      rgba(217,119,6,0.07);
+  --amber-border:  rgba(217,119,6,0.22);
+  --emerald:       #059669;
+  --emerald-bg:    rgba(5,150,105,0.07);
+  --emerald-border:rgba(5,150,105,0.20);
+  --rose:          #e11d48;
+  --rose-bg:       rgba(225,29,72,0.07);
+  --rose-border:   rgba(225,29,72,0.22);
+  --gold:          #b45309;
+  --gold-bg:       rgba(180,83,9,0.07);
+  --gold-border:   rgba(180,83,9,0.22);
 }
 
 html { scroll-behavior: smooth; }
+
+/* ── Top navigation links ── */
+.topnav-link {
+  color: var(--fg-50);
+  transition: color 0.18s ease;
+}
+.topnav-link:hover,
+.topnav-link--active {
+  color: var(--fg);
+}
+.topnav-wordmark {
+  transition: background 0.18s ease, transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
+}
+.topnav-wordmark:hover {
+  background: var(--hover-bg);
+  transform: scale(1.04);
+}
+.topnav-contact {
+  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1), opacity 0.18s ease;
+}
+.topnav-contact:hover {
+  transform: scale(1.07);
+  opacity: 0.88;
+}
+
+/* ── Spring physics — reusable hover animations ── */
+.spring-scale {
+  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
+  will-change: transform;
+}
+.spring-scale:hover { transform: scale(1.05); }
+
+.spring-lift {
+  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
+  will-change: transform;
+}
+.spring-lift:hover { transform: translateY(-4px) scale(1.02); }
+
+.spring-slide {
+  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
+  will-change: transform;
+}
+.spring-slide:hover { transform: translateX(5px); }
+
+/* ── Mobile menu bubble animations ── */
+@keyframes bubble-in {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.82) translateY(-6px); }
+  55%  { opacity: 1; transform: translateX(-50%) scale(1.05) translateY(2px); }
+  75%  { transform: translateX(-50%) scale(0.97) translateY(0); }
+  100% { transform: translateX(-50%) scale(1)    translateY(0); }
+}
+@keyframes bubble-out {
+  0%   { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.88) translateY(-5px); }
+}
+@keyframes item-in {
+  0%   { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
 ::selection { background: rgba(255,255,255,0.25); color: inherit; }
 ::-moz-selection { background: rgba(255,255,255,0.25); color: inherit; }
@@ -106,6 +199,43 @@ html.light .bg-white\/8 { background-color: rgba(0,0,0,0.06) !important; }
 html.light .hover\:bg-white\/8:hover { background-color: rgba(0,0,0,0.06) !important; }
 html.light .border-white\/7 { border-color: rgba(0,0,0,0.07) !important; }
 html.light .bg-\[\#0D0D0D\] { background-color: var(--bg) !important; }
+
+/* ── Theme toggle directional circle transition ── */
+/* Dark → Light: new light mode expands outward from button */
+html[data-theme-dir="to-light"]::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+html[data-theme-dir="to-light"]::view-transition-new(root) {
+  animation: theme-expand 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  z-index: 2;
+}
+/* Light → Dark: old light mode contracts back into button (rewind) */
+html[data-theme-dir="to-dark"]::view-transition-old(root) {
+  animation: theme-contract 0.45s cubic-bezier(0.64, 0, 0.78, 0) both;
+  z-index: 2;
+}
+html[data-theme-dir="to-dark"]::view-transition-new(root) {
+  animation: none;
+  z-index: 1;
+}
+@keyframes theme-expand {
+  from { clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 50%)); }
+  to   { clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 50%)); }
+}
+@keyframes theme-contract {
+  from { clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 50%)); }
+  to   { clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 50%)); }
+}
+
+/* ── Contact button glow ── */
+.contact-glow-btn {
+  transition: color 0.2s ease, box-shadow 0.3s ease;
+}
+.contact-glow-btn:hover {
+  color: var(--amber) !important;
+  box-shadow: 0 0 10px rgba(251,191,36,0.25), 0 0 24px rgba(251,191,36,0.12), inset 0 0 12px rgba(251,191,36,0.05);
+}
 
 /* Mobile top bar in light mode */
 html.light .mobile-topbar {

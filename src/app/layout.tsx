@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="bg-[#0D0D0D] text-white font-sans" suppressHydrationWarning>
         <CustomCursor />
         <SiteWrapper>{children}</SiteWrapper>

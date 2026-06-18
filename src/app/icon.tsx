@@ -12,15 +12,15 @@ export default function Icon() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'center',
-          fontSize: 20,
-          fontWeight: 700,
-          color: 'white',
-          fontFamily: 'serif',
+          gap: 4,
+          paddingBottom: 6,
         }}
       >
-        A
+        <div style={{ width: 6, height: 10, background: '#34d399', borderRadius: 2 }} />
+        <div style={{ width: 6, height: 16, background: '#fbbf24', borderRadius: 2 }} />
+        <div style={{ width: 6, height: 22, background: '#818cf8', borderRadius: 2 }} />
       </div>
     ),
     { ...size }
