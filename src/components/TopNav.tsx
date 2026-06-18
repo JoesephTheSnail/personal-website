@@ -81,6 +81,7 @@ export default function TopNav({ onContactClick }: Props) {
     window.open(
       `https://arnav01.substack.com/subscribe?email=${encodeURIComponent(email.trim())}`,
       '_blank',
+      'noopener,noreferrer',
     );
     setSent(true);
     setEmail('');
