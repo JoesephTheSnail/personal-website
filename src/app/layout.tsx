@@ -4,6 +4,7 @@ import './globals.css';
 import SiteWrapper from '@/components/SiteWrapper';
 import CustomCursor from '@/components/CustomCursor';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CustomCursor />
         <SiteWrapper>{children}</SiteWrapper>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
