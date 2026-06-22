@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://arnavchandra.com',
   },
+  verification: {
+    google: 'ocP8iI0FKeqb7YIA9l5V4VuVT7XtnyL6_zW6So3njV0',
+  },
   openGraph: {
     title: 'Arnav Chandra — Writer, Student & Builder in Toronto',
     description: 'Writer, student, and builder working at the intersection of health and technology.',
