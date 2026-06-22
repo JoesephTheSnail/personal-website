@@ -1,6 +1,11 @@
 import { FaDumbbell, FaAppleAlt, FaBed, FaBrain, FaCapsules } from 'react-icons/fa';
 
-export const metadata = { title: 'Health — Arnav Chandra' };
+export const metadata = {
+  title: 'Health',
+  description:
+    'How Arnav Chandra approaches health — training, nutrition, sleep, and the habits behind long-term performance.',
+  alternates: { canonical: 'https://arnavchandra.com/health' },
+};
 
 function Section({
   icon: Icon,

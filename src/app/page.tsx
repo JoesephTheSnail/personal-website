@@ -1,8 +1,7 @@
-'use client';
-
-import { useRef } from 'react';
-import Image from 'next/image';
 import ContactTrigger from '@/components/ContactTrigger';
+import ProfilePhoto from '@/components/ProfilePhoto';
+import NowSection from '@/components/NowSection';
+import { getAllProjects } from '@/lib/projects';
 import { FaBook, FaNewspaper, FaHeartbeat, FaVideo } from 'react-icons/fa';
 import { HiArrowUpRight } from 'react-icons/hi2';
 
@@ -53,35 +52,14 @@ const activities = [
 }[];
 
 export default function HomePage() {
-  const photoRef = useRef<HTMLDivElement>(null);
-
-  const bubblePhoto = () => {
-    const el = photoRef.current;
-    if (!el) return;
-    el.style.transition = 'transform 0.12s ease-out';
-    el.style.transform  = 'perspective(400px) scale(1.09)';
-    setTimeout(() => {
-      el.style.transition = 'transform 0.55s cubic-bezier(0.34, 1.18, 0.64, 1)';
-      el.style.transform  = 'perspective(400px) scale(1)';
-    }, 120);
-  };
-
-  const handlePhotoMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = photoRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = (e.clientX - rect.left)  / rect.width  - 0.5;
-    const y = (e.clientY - rect.top)   / rect.height - 0.5;
-    el.style.transition = 'transform 0.05s ease-out';
-    el.style.transform  = `perspective(400px) rotateX(${(-y * 20).toFixed(1)}deg) rotateY(${(x * 20).toFixed(1)}deg) scale(1.07)`;
-  };
-
-  const handlePhotoLeave = () => {
-    const el = photoRef.current;
-    if (!el) return;
-    el.style.transition = 'transform 0.55s cubic-bezier(0.34, 1.15, 0.64, 1)';
-    el.style.transform  = 'perspective(400px) rotateX(0deg) rotateY(0deg) scale(1)';
-  };
+  const nowItems = getAllProjects()
+    .filter((p) => p.frontmatter.status === 'upcoming')
+    .map((p) => ({
+      slug: p.slug,
+      title: p.frontmatter.title,
+      description: p.frontmatter.description,
+      category: p.frontmatter.category ?? 'Other',
+    }));
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -89,32 +67,8 @@ export default function HomePage() {
       {/* ── Header ─────────────────────────────────────── */}
       <div className="mb-10">
         <div className="flex items-center gap-6 mb-6">
-          {/* Photo — outer handles perspective tilt + events, inner clips to circle */}
-          <div
-            ref={photoRef}
-            className="flex-shrink-0 cursor-pointer"
-            style={{ width: 96, height: 96, flexShrink: 0 }}
-            onClick={bubblePhoto}
-            onMouseMove={handlePhotoMove}
-            onMouseLeave={handlePhotoLeave}
-          >
-            <div
-              className="w-full h-full rounded-full overflow-hidden"
-              style={{
-                border: '2px solid var(--border-med)',
-                boxShadow: '0 0 0 4px var(--indigo-bg)',
-              }}
-            >
-              <Image
-                src="/profile.jpg"
-                alt="Arnav Chandra"
-                width={96}
-                height={96}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
-          </div>
+          {/* Photo — perspective tilt handled in its own client component */}
+          <ProfilePhoto />
           <div>
             <h1
               className="font-poppins font-semibold text-2xl sm:text-[1.75rem] tracking-tight leading-tight mb-1"
@@ -153,6 +107,9 @@ export default function HomePage() {
       </div>
 
       <hr className="mb-10" style={{ borderColor: 'var(--border)' }} />
+
+      {/* ── What I'm doing now ─────────────────────────── */}
+      <NowSection items={nowItems} />
 
       {/* ── How I spend my time ────────────────────────── */}
       <section className="mb-10">

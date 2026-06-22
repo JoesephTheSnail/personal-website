@@ -145,6 +145,14 @@ html { scroll-behavior: smooth; }
   0%   { opacity: 0; transform: translateY(5px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+@keyframes breathe {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%      { opacity: 0.45; transform: scale(0.85); }
+}
+.now-breathe { animation: breathe 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .now-breathe { animation: none; }
+}
 
 ::selection { background: rgba(255,255,255,0.25); color: inherit; }
 ::-moz-selection { background: rgba(255,255,255,0.25); color: inherit; }

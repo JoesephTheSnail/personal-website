@@ -4,7 +4,10 @@ import Image from 'next/image';
 import BookCoverScroll from '@/components/BookCoverScroll';
 
 export const metadata = {
-  title: 'Books — Arnav Chandra',
+  title: 'Books',
+  description:
+    'Books Arnav Chandra has read, with ratings and notes — spanning health, technology, psychology, and personal growth.',
+  alternates: { canonical: 'https://arnavchandra.com/books' },
 };
 
 function StarRating({ rating }: { rating: number }) {

@@ -12,7 +12,20 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const project = getAllProjects().find((p) => p.slug === slug);
-  return { title: project ? `${project.frontmatter.title} — Arnav Chandra` : 'Project' };
+  if (!project) return { title: 'Project' };
+
+  const pageTitle = project.frontmatter.title;
+  const fullTitle = `${pageTitle} — Arnav Chandra`;
+  const description = project.frontmatter.description;
+  const url = `https://arnavchandra.com/projects/${slug}`;
+
+  return {
+    title: pageTitle,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: fullTitle, description, url, type: 'article' },
+    twitter: { card: 'summary_large_image', title: fullTitle, description },
+  };
 }
 
 function getYouTubeId(url: string): string | null {

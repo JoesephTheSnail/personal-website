@@ -177,6 +177,7 @@ export default function TopNav({ onContactClick }: Props) {
             />
             <button
               type="submit"
+              aria-label="Subscribe"
               className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
               style={{
                 background: 'var(--hover-bg)',
