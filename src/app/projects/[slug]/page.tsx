@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props) {
   if (!project) return { title: 'Project' };
 
   const pageTitle = project.frontmatter.title;
-  const fullTitle = `${pageTitle} — Arnav Chandra`;
+  const fullTitle = `${pageTitle} | Arnav Chandra`;
   const description = project.frontmatter.description;
   const url = `https://arnavchandra.com/projects/${slug}`;
 

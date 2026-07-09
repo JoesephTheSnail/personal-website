@@ -20,8 +20,8 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL('https://arnavchandra.com'),
   title: {
-    default: 'Arnav Chandra — Writer, Student & Builder in Toronto',
-    template: '%s — Arnav Chandra',
+    default: 'Arnav Chandra | Writer, Student & Builder in Toronto',
+    template: '%s | Arnav Chandra',
   },
   description: 'Arnav Chandra is a Toronto-based writer, student, and builder working at the intersection of health and technology.',
   alternates: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     google: 'ocP8iI0FKeqb7YIA9l5V4VuVT7XtnyL6_zW6So3njV0',
   },
   openGraph: {
-    title: 'Arnav Chandra — Writer, Student & Builder in Toronto',
+    title: 'Arnav Chandra | Writer, Student & Builder in Toronto',
     description: 'Writer, student, and builder working at the intersection of health and technology.',
     siteName: 'Arnav Chandra',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Arnav Chandra' }],
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Arnav Chandra — Writer, Student & Builder in Toronto',
+    title: 'Arnav Chandra | Writer, Student & Builder in Toronto',
     description: 'Writer, student, and builder working at the intersection of health and technology.',
     images: ['/opengraph-image'],
   },

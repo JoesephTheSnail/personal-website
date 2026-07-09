@@ -8,7 +8,7 @@ import { HiArrowUpRight } from 'react-icons/hi2';
 const activities = [
   {
     icon: FaNewspaper,
-    title: 'Writing — Mindset Matters',
+    title: 'Writing: Mindset Matters',
     desc: "A monthly newsletter on mindset, habits, and the ideas I can't stop thinking about.",
     link: 'https://arnav01.substack.com/',
     bg:     'var(--amber-bg)',
@@ -18,7 +18,7 @@ const activities = [
   {
     icon: FaBook,
     title: 'Reading',
-    desc: 'Mostly non-fiction — psychology, habits, and human behaviour.',
+    desc: 'Mostly non-fiction: psychology, habits, and human behaviour.',
     link: '/books',
     bg:     'var(--indigo-bg)',
     border: 'var(--indigo-border)',
@@ -91,8 +91,8 @@ export default function HomePage() {
       >
         <p>
           I&apos;m a high school student from Toronto. Got into health and technology early,
-          and just never stopped. My first real project was MindSet — a mental wellness app for
-          teenagers — built before I really knew what I was doing.
+          and just never stopped. My first real project was MindSet, a mental wellness app for
+          teenagers, built before I really knew what I was doing.
         </p>
         <p>
           Now I intern as a Junior Technical Specialist at TuffTek, do health research at NewGen
@@ -101,7 +101,7 @@ export default function HomePage() {
         </p>
         <p>
           Most of what I care about sits at the intersection of health, technology, and how people
-          think. Still in high school — but I figure the best time to work on interesting problems
+          think. Still in high school, but I figure the best time to work on interesting problems
           is now.
         </p>
       </div>
@@ -176,7 +176,7 @@ export default function HomePage() {
           className="text-[0.9375rem] leading-loose mb-6"
           style={{ color: 'var(--fg-70)' }}
         >
-          If any of this resonates — or you just want to talk health, technology, or ideas —
+          If any of this resonates, or you just want to talk health, technology, or ideas,
           I&apos;d love to hear from you.
         </p>
         <div className="flex items-center gap-3 flex-wrap">

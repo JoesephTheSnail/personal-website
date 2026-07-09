@@ -108,7 +108,7 @@ export default function NotFound() {
             <span style={{ color: found ? '#34d399' : '#ef4444', flexShrink: 0 }}>
               {found ? '✓' : '✗'}
             </span>
-            {text}{!found ? ' — still nothing.' : ''}
+            {text}{!found ? '. Still nothing.' : ''}
           </div>
         ))}
       </div>

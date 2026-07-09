@@ -6,7 +6,7 @@ import BookCoverScroll from '@/components/BookCoverScroll';
 export const metadata = {
   title: 'Books',
   description:
-    'Books Arnav Chandra has read, with ratings and notes — spanning health, technology, psychology, and personal growth.',
+    'Books Arnav Chandra has read, with ratings and notes: spanning health, technology, psychology, and personal growth.',
   alternates: { canonical: 'https://arnavchandra.com/books' },
 };
 
@@ -102,7 +102,7 @@ export default function BooksPage() {
                   >
                     <Image
                       src={book.frontmatter.cover}
-                      alt={book.frontmatter.title}
+                      alt={`Cover of ${book.frontmatter.title}`}
                       fill
                       className="object-cover"
                       sizes="56px"
@@ -166,7 +166,7 @@ export default function BooksPage() {
               >
                 <Image
                   src={book.frontmatter.cover}
-                  alt={book.frontmatter.title}
+                  alt={`Cover of ${book.frontmatter.title}`}
                   fill
                   className="object-cover"
                   sizes="48px"
@@ -200,7 +200,7 @@ export default function BooksPage() {
                   <p className="text-xs" style={{ color: 'var(--fg-30)' }}>
                     Read:{' '}
                     <span style={{ color: 'var(--fg-muted)' }}>
-                      {book.frontmatter.date || '—'}
+                      {book.frontmatter.date || 'N/A'}
                     </span>
                   </p>
                   <div className="flex items-center gap-1.5">
@@ -208,7 +208,7 @@ export default function BooksPage() {
                     {book.frontmatter.rating > 0 ? (
                       <StarRating rating={book.frontmatter.rating} />
                     ) : (
-                      <span className="text-xs" style={{ color: 'var(--fg-dimmer)' }}>—</span>
+                      <span className="text-xs" style={{ color: 'var(--fg-dimmer)' }}>N/A</span>
                     )}
                   </div>
                 </div>

@@ -3,7 +3,7 @@ import { FaDumbbell, FaAppleAlt, FaBed, FaBrain, FaCapsules } from 'react-icons/
 export const metadata = {
   title: 'Health',
   description:
-    'How Arnav Chandra approaches health — training, nutrition, sleep, and the habits behind long-term performance.',
+    'How Arnav Chandra approaches health: training, nutrition, sleep, and the habits behind long-term performance.',
   alternates: { canonical: 'https://arnavchandra.com/health' },
 };
 
@@ -56,7 +56,7 @@ export default function HealthPage() {
         Health
       </h1>
       <p className="text-sm mb-8" style={{ color: 'var(--fg-dim)' }}>
-        My personal health protocol — what I do, why I do it, and what I&apos;ve learned.
+        My personal health protocol: what I do, why I do it, and what I&apos;ve learned.
       </p>
 
       <Section icon={FaDumbbell} color="#60a5fa" bg="rgba(96,165,250,0.12)" title="Training">
@@ -107,7 +107,7 @@ export default function HealthPage() {
             Writing my newsletter is genuinely one of the best things I do for my mental state. Organizing thoughts into something coherent creates accountability that journaling alone doesn&apos;t.
           </p>
           <p>
-            Planning my days the night before reduces morning decision fatigue. Consistency in training helps more than almost anything else — when the physical side is dialed in, the mental side tends to follow.
+            Planning my days the night before reduces morning decision fatigue. Consistency in training helps more than almost anything else. When the physical side is dialed in, the mental side tends to follow.
           </p>
         </div>
       </Section>

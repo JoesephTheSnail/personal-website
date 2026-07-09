@@ -146,7 +146,7 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
             >
               <Image
                 src={book.cover}
-                alt={book.title}
+                alt={`Cover of ${book.title}`}
                 fill
                 className="object-cover"
                 sizes="76px"
