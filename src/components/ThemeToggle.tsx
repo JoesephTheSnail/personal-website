@@ -33,7 +33,11 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
       apply();
       return;
     }
-    (document as any).startViewTransition(apply);
+    // A rapid double-toggle aborts the in-flight transition; the theme
+    // still applies, so swallow the rejection instead of surfacing it.
+    const transition = (document as any).startViewTransition(apply);
+    transition.finished?.catch(() => {});
+    transition.ready?.catch(() => {});
   };
 
   return (
