@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { FaSatelliteDish } from 'react-icons/fa';
 import { getOverview, getPlanData } from '@/lib/fitness/liveData';
 import { isStravaConfigured } from '@/lib/fitness/strava';
@@ -5,6 +6,12 @@ import { isGoogleCalendarConfigured } from '@/lib/fitness/googleCalendar';
 import { isKvConfigured } from '@/lib/fitness/kv';
 import FitnessDashboard from '@/components/fitness/FitnessDashboard';
 import { Pill } from '@/components/fitness/ui';
+
+// Hidden — the page is a work in progress. Everything underneath
+// (ingestion routes, the weekly Strava import script) is untouched;
+// this is just the public entry point being taken down. Delete this
+// block to bring it back.
+const HIDDEN = true;
 
 export const metadata = {
   title: 'Fitness',
@@ -23,6 +30,8 @@ function formatSyncedAt(iso: string): string {
 }
 
 export default async function FitnessPage() {
+  if (HIDDEN) notFound();
+
   const [overview, plan] = await Promise.all([
     getOverview(),
     getPlanData(),

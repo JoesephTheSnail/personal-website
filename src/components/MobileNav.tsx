@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   FaHome, FaFolder, FaBook,
-  FaNewspaper, FaHeartbeat, FaRunning, FaBars, FaTimes,
+  FaNewspaper, FaHeartbeat, FaBars, FaTimes,
 } from 'react-icons/fa';
 import { HiArrowUpRight } from 'react-icons/hi2';
 
@@ -15,7 +15,6 @@ const nav = [
   { href: '/projects',                       label: 'Projects',   icon: FaFolder,    external: false },
   { href: '/books',                          label: 'Books',      icon: FaBook,      external: false },
   { href: '/health',                         label: 'Health',     icon: FaHeartbeat, external: false },
-  { href: '/fitness',                        label: 'Fitness',    icon: FaRunning,   external: false },
   { href: 'https://arnav01.substack.com/',   label: 'Newsletter', icon: FaNewspaper, external: true  },
 ];
 
