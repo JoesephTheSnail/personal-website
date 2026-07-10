@@ -88,16 +88,22 @@ export async function POST(req: NextRequest) {
   if (typeof body.date !== 'string') {
     return NextResponse.json({ error: 'Missing or invalid "date"' }, { status: 400 });
   }
-  // Fields are optional, but if present must actually be numbers —
-  // catches the common Shortcuts mistake of leaving a value as Text.
+  // Fields are optional, but if present must be numeric. Shortcuts' JSON
+  // body builder sends every value as Text, and large sums are formatted
+  // with a thousands separator (e.g. "8,412"), so both are handled here
+  // rather than rejected.
+  const coerced: Partial<HealthWebhookPayload> = { date: body.date };
   for (const field of OPTIONAL_NUMBER_FIELDS) {
-    const value = body[field];
-    if (value !== undefined && (typeof value !== 'number' || Number.isNaN(value))) {
+    const raw = body[field];
+    if (raw === undefined) continue;
+    const value = typeof raw === 'string' ? Number(raw.replace(/,/g, '')) : raw;
+    if (typeof value !== 'number' || Number.isNaN(value)) {
       return NextResponse.json({ error: `"${field}" must be a number if provided` }, { status: 400 });
     }
+    (coerced as Record<string, number>)[field] = value;
   }
 
-  await kvSet(HEALTH_VITALS_KEY, { ...body, receivedAt: new Date().toISOString() });
+  await kvSet(HEALTH_VITALS_KEY, { ...coerced, receivedAt: new Date().toISOString() });
 
   return NextResponse.json({ ok: true });
 }
