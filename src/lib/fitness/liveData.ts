@@ -8,10 +8,11 @@
 
 import type { OverviewData, Activity, PlanData, DailyVitals, RecoveryMetric } from './types';
 import * as mock from './mockData';
-import { isKvConfigured, kvGet, HEALTH_VITALS_KEY } from './kv';
+import { isKvConfigured, kvGet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from './kv';
 import { isStravaConfigured, fetchStravaActivities } from './strava';
 import { isGoogleCalendarConfigured, fetchUpcomingEvents } from './googleCalendar';
 import { computeActivityMix, computeTimeByType, computeMileageBySport, computeQuickStats } from './aggregate';
+import { workoutLogToActivities, type WorkoutLog } from './workoutLog';
 
 interface HealthWebhookPayload {
   date: string;
@@ -31,14 +32,32 @@ interface HealthWebhookPayload {
   standGoalHours?: number;
 }
 
-export async function getActivityData(): Promise<Activity[]> {
-  if (!isStravaConfigured()) return mock.getActivityData();
+// Apple Health workouts (from the Shortcuts webhook) are the fallback
+// real source when Strava isn't connected — checked before giving up
+// and showing mock activities.
+async function getAppleWorkoutActivities(): Promise<Activity[] | null> {
+  if (!isKvConfigured()) return null;
   try {
-    return await fetchStravaActivities();
+    const log = await kvGet<WorkoutLog>(ACTIVITY_LOG_KEY);
+    if (!log || Object.keys(log).length === 0) return null;
+    return workoutLogToActivities(log);
   } catch (err) {
-    console.error('[fitness] Strava fetch failed, falling back to mock activities:', err);
-    return mock.getActivityData();
+    console.error('[fitness] Reading synced Apple Health workouts failed:', err);
+    return null;
   }
+}
+
+export async function getActivityData(): Promise<Activity[]> {
+  if (isStravaConfigured()) {
+    try {
+      return await fetchStravaActivities();
+    } catch (err) {
+      console.error('[fitness] Strava fetch failed, falling back to mock activities:', err);
+      return mock.getActivityData();
+    }
+  }
+  const appleWorkouts = await getAppleWorkoutActivities();
+  return appleWorkouts ?? mock.getActivityData();
 }
 
 async function getStoredVitals(): Promise<HealthWebhookPayload | null> {
@@ -93,15 +112,16 @@ function buildRecoveryMetrics(mockMetrics: RecoveryMetric[], stored: HealthWebho
 }
 
 export async function getOverview(): Promise<OverviewData> {
-  // Strava (if configured) and the mock+KV reads are fully independent —
-  // kick the Strava fetch off before awaiting anything else so the three
-  // round trips run concurrently instead of one after another.
+  // Strava (if configured), Apple Health workouts (fallback real source),
+  // and the mock+KV reads are fully independent — kick this off before
+  // awaiting anything else so the round trips run concurrently instead
+  // of one after another.
   const activitiesPromise = isStravaConfigured()
     ? fetchStravaActivities(200).catch((err) => {
         console.error('[fitness] Strava aggregation failed, falling back to mock overview:', err);
         return null;
       })
-    : null;
+    : getAppleWorkoutActivities();
 
   const [mockOverview, stored] = await Promise.all([mock.getOverview(), getStoredVitals()]);
   const today = mergeVitals(stored, mockOverview.today);

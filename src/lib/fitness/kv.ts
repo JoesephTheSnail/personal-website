@@ -12,6 +12,7 @@
 import { Redis } from '@upstash/redis';
 
 export const HEALTH_VITALS_KEY = 'fitness:vitals:today';
+export const ACTIVITY_LOG_KEY = 'fitness:activities:log';
 
 let client: Redis | null = null;
 let attempted = false;

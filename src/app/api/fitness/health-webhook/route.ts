@@ -33,8 +33,18 @@
 //     "exerciseMin": 42,
 //     "exerciseGoalMin": 45,
 //     "standHours": 9,
-//     "standGoalHours": 12
+//     "standGoalHours": 12,
+//     "swimMin": 42, "swimKm": 1.8,
+//     "bikeMin": 78, "bikeKm": 32.0,
+//     "runMin": 25.6, "runKm": 4.0,
+//     "liftMin": 32
 //   }
+//
+// swim/bike/run/lift fields are optional and independent of each other —
+// send whichever workouts happened that day. They're upserted into a
+// per-date log (src/lib/fitness/workoutLog.ts) keyed by "date", not
+// overwritten wholesale, so re-running the Shortcut same-day updates
+// that day's entry rather than duplicating or erasing history.
 //
 // In the Shortcuts app: build an automation (e.g. "Time of Day", every
 // morning) that reads each Health sample, then use "Get Contents of URL"
@@ -42,7 +52,8 @@
 // request body mapping each field to its Health value.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { kvSet, HEALTH_VITALS_KEY } from '@/lib/fitness/kv';
+import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
+import type { WorkoutLogEntry, WorkoutLog } from '@/lib/fitness/workoutLog';
 
 interface HealthWebhookPayload {
   date: string;
@@ -59,13 +70,23 @@ interface HealthWebhookPayload {
   exerciseGoalMin?: number;
   standHours?: number;
   standGoalHours?: number;
+  swimMin?: number;
+  swimKm?: number;
+  bikeMin?: number;
+  bikeKm?: number;
+  runMin?: number;
+  runKm?: number;
+  liftMin?: number;
 }
 
 const OPTIONAL_NUMBER_FIELDS: Array<keyof HealthWebhookPayload> = [
   'steps', 'activeCalories', 'restingCalories', 'heartRateAvg', 'heartRateResting',
   'sleepHours', 'weightLbs', 'moveKcal', 'moveGoalKcal', 'exerciseMin', 'exerciseGoalMin',
   'standHours', 'standGoalHours',
+  'swimMin', 'swimKm', 'bikeMin', 'bikeKm', 'runMin', 'runKm', 'liftMin',
 ];
+
+const WORKOUT_LOG_FIELDS: Array<keyof WorkoutLogEntry> = ['swimMin', 'swimKm', 'bikeMin', 'bikeKm', 'runMin', 'runKm', 'liftMin'];
 
 export async function POST(req: NextRequest) {
   const secret = process.env.HEALTH_WEBHOOK_SECRET;
@@ -85,7 +106,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (typeof body.date !== 'string') {
+  if (typeof body.date !== 'string' || body.date.trim() === '') {
     return NextResponse.json({ error: 'Missing or invalid "date"' }, { status: 400 });
   }
   // Fields are optional, but if present must be numeric. Shortcuts' JSON
@@ -104,6 +125,23 @@ export async function POST(req: NextRequest) {
   }
 
   await kvSet(HEALTH_VITALS_KEY, { ...coerced, receivedAt: new Date().toISOString() });
+
+  // Workout fields (swim/bike/run/lift) are upserted into a per-date log
+  // rather than overwritten wholesale, so a re-run of the Shortcut on the
+  // same day updates that day's entry instead of duplicating or erasing
+  // other days' history.
+  const hasWorkoutData = WORKOUT_LOG_FIELDS.some((f) => coerced[f as keyof HealthWebhookPayload] !== undefined);
+  if (hasWorkoutData) {
+    const log = ((await kvGet<WorkoutLog>(ACTIVITY_LOG_KEY)) ?? {}) as WorkoutLog;
+    const existing = log[body.date] ?? {};
+    const entry: WorkoutLogEntry = { ...existing };
+    for (const field of WORKOUT_LOG_FIELDS) {
+      const value = coerced[field as keyof HealthWebhookPayload] as number | undefined;
+      if (value !== undefined) entry[field] = value;
+    }
+    log[body.date] = entry;
+    await kvSet(ACTIVITY_LOG_KEY, log);
+  }
 
   return NextResponse.json({ ok: true });
 }
