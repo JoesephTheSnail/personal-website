@@ -68,10 +68,10 @@ export async function getOverview(): Promise<OverviewData> {
     },
     lastSyncedAt: null, // mock mode — never actually synced; page.tsx shows "Mock Data" instead of a timestamp
     quickStats: [
-      { label: 'This Week: Swim', value: '42m',    sublabel: '1 session',  color: 'cyan',    trend: { direction: 'up',   pct: 18 } },
-      { label: 'This Week: Bike', value: '1h 18m', sublabel: '1 session',  color: 'blue',    trend: { direction: 'down', pct: 8 } },
-      { label: 'This Week: Run',  value: '2h 6m',  sublabel: '3 sessions', color: 'accent',  trend: { direction: 'up',   pct: 22 } },
-      { label: 'This Month',       value: '14h 40m',sublabel: '12 sessions',color: 'default' },
+      { label: 'Last 7 Days: Swim', value: '42m',    sublabel: '1 session',  color: 'cyan',    trend: { direction: 'up',   pct: 18 } },
+      { label: 'Last 7 Days: Bike', value: '1h 18m', sublabel: '1 session',  color: 'blue',    trend: { direction: 'down', pct: 8 } },
+      { label: 'Last 7 Days: Run',  value: '2h 6m',  sublabel: '3 sessions', color: 'accent',  trend: { direction: 'up',   pct: 22 } },
+      { label: 'This Month',        value: '14h 40m',sublabel: '12 sessions',color: 'default' },
     ],
     activityMix: [
       { label: 'Run',      value: 62, color: 'var(--fx-accent-bright)' },

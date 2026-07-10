@@ -50,14 +50,6 @@ const TYPE_COLOR: Record<ActivityType, string> = {
   'cross-train': 'var(--fx-slate)',
 };
 
-function mondayOf(dateStr: string): Date {
-  const d = new Date(`${dateStr}T00:00:00`);
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  d.setDate(d.getDate() + diff);
-  return d;
-}
-
 function toDateKey(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
@@ -111,14 +103,19 @@ export function computeMileageBySport(activities: Activity[]): TypeBreakdown[] {
     .map(([type, value]) => ({ label: TYPE_LABEL[type], value: Math.round(value), color: TYPE_COLOR[type] }));
 }
 
-// Quick stats: This Week broken out by the three headline sports (swim,
-// ride, run) each with a trend vs. the prior week, plus one overall
-// This Month total across every sport.
+// Quick stats: a rolling trailing 7 days (not calendar Monday–Sunday)
+// broken out by the three headline sports, each with a trend vs. the
+// prior 7 days, plus one overall This Month total across every sport.
+// Rolling rather than calendar-week matters here specifically because
+// activity data arrives via a weekly manual Strava export (see
+// scripts/import-strava-week.mjs) that isn't aligned to any particular
+// weekday — a Monday-anchored window would routinely show 0 sessions
+// for a sport done a few days before the most recent Monday, even
+// though it's well within "the last week" by any normal reading.
 export function computeQuickStats(rawActivities: Activity[], now = new Date()): QuickStat[] {
   const activities = filterDisplayedSports(rawActivities);
-  const nowKey = toDateKey(now);
-  const weekStart = toDateKey(mondayOf(nowKey));
-  const lastWeekStart = toDateKey(new Date(new Date(`${weekStart}T00:00:00`).getTime() - 7 * 86400000));
+  const weekStart = toDateKey(new Date(now.getTime() - 6 * 86400000)); // trailing 7 days, inclusive of today
+  const lastWeekStart = toDateKey(new Date(now.getTime() - 13 * 86400000));
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
   const thisWeek = activities.filter((a) => a.date >= weekStart);
@@ -142,9 +139,9 @@ export function computeQuickStats(rawActivities: Activity[], now = new Date()): 
   };
 
   return [
-    sportStat('swim', 'This Week: Swim', 'cyan'),
-    sportStat('ride', 'This Week: Bike', 'blue'),
-    sportStat('run', 'This Week: Run', 'accent'),
+    sportStat('swim', 'Last 7 Days: Swim', 'cyan'),
+    sportStat('ride', 'Last 7 Days: Bike', 'blue'),
+    sportStat('run', 'Last 7 Days: Run', 'accent'),
     { label: 'This Month', value: formatHoursMinutes(totalMin(thisMonth)), sublabel: sessionLabel(thisMonth.length), color: 'default' },
   ];
 }
