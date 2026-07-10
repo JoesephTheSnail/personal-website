@@ -19,6 +19,8 @@ export interface ParsedVitals {
   restingCalories?: number;
   heartRateAvg?: number;
   heartRateResting?: number;
+  hrv?: number;
+  vo2max?: number;
   sleepHours?: number;
   weightLbs?: number;
   exerciseMin?: number;
@@ -158,8 +160,12 @@ export function parseHealthAutoExport(body: unknown): ParseResult {
 
     if (n.includes('restingheart') || (n.includes('resting') && n.includes('heart'))) {
       vitals.heartRateResting = point.Avg ?? point.qty;
-    } else if (!n.includes('variability') && !n.includes('hrv') && n.includes('heart')) {
+    } else if (n.includes('variability') || n.includes('hrv')) {
+      vitals.hrv = point.Avg ?? point.qty;
+    } else if (n.includes('heart')) {
       vitals.heartRateAvg = point.Avg ?? point.qty;
+    } else if (n.includes('vo2')) {
+      vitals.vo2max = point.Avg ?? point.qty;
     } else if (n.includes('step')) {
       vitals.steps = point.qty;
     } else if (n.includes('active') && n.includes('energy')) {

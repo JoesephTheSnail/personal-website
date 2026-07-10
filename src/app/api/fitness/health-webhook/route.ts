@@ -26,6 +26,8 @@
 //     "restingCalories": 1780,
 //     "heartRateAvg": 88,
 //     "heartRateResting": 54,
+//     "hrv": 58,
+//     "vo2max": 48.2,
 //     "sleepHours": 7.3,
 //     "weightLbs": 171.4,
 //     "moveKcal": 612,
@@ -62,6 +64,8 @@ interface HealthWebhookPayload {
   restingCalories?: number;
   heartRateAvg?: number;
   heartRateResting?: number;
+  hrv?: number;
+  vo2max?: number;
   sleepHours?: number;
   weightLbs?: number;
   moveKcal?: number;
@@ -80,7 +84,7 @@ interface HealthWebhookPayload {
 }
 
 const OPTIONAL_NUMBER_FIELDS: Array<keyof HealthWebhookPayload> = [
-  'steps', 'activeCalories', 'restingCalories', 'heartRateAvg', 'heartRateResting',
+  'steps', 'activeCalories', 'restingCalories', 'heartRateAvg', 'heartRateResting', 'hrv', 'vo2max',
   'sleepHours', 'weightLbs', 'moveKcal', 'moveGoalKcal', 'exerciseMin', 'exerciseGoalMin',
   'standHours', 'standGoalHours',
   'swimMin', 'swimKm', 'bikeMin', 'bikeKm', 'runMin', 'runKm', 'liftMin',

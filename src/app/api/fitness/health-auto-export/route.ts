@@ -24,9 +24,10 @@
 // In the app: Automations → New → REST API → paste this URL → add header
 // "Authorization: Bearer <secret>" → enable JSON format → toggle on
 // Step Count, Active Energy, Resting/Basal Energy, Heart Rate, Resting
-// Heart Rate, Weight, Sleep Analysis, Apple Exercise Time, Apple Stand
-// Hour, AND Workouts → set the export range to "Today" → schedule it
-// (e.g. daily, early morning, after your sleep data has finalized).
+// Heart Rate, Heart Rate Variability, VO2 Max, Weight, Sleep Analysis,
+// Apple Exercise Time, Apple Stand Hour, AND Workouts → set the export
+// range to "Today" → schedule it (e.g. daily, early morning, after your
+// sleep data has finalized).
 //
 // Workouts (run/ride/swim/walk/strength) come through the same payload's
 // separate "workouts" array — this is what actually solves "get my
@@ -83,6 +84,8 @@ interface StoredVitals {
   restingCalories?: number;
   heartRateAvg?: number;
   heartRateResting?: number;
+  hrv?: number;
+  vo2max?: number;
   sleepHours?: number;
   weightLbs?: number;
   moveKcal?: number;
@@ -135,6 +138,8 @@ export async function POST(req: NextRequest) {
       ...(vitals.restingCalories !== undefined && { restingCalories: vitals.restingCalories }),
       ...(vitals.heartRateAvg !== undefined && { heartRateAvg: vitals.heartRateAvg }),
       ...(vitals.heartRateResting !== undefined && { heartRateResting: vitals.heartRateResting }),
+      ...(vitals.hrv !== undefined && { hrv: vitals.hrv }),
+      ...(vitals.vo2max !== undefined && { vo2max: vitals.vo2max }),
       ...(vitals.sleepHours !== undefined && { sleepHours: vitals.sleepHours }),
       ...(vitals.weightLbs !== undefined && { weightLbs: vitals.weightLbs }),
       ...(vitals.exerciseMin !== undefined && { exerciseMin: vitals.exerciseMin }),

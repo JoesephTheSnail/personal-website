@@ -27,6 +27,8 @@ interface HealthWebhookPayload {
   restingCalories?: number;
   heartRateAvg?: number;
   heartRateResting?: number;
+  hrv?: number; // ms, HRV SDNN average
+  vo2max?: number; // mL/kg/min, latest sample
   sleepHours?: number;
   weightLbs?: number;
   moveKcal?: number;
@@ -116,20 +118,23 @@ function mergeVitals(stored: HealthWebhookPayload | null, fallback: DailyVitals)
   };
 }
 
-// Resting HR and sleep are the two recovery signals actually present in
-// the webhook payload today — HRV and VO2 max aren't collected by that
-// schema yet, so they stay on the mock fixture until ingestion is
-// extended to cover them. Sleep prefers a real sleep *score* if one is
-// ever added to the payload, but falls back to plain hours-asleep
-// (labeled as such, not dressed up as a score) since that's what the
-// Shortcut can actually produce today. Overriding fields individually
-// (rather than going all-mock or all-live) keeps "Live" from silently
-// overclaiming freshness it doesn't have for the two metrics not yet wired.
+// Sleep prefers a real sleep *score* if one is ever added to the
+// payload, but falls back to plain hours-asleep (labeled as such, not
+// dressed up as a score) since that's what the Shortcut can actually
+// produce today. Overriding fields individually (rather than going
+// all-mock or all-live) keeps "Live" from silently overclaiming
+// freshness it doesn't have for whichever metrics aren't synced yet.
 function buildRecoveryMetrics(mockMetrics: RecoveryMetric[], stored: HealthWebhookPayload | null): RecoveryMetric[] {
   return mockMetrics.map((m) => {
     if (m.key === 'rhr' && stored?.heartRateResting !== undefined) {
       const rhr = Math.round(stored.heartRateResting);
       return { ...m, value: `${rhr} bpm`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
+    }
+    if (m.key === 'hrv' && stored?.hrv !== undefined) {
+      return { ...m, value: `${Math.round(stored.hrv)} ms`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
+    }
+    if (m.key === 'vo2max' && stored?.vo2max !== undefined) {
+      return { ...m, value: `${stored.vo2max.toFixed(1)} mL/kg/min`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
     }
     if (m.key === 'sleepScore' && stored?.sleepHours !== undefined) {
       const h = Math.floor(stored.sleepHours);
