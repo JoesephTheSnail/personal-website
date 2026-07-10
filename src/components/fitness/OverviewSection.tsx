@@ -64,7 +64,7 @@ interface Props {
 }
 
 export default function OverviewSection({ data }: Props) {
-  const { quickStats, activityMix, timeByType, mileageBySport, mileageFunFact, recoveryMetrics } = data;
+  const { quickStats, timeByType, mileageBySport, mileageFunFact, recoveryMetrics } = data;
   const timeByTypeTotal = timeByType.reduce((sum, d) => sum + d.value, 0);
 
   return (
@@ -104,25 +104,33 @@ export default function OverviewSection({ data }: Props) {
         </div>
       </Panel>
 
-      {/* Session mix (stat cards, not a chart) + time-by-sport donut */}
+      {/* Mileage by sport (replaces the old Session Mix panel — distance
+          matters more here than raw session counts) + time-by-sport donut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel>
-          <SectionHeader title="Session Mix" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>sessions, year to date</span>} />
+          <SectionHeader title="Mileage by Sport" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>km, year to date</span>} />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {activityMix.map((s) => {
-              const Icon = SPORT_ICON[s.label] ?? FaSyncAlt;
-              const tint = softTintFor(s.color);
+            {mileageBySport.map((d) => {
+              const Icon = SPORT_ICON[d.label] ?? FaSyncAlt;
+              const tint = softTintFor(d.color);
               return (
-                <div key={s.label} className="fx-panel p-3" style={{ background: tint.bg, borderColor: tint.bg }}>
+                <div key={d.label} className="fx-panel p-3" style={{ background: tint.bg, borderColor: tint.bg }}>
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <Icon size={11} aria-hidden="true" style={{ color: tint.icon }} />
-                    <span className="text-[0.7rem]" style={{ color: 'var(--fx-fg-dim)' }}>{s.label}</span>
+                    <span className="text-[0.7rem]" style={{ color: 'var(--fx-fg-dim)' }}>{d.label}</span>
                   </div>
-                  <p className="fx-value text-lg"><Odometer value={String(s.value)} style={{ color: 'var(--fx-fg)' }} /></p>
+                  <p className="fx-value text-lg">
+                    <Odometer value={String(d.value)} style={{ color: 'var(--fx-fg)' }} /> km
+                  </p>
                 </div>
               );
             })}
           </div>
+          {mileageFunFact && (
+            <p className="text-[0.7rem] mt-3 pt-3" style={{ color: 'var(--fx-fg-dimmer)', borderTop: '1px solid var(--fx-border)' }}>
+              {mileageFunFact}
+            </p>
+          )}
         </Panel>
 
         <Panel className="h-full flex flex-col">
@@ -133,36 +141,6 @@ export default function OverviewSection({ data }: Props) {
           </div>
         </Panel>
       </div>
-
-      {/* Mileage by sport — independent stat cards, not a ranked/comparative
-          layout: km-per-hour is inherently different across sports (an
-          easy ride covers far more ground than an easy run), so lining
-          them up bar-chart-style read as "competing" when they aren't. */}
-      <Panel>
-        <SectionHeader title="Mileage by Sport" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>km, year to date</span>} />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {mileageBySport.map((d) => {
-            const Icon = SPORT_ICON[d.label] ?? FaSyncAlt;
-            const tint = softTintFor(d.color);
-            return (
-              <div key={d.label} className="fx-panel p-3" style={{ background: tint.bg, borderColor: tint.bg }}>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Icon size={11} aria-hidden="true" style={{ color: tint.icon }} />
-                  <span className="text-[0.7rem]" style={{ color: 'var(--fx-fg-dim)' }}>{d.label}</span>
-                </div>
-                <p className="fx-value text-lg">
-                  <Odometer value={String(d.value)} style={{ color: 'var(--fx-fg)' }} /> km
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        {mileageFunFact && (
-          <p className="text-[0.7rem] mt-3 pt-3" style={{ color: 'var(--fx-fg-dimmer)', borderTop: '1px solid var(--fx-border)' }}>
-            {mileageFunFact}
-          </p>
-        )}
-      </Panel>
     </div>
   );
 }

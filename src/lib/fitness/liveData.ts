@@ -92,28 +92,35 @@ async function getStoredVitals(): Promise<HealthWebhookPayload | null> {
   }
 }
 
-function mergeVitals(stored: HealthWebhookPayload | null, fallback: DailyVitals): DailyVitals {
-  if (!stored) return fallback;
-  // Per-field merge — a Shortcut that only sends steps/calories/heart
-  // rate/weight still works fine; anything omitted keeps the mock's
-  // plausible value rather than showing 0 or breaking the rings.
+// In full mock mode (no real source connected at all) every field keeps
+// the mock's fixture number — that's the intended demo experience. Once
+// a real source IS connected, a field the Shortcut/Health Auto Export
+// hasn't actually synced becomes null ("N/A") instead of quietly
+// borrowing the mock's fabricated number — a live dashboard should never
+// show a fake reading as if it were real.
+function mergeVitals(stored: HealthWebhookPayload | null, fallback: DailyVitals, isLive: boolean): DailyVitals {
+  if (!isLive) return fallback;
+  const real = <T,>(v: T | undefined): T | null => v ?? null;
   return {
-    date: stored.date ?? fallback.date,
-    steps: stored.steps ?? fallback.steps,
-    activeCalories: stored.activeCalories ?? fallback.activeCalories,
-    restingCalories: stored.restingCalories ?? fallback.restingCalories,
-    heartRateAvg: stored.heartRateAvg ?? fallback.heartRateAvg,
-    heartRateResting: stored.heartRateResting ?? fallback.heartRateResting,
-    sleepHours: stored.sleepHours ?? fallback.sleepHours,
+    date: stored?.date ?? fallback.date,
+    steps: real(stored?.steps),
+    activeCalories: real(stored?.activeCalories),
+    restingCalories: real(stored?.restingCalories),
+    heartRateAvg: real(stored?.heartRateAvg),
+    heartRateResting: real(stored?.heartRateResting),
+    sleepHours: real(stored?.sleepHours),
     sleepQuality: fallback.sleepQuality, // not collected via the webhook payload; keep the mock's qualitative label
-    weightLbs: stored.weightLbs ?? fallback.weightLbs,
+    weightLbs: real(stored?.weightLbs),
     rings: {
-      moveKcal: stored.moveKcal ?? fallback.rings.moveKcal,
-      moveGoalKcal: stored.moveGoalKcal ?? fallback.rings.moveGoalKcal,
-      exerciseMin: stored.exerciseMin ?? fallback.rings.exerciseMin,
-      exerciseGoalMin: stored.exerciseGoalMin ?? fallback.rings.exerciseGoalMin,
-      standHours: stored.standHours ?? fallback.rings.standHours,
-      standGoalHours: stored.standGoalHours ?? fallback.rings.standGoalHours,
+      moveKcal: real(stored?.moveKcal),
+      // Goals are never real — HealthKit doesn't expose them to any
+      // third-party app — so they're always null once live, not just
+      // when unsynced. See the ActivityRings doc comment in types.ts.
+      moveGoalKcal: null,
+      exerciseMin: real(stored?.exerciseMin),
+      exerciseGoalMin: null,
+      standHours: real(stored?.standHours),
+      standGoalHours: null,
     },
   };
 }
@@ -121,22 +128,40 @@ function mergeVitals(stored: HealthWebhookPayload | null, fallback: DailyVitals)
 // Sleep prefers a real sleep *score* if one is ever added to the
 // payload, but falls back to plain hours-asleep (labeled as such, not
 // dressed up as a score) since that's what the Shortcut can actually
-// produce today. Overriding fields individually (rather than going
-// all-mock or all-live) keeps "Live" from silently overclaiming
-// freshness it doesn't have for whichever metrics aren't synced yet.
-function buildRecoveryMetrics(mockMetrics: RecoveryMetric[], stored: HealthWebhookPayload | null): RecoveryMetric[] {
+// produce today.
+//
+// In full mock mode every card keeps its fixture value (the demo
+// experience). Once live, a metric that hasn't actually synced shows
+// "N/A" rather than quietly keeping the mock's fabricated reading —
+// e.g. HRV permission not yet granted shouldn't display a fake "58 ms"
+// as if it were real.
+function buildRecoveryMetrics(mockMetrics: RecoveryMetric[], stored: HealthWebhookPayload | null, isLive: boolean): RecoveryMetric[] {
+  if (!isLive) return mockMetrics;
+
+  const notSynced = (m: RecoveryMetric): RecoveryMetric => ({
+    ...m,
+    value: 'N/A',
+    noteStat: 'Not yet synced',
+    note: undefined,
+    noteSentiment: 'neutral' as const,
+  });
+
   return mockMetrics.map((m) => {
-    if (m.key === 'rhr' && stored?.heartRateResting !== undefined) {
+    if (m.key === 'rhr') {
+      if (stored?.heartRateResting === undefined) return notSynced(m);
       const rhr = Math.round(stored.heartRateResting);
       return { ...m, value: `${rhr} bpm`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
     }
-    if (m.key === 'hrv' && stored?.hrv !== undefined) {
+    if (m.key === 'hrv') {
+      if (stored?.hrv === undefined) return notSynced(m);
       return { ...m, value: `${Math.round(stored.hrv)} ms`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
     }
-    if (m.key === 'vo2max' && stored?.vo2max !== undefined) {
+    if (m.key === 'vo2max') {
+      if (stored?.vo2max === undefined) return notSynced(m);
       return { ...m, value: `${stored.vo2max.toFixed(1)} mL/kg/min`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
     }
-    if (m.key === 'sleepScore' && stored?.sleepHours !== undefined) {
+    if (m.key === 'sleepScore') {
+      if (stored?.sleepHours === undefined) return notSynced({ ...m, label: 'Time Asleep' });
       const h = Math.floor(stored.sleepHours);
       const min = Math.round((stored.sleepHours - h) * 60);
       return {
@@ -158,10 +183,11 @@ export async function getOverview(): Promise<OverviewData> {
   // concurrently instead of one after another.
   const activitiesPromise = getRealActivities(startOfYear());
 
+  const isLive = isKvConfigured();
   const [mockOverview, stored] = await Promise.all([mock.getOverview(), getStoredVitals()]);
-  const today = mergeVitals(stored, mockOverview.today);
+  const today = mergeVitals(stored, mockOverview.today, isLive);
   const lastSyncedAt = stored?.receivedAt ?? mockOverview.lastSyncedAt;
-  const recoveryMetrics = buildRecoveryMetrics(mockOverview.recoveryMetrics, stored);
+  const recoveryMetrics = buildRecoveryMetrics(mockOverview.recoveryMetrics, stored, isLive);
 
   const activities = await activitiesPromise;
   if (!activities) {

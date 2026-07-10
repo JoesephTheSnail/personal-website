@@ -10,25 +10,37 @@
 
 export type IntensityLevel = 'easy' | 'moderate' | 'hard' | 'rest';
 
+// Ring GOALS (moveGoalKcal/exerciseGoalMin/standGoalHours) are nullable
+// because HealthKit never exposes a user's configured targets to any
+// third-party app or Shortcut — only achieved values. In live mode
+// there's no honest number to show for a goal, so it's null ("N/A")
+// rather than a guessed constant. Achieved values are nullable too, for
+// the same reason as DailyVitals below: a live-but-not-yet-synced field
+// must not silently borrow the mock's fabricated number.
 export interface ActivityRings {
-  moveKcal: number;
-  moveGoalKcal: number;
-  exerciseMin: number;
-  exerciseGoalMin: number;
-  standHours: number;
-  standGoalHours: number;
+  moveKcal: number | null;
+  moveGoalKcal: number | null;
+  exerciseMin: number | null;
+  exerciseGoalMin: number | null;
+  standHours: number | null;
+  standGoalHours: number | null;
 }
 
+// Nullable fields (all but `date`) render as "N/A" in live mode when
+// not yet synced, rather than falling back to mockData.ts's fixture —
+// see mergeVitals() in liveData.ts. In full mock mode every field is
+// always a real (fixture) number; null only appears once a real source
+// is connected.
 export interface DailyVitals {
   date: string; // ISO date
-  steps: number;
-  activeCalories: number;
-  restingCalories: number;
-  heartRateAvg: number;
-  heartRateResting: number;
-  sleepHours: number;
+  steps: number | null;
+  activeCalories: number | null;
+  restingCalories: number | null;
+  heartRateAvg: number | null;
+  heartRateResting: number | null;
+  sleepHours: number | null;
   sleepQuality: 'poor' | 'fair' | 'good' | 'great';
-  weightLbs: number;
+  weightLbs: number | null;
   rings: ActivityRings;
 }
 

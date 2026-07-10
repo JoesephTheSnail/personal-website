@@ -39,8 +39,8 @@
 //
 // Move/Exercise/Stand ring GOALS aren't exposed by HealthKit to any
 // third-party app (Apple only exposes achieved values, never your
-// configured targets) — these three are fixed constants below. Edit
-// them if you change your goals in the Fitness app.
+// configured targets), so this route never writes them — they render
+// as "N/A" on the dashboard rather than a guessed constant.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
@@ -71,10 +71,6 @@ function groupWorkoutsByDate(workouts: ParsedWorkout[]): Map<string, WorkoutLogE
   }
   return byDate;
 }
-
-const MOVE_GOAL_KCAL = 700;
-const EXERCISE_GOAL_MIN = 45;
-const STAND_GOAL_HOURS = 12;
 
 interface StoredVitals {
   date: string;
@@ -144,9 +140,11 @@ export async function POST(req: NextRequest) {
       ...(vitals.weightLbs !== undefined && { weightLbs: vitals.weightLbs }),
       ...(vitals.exerciseMin !== undefined && { exerciseMin: vitals.exerciseMin }),
       ...(vitals.standHours !== undefined && { standHours: vitals.standHours }),
-      moveGoalKcal: MOVE_GOAL_KCAL,
-      exerciseGoalMin: EXERCISE_GOAL_MIN,
-      standGoalHours: STAND_GOAL_HOURS,
+      // Move/Exercise/Stand ring GOALS are never set here — HealthKit
+      // doesn't expose a user's configured targets to any third-party
+      // app, so there's no honest number to write. mergeVitals() in
+      // liveData.ts renders them as "N/A" once live rather than a
+      // guessed constant.
     };
 
     await kvSet(HEALTH_VITALS_KEY, merged);
