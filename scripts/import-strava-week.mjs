@@ -130,9 +130,13 @@ function main() {
     process.exit(1);
   }
 
+  // Truncated to midnight, not a rolling "exactly 168 hours ago" instant —
+  // otherwise an activity from earlier in the day 7 days back falls just
+  // before the cutoff and gets silently dropped while a later activity on
+  // that same calendar day gets included, undercounting that boundary day.
   const since = flags.since
     ? new Date(`${flags.since}T00:00:00`)
-    : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    : new Date(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0));
 
   const csvPath = join(exportDir, 'activities.csv');
   let text;
