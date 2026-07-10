@@ -11,6 +11,27 @@
 
 import type { Activity, ActivityType, TypeBreakdown, QuickStat, StatTrend } from './types';
 
+// The dashboard displays exactly five sports — run, ride (bike), swim,
+// walk, strength — and nothing else. 'cross-train' is a valid Activity
+// type (Strava/HealthKit can report it), but it's intentionally excluded
+// everywhere below rather than shown as a catch-all bucket.
+const DISPLAYED_TYPES: ActivityType[] = ['run', 'ride', 'swim', 'walk', 'strength'];
+
+export function filterDisplayedSports(activities: Activity[]): Activity[] {
+  return activities.filter((a) => DISPLAYED_TYPES.includes(a.type));
+}
+
+// "Year to date" scoping for the Session Mix / Mileage / Time-by-Sport
+// panels — without this, they'd silently reflect whatever page of raw
+// activity history happened to be fetched (e.g. Strava's most recent
+// 200), which for a frequent athlete can be a few months and for an
+// infrequent one can span multiple years. Both read as "year to date"
+// in the UI, so the underlying data has to actually be bounded to it.
+export function filterThisYear(activities: Activity[], now = new Date()): Activity[] {
+  const year = String(now.getFullYear());
+  return activities.filter((a) => a.date.startsWith(year));
+}
+
 const TYPE_LABEL: Record<ActivityType, string> = {
   run: 'Run', ride: 'Ride', swim: 'Swim', walk: 'Walk', strength: 'Strength', 'cross-train': 'Cross-train',
 };
@@ -57,9 +78,13 @@ function computeTrend(thisPeriod: number, lastPeriod: number): StatTrend | undef
   return { direction: pct > 0 ? 'up' : 'down', pct: Math.abs(pct) };
 }
 
+// Session count by sport — "number of sessions done in a year" for each
+// of the five displayed sports. Callers pass year-scoped activities
+// (filterThisYear); types outside DISPLAYED_TYPES are dropped here too
+// so a stray 'cross-train' entry can never leak into the chart.
 export function computeActivityMix(activities: Activity[]): TypeBreakdown[] {
   const counts = new Map<ActivityType, number>();
-  for (const a of activities) counts.set(a.type, (counts.get(a.type) ?? 0) + 1);
+  for (const a of filterDisplayedSports(activities)) counts.set(a.type, (counts.get(a.type) ?? 0) + 1);
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([type, value]) => ({ label: TYPE_LABEL[type], value, color: TYPE_COLOR[type] }));
@@ -67,7 +92,7 @@ export function computeActivityMix(activities: Activity[]): TypeBreakdown[] {
 
 export function computeTimeByType(activities: Activity[]): TypeBreakdown[] {
   const minutes = new Map<ActivityType, number>();
-  for (const a of activities) minutes.set(a.type, (minutes.get(a.type) ?? 0) + a.durationMin);
+  for (const a of filterDisplayedSports(activities)) minutes.set(a.type, (minutes.get(a.type) ?? 0) + a.durationMin);
   return [...minutes.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([type, value]) => ({ label: TYPE_LABEL[type], value: Math.round(value), color: TYPE_COLOR[type] }));
@@ -77,7 +102,7 @@ export function computeTimeByType(activities: Activity[]): TypeBreakdown[] {
 // excluded rather than showing a misleading "0 km" entry.
 export function computeMileageBySport(activities: Activity[]): TypeBreakdown[] {
   const km = new Map<ActivityType, number>();
-  for (const a of activities) {
+  for (const a of filterDisplayedSports(activities)) {
     if (a.distanceKm === undefined) continue;
     km.set(a.type, (km.get(a.type) ?? 0) + a.distanceKm);
   }
@@ -89,7 +114,8 @@ export function computeMileageBySport(activities: Activity[]): TypeBreakdown[] {
 // Quick stats: This Week broken out by the three headline sports (swim,
 // ride, run) each with a trend vs. the prior week, plus one overall
 // This Month total across every sport.
-export function computeQuickStats(activities: Activity[], now = new Date()): QuickStat[] {
+export function computeQuickStats(rawActivities: Activity[], now = new Date()): QuickStat[] {
+  const activities = filterDisplayedSports(rawActivities);
   const nowKey = toDateKey(now);
   const weekStart = toDateKey(mondayOf(nowKey));
   const lastWeekStart = toDateKey(new Date(new Date(`${weekStart}T00:00:00`).getTime() - 7 * 86400000));

@@ -10,9 +10,14 @@ import type { OverviewData, Activity, PlanData, DailyVitals, RecoveryMetric } fr
 import * as mock from './mockData';
 import { isKvConfigured, kvGet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from './kv';
 import { isStravaConfigured, fetchStravaActivities } from './strava';
+import { isIntervalsConfigured, fetchIntervalsActivities } from './intervalsIcu';
 import { isGoogleCalendarConfigured, fetchUpcomingEvents } from './googleCalendar';
-import { computeActivityMix, computeTimeByType, computeMileageBySport, computeQuickStats } from './aggregate';
+import { computeActivityMix, computeTimeByType, computeMileageBySport, computeQuickStats, filterThisYear } from './aggregate';
 import { workoutLogToActivities, type WorkoutLog } from './workoutLog';
+
+function startOfYear(now = new Date()): string {
+  return `${now.getFullYear()}-01-01`;
+}
 
 interface HealthWebhookPayload {
   date: string;
@@ -32,9 +37,9 @@ interface HealthWebhookPayload {
   standGoalHours?: number;
 }
 
-// Apple Health workouts (from the Shortcuts webhook) are the fallback
-// real source when Strava isn't connected — checked before giving up
-// and showing mock activities.
+// Apple Health workouts (from the Shortcuts webhook) are the last-resort
+// real source, checked only once Strava and intervals.icu have both been
+// ruled out.
 async function getAppleWorkoutActivities(): Promise<Activity[] | null> {
   if (!isKvConfigured()) return null;
   try {
@@ -47,17 +52,32 @@ async function getAppleWorkoutActivities(): Promise<Activity[] | null> {
   }
 }
 
-export async function getActivityData(): Promise<Activity[]> {
+// Real-source priority: Strava (official API) > intervals.icu (aggregates
+// Strava/Garmin/manual) > Apple Health workouts (from the Shortcuts
+// webhook) > null, meaning "fall back to mock." `oldest` bounds how far
+// back to fetch for sources that support date-range queries (intervals.icu);
+// Strava and the Apple Health log return whatever they have.
+async function getRealActivities(oldest: string): Promise<Activity[] | null> {
   if (isStravaConfigured()) {
     try {
-      return await fetchStravaActivities();
+      return await fetchStravaActivities(200);
     } catch (err) {
-      console.error('[fitness] Strava fetch failed, falling back to mock activities:', err);
-      return mock.getActivityData();
+      console.error('[fitness] Strava fetch failed, falling back:', err);
     }
   }
-  const appleWorkouts = await getAppleWorkoutActivities();
-  return appleWorkouts ?? mock.getActivityData();
+  if (isIntervalsConfigured()) {
+    try {
+      return await fetchIntervalsActivities(oldest);
+    } catch (err) {
+      console.error('[fitness] intervals.icu fetch failed, falling back:', err);
+    }
+  }
+  return getAppleWorkoutActivities();
+}
+
+export async function getActivityData(): Promise<Activity[]> {
+  const activities = await getRealActivities(startOfYear());
+  return activities ?? mock.getActivityData();
 }
 
 async function getStoredVitals(): Promise<HealthWebhookPayload | null> {
@@ -96,32 +116,42 @@ function mergeVitals(stored: HealthWebhookPayload | null, fallback: DailyVitals)
   };
 }
 
-// Resting HR is the one recovery metric actually present in the webhook/
-// Health Auto Export payload today — HRV, VO2 max, and the sleep score
-// aren't collected by that schema yet, so they stay on the mock fixture
-// until ingestion is extended to cover them. Overriding just this one
-// field (rather than leaving all four permanently mock once any source
-// is configured) keeps "Live" from silently overclaiming freshness it
-// doesn't have.
+// Resting HR and sleep are the two recovery signals actually present in
+// the webhook payload today — HRV and VO2 max aren't collected by that
+// schema yet, so they stay on the mock fixture until ingestion is
+// extended to cover them. Sleep prefers a real sleep *score* if one is
+// ever added to the payload, but falls back to plain hours-asleep
+// (labeled as such, not dressed up as a score) since that's what the
+// Shortcut can actually produce today. Overriding fields individually
+// (rather than going all-mock or all-live) keeps "Live" from silently
+// overclaiming freshness it doesn't have for the two metrics not yet wired.
 function buildRecoveryMetrics(mockMetrics: RecoveryMetric[], stored: HealthWebhookPayload | null): RecoveryMetric[] {
-  if (stored?.heartRateResting === undefined) return mockMetrics;
-  const rhr = Math.round(stored.heartRateResting);
-  return mockMetrics.map((m) =>
-    m.key === 'rhr' ? { ...m, value: `${rhr} bpm`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' } : m
-  );
+  return mockMetrics.map((m) => {
+    if (m.key === 'rhr' && stored?.heartRateResting !== undefined) {
+      const rhr = Math.round(stored.heartRateResting);
+      return { ...m, value: `${rhr} bpm`, noteStat: 'Synced from Apple Health', note: undefined, noteSentiment: 'neutral' as const };
+    }
+    if (m.key === 'sleepScore' && stored?.sleepHours !== undefined) {
+      const h = Math.floor(stored.sleepHours);
+      const min = Math.round((stored.sleepHours - h) * 60);
+      return {
+        ...m,
+        label: 'Time Asleep',
+        value: min > 0 ? `${h}h ${min}m` : `${h}h`,
+        noteStat: 'Synced from Apple Health',
+        note: undefined,
+        noteSentiment: 'neutral' as const,
+      };
+    }
+    return m;
+  });
 }
 
 export async function getOverview(): Promise<OverviewData> {
-  // Strava (if configured), Apple Health workouts (fallback real source),
-  // and the mock+KV reads are fully independent — kick this off before
-  // awaiting anything else so the round trips run concurrently instead
-  // of one after another.
-  const activitiesPromise = isStravaConfigured()
-    ? fetchStravaActivities(200).catch((err) => {
-        console.error('[fitness] Strava aggregation failed, falling back to mock overview:', err);
-        return null;
-      })
-    : getAppleWorkoutActivities();
+  // Real activities and the mock+KV reads are fully independent — kick
+  // this off before awaiting anything else so the round trips run
+  // concurrently instead of one after another.
+  const activitiesPromise = getRealActivities(startOfYear());
 
   const [mockOverview, stored] = await Promise.all([mock.getOverview(), getStoredVitals()]);
   const today = mergeVitals(stored, mockOverview.today);
@@ -133,13 +163,15 @@ export async function getOverview(): Promise<OverviewData> {
     return { ...mockOverview, today, lastSyncedAt, recoveryMetrics };
   }
 
+  const thisYear = filterThisYear(activities);
+
   return {
     today,
     lastSyncedAt,
     quickStats: computeQuickStats(activities),
-    activityMix: computeActivityMix(activities),
-    timeByType: computeTimeByType(activities),
-    mileageBySport: computeMileageBySport(activities),
+    activityMix: computeActivityMix(thisYear),
+    timeByType: computeTimeByType(thisYear),
+    mileageBySport: computeMileageBySport(thisYear),
     mileageFunFact: null, // real-world comparison is illustrative flavor text, only meaningful for the mock fixture
     recoveryMetrics,
   };

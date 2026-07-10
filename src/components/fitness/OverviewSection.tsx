@@ -107,7 +107,7 @@ export default function OverviewSection({ data }: Props) {
       {/* Session mix (stat cards, not a chart) + time-by-sport donut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel>
-          <SectionHeader title="Session Mix" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>by sport</span>} />
+          <SectionHeader title="Session Mix" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>sessions, year to date</span>} />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {activityMix.map((s) => {
               const Icon = SPORT_ICON[s.label] ?? FaSyncAlt;
@@ -126,7 +126,7 @@ export default function OverviewSection({ data }: Props) {
         </Panel>
 
         <Panel className="h-full flex flex-col">
-          <SectionHeader title="Time by Sport" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>% of total time</span>} />
+          <SectionHeader title="Time by Sport" right={<span className="text-[0.72rem]" style={{ color: 'var(--fx-fg-dimmer)' }}>% of time, year to date</span>} />
           <div className="flex items-center gap-6 flex-1">
             <TimeBySportChart data={timeByType} />
             <TimeByTypeLegend items={timeByType} total={timeByTypeTotal} />
