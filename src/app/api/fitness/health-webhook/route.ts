@@ -53,7 +53,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
-import type { WorkoutLogEntry, WorkoutLog } from '@/lib/fitness/workoutLog';
+import { upsertWorkoutDay, type WorkoutLogEntry, type WorkoutLog } from '@/lib/fitness/workoutLog';
 
 interface HealthWebhookPayload {
   date: string;
@@ -130,16 +130,14 @@ export async function POST(req: NextRequest) {
   // rather than overwritten wholesale, so a re-run of the Shortcut on the
   // same day updates that day's entry instead of duplicating or erasing
   // other days' history.
-  const hasWorkoutData = WORKOUT_LOG_FIELDS.some((f) => coerced[f as keyof HealthWebhookPayload] !== undefined);
-  if (hasWorkoutData) {
+  const workoutPartial: WorkoutLogEntry = {};
+  for (const field of WORKOUT_LOG_FIELDS) {
+    const value = coerced[field as keyof HealthWebhookPayload] as number | undefined;
+    if (value !== undefined) workoutPartial[field] = value;
+  }
+  if (Object.keys(workoutPartial).length > 0) {
     const log = ((await kvGet<WorkoutLog>(ACTIVITY_LOG_KEY)) ?? {}) as WorkoutLog;
-    const existing = log[body.date] ?? {};
-    const entry: WorkoutLogEntry = { ...existing };
-    for (const field of WORKOUT_LOG_FIELDS) {
-      const value = coerced[field as keyof HealthWebhookPayload] as number | undefined;
-      if (value !== undefined) entry[field] = value;
-    }
-    log[body.date] = entry;
+    upsertWorkoutDay(log, body.date, workoutPartial);
     await kvSet(ACTIVITY_LOG_KEY, log);
   }
 

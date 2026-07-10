@@ -14,6 +14,8 @@ export interface WorkoutLogEntry {
   bikeKm?: number;
   runMin?: number;
   runKm?: number;
+  walkMin?: number;
+  walkKm?: number;
   liftMin?: number;
 }
 
@@ -28,8 +30,19 @@ const SPORTS: Array<{
   { minKey: 'swimMin', kmKey: 'swimKm', type: 'swim', title: 'Swim' },
   { minKey: 'bikeMin', kmKey: 'bikeKm', type: 'ride', title: 'Ride' },
   { minKey: 'runMin', kmKey: 'runKm', type: 'run', title: 'Run' },
+  { minKey: 'walkMin', kmKey: 'walkKm', type: 'walk', title: 'Walk' },
   { minKey: 'liftMin', type: 'strength', title: 'Weight Lifting' },
 ];
+
+// Upserts one day's fields into the log in place — shared by both
+// ingestion routes (the Shortcuts webhook and Health Auto Export) so a
+// same-day re-sync from either source updates that day's entry instead
+// of duplicating or erasing other days' history. Only overwrites the
+// keys present in `partial`; omitted fields keep whatever was already
+// stored for that date.
+export function upsertWorkoutDay(log: WorkoutLog, date: string, partial: WorkoutLogEntry): void {
+  log[date] = { ...(log[date] ?? {}), ...partial };
+}
 
 // One Activity per logged sport per day — a day with a swim and a run
 // produces two entries, matching how Strava/HealthKit would report them

@@ -19,14 +19,22 @@
 //   POST /api/fitness/health-auto-export
 //   Authorization: Bearer <HEALTH_WEBHOOK_SECRET>
 //   Content-Type: application/json
-//   Body: Health Auto Export's native { "data": { "metrics": [...] } } export.
+//   Body: Health Auto Export's native { "data": { "metrics": [...], "workouts": [...] } } export.
 //
 // In the app: Automations → New → REST API → paste this URL → add header
 // "Authorization: Bearer <secret>" → enable JSON format → toggle on
 // Step Count, Active Energy, Resting/Basal Energy, Heart Rate, Resting
 // Heart Rate, Weight, Sleep Analysis, Apple Exercise Time, Apple Stand
-// Hour → set the export range to "Today" → schedule it (e.g. daily,
-// early morning, after your sleep data has finalized).
+// Hour, AND Workouts → set the export range to "Today" → schedule it
+// (e.g. daily, early morning, after your sleep data has finalized).
+//
+// Workouts (run/ride/swim/walk/strength) come through the same payload's
+// separate "workouts" array — this is what actually solves "get my
+// workout time + distance off my Watch" for free: unlike Shortcuts,
+// which has no action to query past HKWorkout sessions, Health Auto
+// Export does the on-device workout query itself and exports full
+// per-workout duration + distance. Toggling "Workouts" on in the app's
+// export settings is what populates it.
 //
 // Move/Exercise/Stand ring GOALS aren't exposed by HealthKit to any
 // third-party app (Apple only exposes achieved values, never your
@@ -34,8 +42,34 @@
 // them if you change your goals in the Fitness app.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { kvGet, kvSet, HEALTH_VITALS_KEY } from '@/lib/fitness/kv';
-import { parseHealthAutoExport } from '@/lib/fitness/healthAutoExportParser';
+import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
+import { parseHealthAutoExport, type ParsedWorkout } from '@/lib/fitness/healthAutoExportParser';
+import { upsertWorkoutDay, type WorkoutLog, type WorkoutLogEntry } from '@/lib/fitness/workoutLog';
+
+const SPORT_FIELD: Record<ParsedWorkout['sport'], { minKey: keyof WorkoutLogEntry; kmKey?: keyof WorkoutLogEntry }> = {
+  swim: { minKey: 'swimMin', kmKey: 'swimKm' },
+  ride: { minKey: 'bikeMin', kmKey: 'bikeKm' },
+  run: { minKey: 'runMin', kmKey: 'runKm' },
+  walk: { minKey: 'walkMin', kmKey: 'walkKm' },
+  strength: { minKey: 'liftMin' }, // no distance field — strength has no km to log
+};
+
+// Multiple same-sport workouts on one day (e.g. two runs) are summed
+// into that day's single entry, matching how the Shortcuts webhook's
+// flat per-day fields already work.
+function groupWorkoutsByDate(workouts: ParsedWorkout[]): Map<string, WorkoutLogEntry> {
+  const byDate = new Map<string, WorkoutLogEntry>();
+  for (const w of workouts) {
+    const entry = byDate.get(w.date) ?? {};
+    const { minKey, kmKey } = SPORT_FIELD[w.sport];
+    entry[minKey] = (entry[minKey] ?? 0) + w.durationMin;
+    if (kmKey && w.distanceKm !== undefined) {
+      entry[kmKey] = (entry[kmKey] ?? 0) + w.distanceKm;
+    }
+    byDate.set(w.date, entry);
+  }
+  return byDate;
+}
 
 const MOVE_GOAL_KCAL = 700;
 const EXERCISE_GOAL_MIN = 45;
@@ -77,41 +111,51 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { vitals, matched, unmatched } = parseHealthAutoExport(body);
+  const { vitals, workouts, matched, unmatched } = parseHealthAutoExport(body);
 
-  if (matched.length === 0) {
+  if (Object.keys(vitals).length === 0 && workouts.length === 0) {
     return NextResponse.json(
-      { error: 'No recognizable metrics found in payload', unmatched },
+      { error: 'No recognizable metrics or workouts found in payload', unmatched },
       { status: 422 },
     );
   }
 
-  // Merge over whatever's already stored rather than replacing wholesale —
-  // if steps/calories arrive on one automation and weight on a separate
-  // weekly one, neither write should erase the other's fields.
-  const existing = (await kvGet<StoredVitals>(HEALTH_VITALS_KEY)) ?? { date: '' };
+  if (Object.keys(vitals).length > 0) {
+    // Merge over whatever's already stored rather than replacing wholesale —
+    // if steps/calories arrive on one automation and weight on a separate
+    // weekly one, neither write should erase the other's fields.
+    const existing = (await kvGet<StoredVitals>(HEALTH_VITALS_KEY)) ?? { date: '' };
 
-  const merged: StoredVitals = {
-    ...existing,
-    date: new Date().toISOString().slice(0, 10),
-    receivedAt: new Date().toISOString(),
-    ...(vitals.steps !== undefined && { steps: vitals.steps }),
-    ...(vitals.activeCalories !== undefined && { activeCalories: vitals.activeCalories, moveKcal: vitals.activeCalories }),
-    ...(vitals.restingCalories !== undefined && { restingCalories: vitals.restingCalories }),
-    ...(vitals.heartRateAvg !== undefined && { heartRateAvg: vitals.heartRateAvg }),
-    ...(vitals.heartRateResting !== undefined && { heartRateResting: vitals.heartRateResting }),
-    ...(vitals.sleepHours !== undefined && { sleepHours: vitals.sleepHours }),
-    ...(vitals.weightLbs !== undefined && { weightLbs: vitals.weightLbs }),
-    ...(vitals.exerciseMin !== undefined && { exerciseMin: vitals.exerciseMin }),
-    ...(vitals.standHours !== undefined && { standHours: vitals.standHours }),
-    moveGoalKcal: MOVE_GOAL_KCAL,
-    exerciseGoalMin: EXERCISE_GOAL_MIN,
-    standGoalHours: STAND_GOAL_HOURS,
-  };
+    const merged: StoredVitals = {
+      ...existing,
+      date: new Date().toISOString().slice(0, 10),
+      receivedAt: new Date().toISOString(),
+      ...(vitals.steps !== undefined && { steps: vitals.steps }),
+      ...(vitals.activeCalories !== undefined && { activeCalories: vitals.activeCalories, moveKcal: vitals.activeCalories }),
+      ...(vitals.restingCalories !== undefined && { restingCalories: vitals.restingCalories }),
+      ...(vitals.heartRateAvg !== undefined && { heartRateAvg: vitals.heartRateAvg }),
+      ...(vitals.heartRateResting !== undefined && { heartRateResting: vitals.heartRateResting }),
+      ...(vitals.sleepHours !== undefined && { sleepHours: vitals.sleepHours }),
+      ...(vitals.weightLbs !== undefined && { weightLbs: vitals.weightLbs }),
+      ...(vitals.exerciseMin !== undefined && { exerciseMin: vitals.exerciseMin }),
+      ...(vitals.standHours !== undefined && { standHours: vitals.standHours }),
+      moveGoalKcal: MOVE_GOAL_KCAL,
+      exerciseGoalMin: EXERCISE_GOAL_MIN,
+      standGoalHours: STAND_GOAL_HOURS,
+    };
 
-  await kvSet(HEALTH_VITALS_KEY, merged);
+    await kvSet(HEALTH_VITALS_KEY, merged);
+  }
 
-  return NextResponse.json({ ok: true, matched, unmatched });
+  if (workouts.length > 0) {
+    const log = ((await kvGet<WorkoutLog>(ACTIVITY_LOG_KEY)) ?? {}) as WorkoutLog;
+    for (const [date, entry] of groupWorkoutsByDate(workouts)) {
+      upsertWorkoutDay(log, date, entry);
+    }
+    await kvSet(ACTIVITY_LOG_KEY, log);
+  }
+
+  return NextResponse.json({ ok: true, matched, unmatched, workoutsSynced: workouts.length });
 }
 
 export async function GET() {
