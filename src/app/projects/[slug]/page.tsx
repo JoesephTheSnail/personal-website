@@ -33,6 +33,15 @@ function getYouTubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+function getGoogleDriveId(url: string): string | null {
+  const m = url.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+function isEmbeddable(url: string): boolean {
+  return getYouTubeId(url) !== null || getGoogleDriveId(url) !== null || (url.includes('figma.com') && !url.includes('placeholder'));
+}
+
 function MediaEmbed({ url, label }: { url: string; label: string }) {
   const ytId = getYouTubeId(url);
   if (ytId) {
@@ -45,6 +54,24 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
             src={`https://www.youtube.com/embed/${ytId}`}
             title={label}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const driveId = getGoogleDriveId(url);
+  if (driveId) {
+    return (
+      <div className="mb-4">
+        <p className="text-xs mb-2 uppercase tracking-wider" style={{ color: 'var(--fg-dim)' }}>{label}</p>
+        <div className="relative w-full rounded-xl overflow-hidden border" style={{ paddingBottom: '56.25%', borderColor: 'var(--border-8)' }}>
+          <iframe
+            className="absolute inset-0 w-full h-full"
+            src={`https://drive.google.com/file/d/${driveId}/preview`}
+            title={label}
+            allow="autoplay"
             allowFullScreen
           />
         </div>
@@ -126,22 +153,16 @@ export default async function ProjectPage({ params }: Props) {
       <p className="text-sm mb-1" style={{ color: 'var(--fg-dim)' }}>{date}</p>
       <p className="text-base mb-8 leading-relaxed" style={{ color: 'var(--fg-60)' }}>{description}</p>
 
-      {/* Media: YouTube embeds first, then link buttons */}
+      {/* Media: embeddable links (YouTube, Google Drive, Figma) first, then button links */}
       {links && links.length > 0 && (
         <div className="mb-10">
-          {/* YouTube embeds */}
-          {links.filter((l) => getYouTubeId(l.url) !== null).map((l) => (
+          {links.filter((l) => isEmbeddable(l.url)).map((l) => (
             <MediaEmbed key={l.url} url={l.url} label={l.label} />
           ))}
-          {/* Figma embeds */}
-          {links.filter((l) => l.url.includes('figma.com') && !l.url.includes('placeholder')).map((l) => (
-            <MediaEmbed key={l.url} url={l.url} label={l.label} />
-          ))}
-          {/* Button links (non-embeddable) */}
-          {links.filter((l) => getYouTubeId(l.url) === null && !(l.url.includes('figma.com') && !l.url.includes('placeholder'))).length > 0 && (
+          {links.filter((l) => !isEmbeddable(l.url)).length > 0 && (
             <div className="flex flex-wrap gap-2">
               {links
-                .filter((l) => getYouTubeId(l.url) === null && !(l.url.includes('figma.com') && !l.url.includes('placeholder')))
+                .filter((l) => !isEmbeddable(l.url))
                 .map((l) => (
                   <MediaEmbed key={l.url} url={l.url} label={l.label} />
                 ))}
