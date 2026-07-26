@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { Project } from '@/lib/projects';
 import {
-  FaMobileAlt, FaFlask, FaFilm, FaCog,
+  FaMobileAlt, FaFlask, FaFilm, FaCog, FaRunning,
   FaFolder, FaLightbulb, FaStar, FaChalkboard,
 } from 'react-icons/fa';
 
-const FEATURED_SLUGS = ['mindset-app', 'anywear', 'insusense'];
+const FEATURED_SLUGS = ['mindset-app', 'anywear', 'screens-and-sleep-report'];
 
 type CatMeta = { label: string; icon: React.ElementType; color: string; bg: string; order: number };
 
@@ -19,6 +19,7 @@ const CATEGORY_META: Record<string, CatMeta> = {
   'Pitch Deck':  { label: 'Pitch Deck', icon: FaChalkboard, color: '#818cf8', bg: 'rgba(129,140,248,0.12)', order: 4 },
   'Film':        { label: 'Film',        icon: FaFilm,       color: '#f87171', bg: 'rgba(248,113,113,0.12)', order: 5 },
   'Engineering': { label: 'Engineering', icon: FaCog,        color: '#fb923c', bg: 'rgba(251,146,60,0.12)',  order: 6 },
+  'Training':    { label: 'Training',    icon: FaRunning,    color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   order: 7 },
 };
 
 // Darkened versions for light mode (WCAG contrast on light bg)
@@ -29,6 +30,7 @@ const LIGHT_COLORS: Record<string, string> = {
   'Pitch Deck':  '#3730a3',
   'Film':        '#b91c1c',
   'Engineering': '#c2410c',
+  'Training':    '#b91c1c',
 };
 
 function getCatMeta(cat: string): CatMeta {

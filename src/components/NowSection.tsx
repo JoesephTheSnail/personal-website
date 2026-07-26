@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  FaMobileAlt, FaFlask, FaFilm, FaCog,
+  FaMobileAlt, FaFlask, FaFilm, FaCog, FaRunning,
   FaFolder, FaLightbulb, FaChalkboard,
 } from 'react-icons/fa';
 import { HiArrowUpRight } from 'react-icons/hi2';
@@ -14,6 +14,7 @@ const CATEGORY_META: Record<string, CatMeta> = {
   'Pitch Deck':  { icon: FaChalkboard, color: '#818cf8', bg: 'rgba(129,140,248,0.12)' },
   'Film':        { icon: FaFilm,       color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   'Engineering': { icon: FaCog,        color: '#fb923c', bg: 'rgba(251,146,60,0.12)'  },
+  'Training':    { icon: FaRunning,    color: '#ef4444', bg: 'rgba(239,68,68,0.12)'   },
 };
 
 function getCatMeta(cat: string): CatMeta {
@@ -43,33 +44,30 @@ export default function NowSection({ items }: { items: NowItem[] }) {
         {items.map((item) => {
           const meta = getCatMeta(item.category);
           const Icon = meta.icon;
+          // Plain div, not a Link — these are 'upcoming' projects with no
+          // real case-study page yet, so making them clickable just sent
+          // visitors to a blank page.
           return (
-            <Link
+            <div
               key={item.slug}
-              href={`/projects/${item.slug}`}
-              className="group flex items-center gap-4 rounded-xl p-4 border transition-all duration-200 hover:bg-white/4 hover:scale-[1.01]"
+              className="flex items-center gap-4 rounded-xl p-4 border"
               style={{ borderColor: 'var(--border-9)', background: 'var(--card-bg)' }}
             >
               <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
+                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: meta.bg }}
               >
                 <Icon size={15} style={{ color: meta.color }} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm mb-0.5 group-hover:text-white transition-colors" style={{ color: 'var(--fg)' }}>
+                <h3 className="font-medium text-sm mb-0.5" style={{ color: 'var(--fg)' }}>
                   {item.title}
                 </h3>
                 <p className="text-[0.8125rem] leading-relaxed line-clamp-1" style={{ color: 'var(--fg-muted)' }}>
                   {item.description}
                 </p>
               </div>
-              <HiArrowUpRight
-                size={14}
-                className="flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
-                style={{ color: 'var(--fg-dim)' }}
-              />
-            </Link>
+            </div>
           );
         })}
       </div>

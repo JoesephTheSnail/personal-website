@@ -225,7 +225,11 @@
       "Bash(/bin/ls -1 \"/Users/ArnavChandra/Documents/Shortcuts Playground/2026-07-10/\")",
       "Bash(grep -niB2 -A6 'Current Date\\\\|CurrentDate\\\\|current date' /Users/ArnavChandra/.claude/plugins/cache/shortcuts-playground/shortcuts-playground/1.2.1/skills/shortcuts-playground/DATE_TIME.md)",
       "Bash(node -e \"console.log\\(new Date\\(\\).toString\\(\\)\\); console.log\\(new Date\\(Date.now\\(\\) - 7*24*60*60*1000\\).toString\\(\\)\\)\")",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(git checkout *)",
+      "Bash(git config *)",
+      "Bash(security find-internet-password *)",
+      "Bash(brew install *)"
     ]
   }
 }

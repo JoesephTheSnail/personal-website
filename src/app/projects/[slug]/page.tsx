@@ -1,7 +1,9 @@
 import { getAllProjects } from '@/lib/projects';
 import { MDXRemote } from 'next-mdx-remote/rsc';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { HiOutlineDocumentText, HiArrowUpRight } from 'react-icons/hi2';
 
 interface Props { params: Promise<{ slug: string }>; }
 
@@ -38,8 +40,12 @@ function getGoogleDriveId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+function isPdf(url: string): boolean {
+  return url.toLowerCase().endsWith('.pdf');
+}
+
 function isEmbeddable(url: string): boolean {
-  return getYouTubeId(url) !== null || getGoogleDriveId(url) !== null || (url.includes('figma.com') && !url.includes('placeholder'));
+  return getYouTubeId(url) !== null || getGoogleDriveId(url) !== null || isPdf(url) || (url.includes('figma.com') && !url.includes('placeholder'));
 }
 
 function MediaEmbed({ url, label }: { url: string; label: string }) {
@@ -75,6 +81,46 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
             allowFullScreen
           />
         </div>
+      </div>
+    );
+  }
+
+  if (isPdf(url)) {
+    // A live PDF viewer drags in the browser's own toolbar/UI chrome,
+    // which never matches the site. Instead: a static cover-page preview
+    // (rendered once via pdftoppm, convention is `<name>-cover.png` next
+    // to `<name>.pdf`) styled as a document card, linking out to the
+    // actual PDF in a new tab.
+    const coverSrc = url.replace(/\.pdf$/i, '-cover.png');
+    return (
+      <div className="mb-4">
+        <p className="text-xs mb-2 uppercase tracking-wider" style={{ color: 'var(--fg-dim)' }}>{label}</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-4 sm:gap-5 rounded-xl border p-4 sm:p-5 transition-all duration-200 hover:border-white/30 hover:bg-white/4"
+          style={{ borderColor: 'var(--border-8)', background: 'var(--card-bg)' }}
+        >
+          <div
+            className="relative flex-shrink-0 rounded-lg overflow-hidden border shadow-lg transition-transform duration-200 group-hover:scale-[1.02]"
+            style={{ width: 84, aspectRatio: '17 / 22', borderColor: 'var(--border-med)' }}
+          >
+            <Image src={coverSrc} alt={`Cover page of ${label}`} fill className="object-cover" sizes="84px" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <HiOutlineDocumentText size={15} style={{ color: 'var(--fg-dim)' }} />
+              <span className="font-poppins font-semibold text-sm" style={{ color: 'var(--fg)' }}>{label}</span>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--fg-dim)' }}>PDF Report · Opens in a new tab</p>
+          </div>
+          <HiArrowUpRight
+            size={16}
+            className="flex-shrink-0 opacity-40 group-hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--fg-dim)' }}
+          />
+        </a>
       </div>
     );
   }
