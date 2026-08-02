@@ -1,18 +1,38 @@
 import { getAllProjects } from '@/lib/projects';
+import { CATEGORIES, getCategoryBySlug, getCategoryByLabel } from '@/lib/categoryMeta';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { HiOutlineDocumentText, HiArrowUpRight } from 'react-icons/hi2';
+import CategoryIndexList from '@/components/CategoryIndexList';
+import ThemedIcon from '@/components/ThemedIcon';
+import BackLink from '@/components/BackLink';
+import { projectCardTransitionName } from '@/lib/viewTransition';
 
 interface Props { params: Promise<{ slug: string }>; }
 
 export async function generateStaticParams() {
-  return getAllProjects().map((p) => ({ slug: p.slug }));
+  const projectParams = getAllProjects().map((p) => ({ slug: p.slug }));
+  const categoryParams = CATEGORIES.map((c) => ({ slug: c.slug }));
+  return [...projectParams, ...categoryParams];
 }
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
+
+  const category = getCategoryBySlug(slug);
+  if (category) {
+    const url = `https://arnavchandra.com/projects/${slug}`;
+    const title = `${category.label} projects`;
+    const description = `${category.label} projects by Arnav Chandra.`;
+    return {
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: { title: `${title} | Arnav Chandra`, description, url, type: 'website' },
+    };
+  }
+
   const project = getAllProjects().find((p) => p.slug === slug);
   if (!project) return { title: 'Project' };
 
@@ -176,21 +196,54 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
 
 export default async function ProjectPage({ params }: Props) {
   const { slug } = await params;
+
+  // Category browsing pages (/projects/research, /projects/pitch-deck, …)
+  // share this same [slug] segment as individual project pages — Next.js
+  // can't have two dynamic segments at the same path level, so a known
+  // category slug is resolved here first, before falling through to the
+  // project lookup below.
+  const category = getCategoryBySlug(slug);
+  if (category) {
+    const categoryProjects = getAllProjects()
+      .filter((p) => p.frontmatter.status === 'published' && p.frontmatter.category === category.label)
+      .sort((a, b) => (b.frontmatter.date ?? '').localeCompare(a.frontmatter.date ?? ''));
+    if (categoryProjects.length === 0) notFound();
+
+    const Icon = category.icon;
+    return (
+      <div className="max-w-3xl mx-auto">
+        <BackLink fallbackHref="/projects" label="Back to Projects" />
+
+        <div className="flex items-center gap-2.5 mb-2">
+          <ThemedIcon color={category.color} lightColor={category.lightColor} className="inline-flex">
+            <Icon size={20} />
+          </ThemedIcon>
+          <h1 className="font-poppins font-semibold text-3xl tracking-tight" style={{ color: 'var(--fg)' }}>
+            {category.label}
+          </h1>
+        </div>
+        <p className="text-sm mb-4" style={{ color: 'var(--fg-dim)' }}>
+          {categoryProjects.length} project{categoryProjects.length === 1 ? '' : 's'}
+        </p>
+
+        <CategoryIndexList projects={categoryProjects} color={category.color} lightColor={category.lightColor} />
+      </div>
+    );
+  }
+
   const project = getAllProjects().find((p) => p.slug === slug);
   if (!project) notFound();
 
-  const { title, date, description, links } = project.frontmatter;
+  const { title, date, description, links, category: categoryLabel } = project.frontmatter;
+  // Falls back to the project's own category page (not the full grid) when
+  // there's no in-site history to go back to — a shared/direct link to a
+  // Robotics writeup should land back on Engineering, not the top grid.
+  const parentCategory = categoryLabel ? getCategoryByLabel(categoryLabel) : undefined;
+  const backHref = parentCategory ? `/projects/${parentCategory.slug}` : '/projects';
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Back link */}
-      <Link
-        href="/projects"
-        className="inline-flex items-center gap-1.5 text-sm transition-colors mb-8"
-        style={{ color: 'var(--fg-35)' }}
-      >
-        ← Back to Projects
-      </Link>
+    <div className="max-w-3xl mx-auto" data-project-transition={slug} style={{ viewTransitionName: projectCardTransitionName(slug) }}>
+      <BackLink fallbackHref={backHref} label="Back to Projects" />
 
       {/* Header */}
       <h1 className="font-poppins font-semibold text-3xl tracking-tight mb-2" style={{ color: 'var(--fg)' }}>

@@ -2,6 +2,7 @@ import { getAllBooks } from '@/lib/books';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import Image from 'next/image';
 import BookCoverScroll from '@/components/BookCoverScroll';
+import BooksList, { type BookListItem } from '@/components/BooksList';
 
 export const metadata = {
   title: 'Books',
@@ -10,31 +11,8 @@ export const metadata = {
   alternates: { canonical: 'https://arnavchandra.com/books' },
 };
 
-function StarRating({ rating }: { rating: number }) {
-  const stars = rating / 2; // convert /10 → /5
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((n) => {
-        const full = stars >= n;
-        const half = !full && stars >= n - 0.5;
-        return (
-          <span key={n} className="relative inline-block" style={{ fontSize: '0.8rem', lineHeight: 1 }}>
-            <span style={{ color: 'var(--fg)', opacity: 0.2 }}>★</span>
-            {(full || half) && (
-              <span
-                className="absolute inset-0 overflow-hidden"
-                style={{ width: full ? '100%' : '50%', color: 'var(--fg)' }}
-              >
-                ★
-              </span>
-            )}
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
+// Star ratings only appear on finished books, which now render inside
+// BooksList — the "Now Reading" block below still needs the genre tags.
 function GenreTags({ genres }: { genres: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -70,6 +48,24 @@ export default function BooksPage() {
     title: b.frontmatter.title,
     cover: b.frontmatter.cover,
   }));
+
+  // MDX only renders server-side, so each takeaway is rendered here and
+  // handed down as a finished node — the client component reorders the
+  // list without ever re-rendering that content.
+  const listItems: BookListItem[] = readBooks.map((b) => {
+    const parsed = Date.parse(b.frontmatter.date);
+    return {
+      slug: b.frontmatter.slug,
+      title: b.frontmatter.title,
+      author: b.frontmatter.author,
+      cover: b.frontmatter.cover,
+      date: b.frontmatter.date,
+      sortDate: Number.isNaN(parsed) ? 0 : parsed,
+      rating: b.frontmatter.rating,
+      genres: b.frontmatter.genre ?? [],
+      takeaway: b.content.trim() ? <MDXRemote source={b.content} /> : null,
+    };
+  });
 
   return (
     <div className="max-w-3xl mx-auto sm:px-0 px-2" style={{ overflowX: 'hidden' }}>
@@ -148,88 +144,8 @@ export default function BooksPage() {
       {/* ── Animated scrolling cover strip ── */}
       <BookCoverScroll books={coverItems} />
 
-      {/* ── Read books list ── */}
-      <div className="space-y-4 sm:space-y-6">
-        {readBooks.map((book) => (
-          <article
-            key={book.slug}
-            id={book.frontmatter.slug}
-            className="scroll-mt-10 rounded-xl border overflow-hidden"
-            style={{ borderColor: 'var(--border-9)', background: 'var(--card-bg)' }}
-          >
-            {/* Header row */}
-            <div className="flex gap-3 sm:gap-4 items-start p-3 sm:p-5">
-              {/* Cover thumbnail */}
-              <div
-                className="flex-shrink-0 rounded overflow-hidden"
-                style={{ width: 48, height: 72, position: 'relative', border: '1px solid var(--border-med)' }}
-              >
-                <Image
-                  src={book.frontmatter.cover}
-                  alt={`Cover of ${book.frontmatter.title}`}
-                  fill
-                  className="object-cover"
-                  sizes="48px"
-                />
-              </div>
-
-              {/* Meta */}
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h2
-                  className="font-poppins font-semibold leading-snug mb-1"
-                  style={{
-                    color: 'var(--fg)',
-                    fontSize: 'clamp(0.875rem, 3.5vw, 1.0625rem)',
-                    overflowWrap: 'break-word',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {book.frontmatter.title}
-                </h2>
-                <p className="text-xs sm:text-sm leading-snug mb-1.5" style={{ color: 'var(--fg-muted)' }}>
-                  {book.frontmatter.author}
-                </p>
-
-                {/* Genre tags */}
-                {book.frontmatter.genre && book.frontmatter.genre.length > 0 && (
-                  <GenreTags genres={book.frontmatter.genre} />
-                )}
-
-                {/* Rating + date */}
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2">
-                  <p className="text-xs" style={{ color: 'var(--fg-30)' }}>
-                    Read:{' '}
-                    <span style={{ color: 'var(--fg-muted)' }}>
-                      {book.frontmatter.date || 'N/A'}
-                    </span>
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs" style={{ color: 'var(--fg-30)' }}>Rating:</span>
-                    {book.frontmatter.rating > 0 ? (
-                      <StarRating rating={book.frontmatter.rating} />
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--fg-dimmer)' }}>N/A</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Takeaway */}
-            {book.content.trim() && (
-              <>
-                <div style={{ borderTop: '1px solid var(--border)' }} />
-                <div
-                  className="px-3 sm:px-5 py-3 sm:py-4 prose"
-                  style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
-                >
-                  <MDXRemote source={book.content} />
-                </div>
-              </>
-            )}
-          </article>
-        ))}
-      </div>
+      {/* ── Read books list (sortable / filterable) ── */}
+      <BooksList items={listItems} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FiSun, FiMoon } from 'react-icons/fi';
+import { playToggle } from '@/lib/sound';
 
 export default function ThemeToggle({ className = '' }: { className?: string }) {
   const [isDark, setIsDark] = useState(true);
@@ -22,6 +23,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
 
     // Direction: to-light = expand, to-dark = rewind
     root.setAttribute('data-theme-dir', next ? 'to-dark' : 'to-light');
+    playToggle(!next);
 
     const apply = () => {
       setIsDark(next);

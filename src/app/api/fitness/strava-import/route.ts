@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
 import type { WorkoutLog, WorkoutLogEntry } from '@/lib/fitness/workoutLog';
+import { checkFitnessAuth, parseJsonBody } from '@/lib/fitness/auth';
 
 const NUMBER_FIELDS: Array<keyof WorkoutLogEntry> = [
   'swimMin', 'swimKm', 'bikeMin', 'bikeKm', 'runMin', 'runKm', 'walkMin', 'walkKm', 'liftMin',
@@ -35,24 +36,13 @@ function isValidEntry(entry: unknown): entry is WorkoutLogEntry {
 }
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.HEALTH_WEBHOOK_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: 'HEALTH_WEBHOOK_SECRET is not configured on the server' }, { status: 503 });
-  }
+  const authError = checkFitnessAuth(req);
+  if (authError) return authError;
 
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const parsed = await parseJsonBody(req);
+  if ('error' in parsed) return parsed.error;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const days = (body as { days?: unknown })?.days;
+  const days = (parsed.body as { days?: unknown })?.days;
   if (typeof days !== 'object' || days === null || Array.isArray(days)) {
     return NextResponse.json({ error: '"days" must be an object keyed by ISO date' }, { status: 400 });
   }

@@ -67,24 +67,23 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
 
   return (
     <div
-      className="relative mb-10 select-none overflow-hidden"
+      // The track's scrollbar is fully hidden (see .cover-track), so this
+      // margin is the only gap under the covers — no hidden padding stacking
+      // on top of it the way pb-6 used to.
+      className="relative mb-3 select-none overflow-hidden"
       data-hide-cursor
       onMouseMove={handleMouseMove}
       onMouseLeave={stopScroll}
     >
-      {/* Left fade — only when scrolled away from start */}
-      <div
-        className="absolute inset-y-0 left-0 w-16 z-10 pointer-events-none transition-opacity duration-300"
-        style={{
-          background: 'linear-gradient(to right, var(--bg), transparent)',
-          opacity: scrolled ? 1 : 0,
-        }}
-      />
-      {/* Right fade — always visible to hint there's more */}
-      <div
-        className="absolute inset-y-0 right-0 w-16 z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to left, var(--bg), transparent)' }}
-      />
+      {/* Fade used to be a solid-colour div painted on top of the track —
+          but that div and the scrollable track underneath it are each
+          promoted to their own GPU-composited layer (see the comment on
+          the track below), and two independently-composited layers meeting
+          at an edge can leave a hairline seam where the layer underneath
+          shows through by a subpixel, even though every CSS value lines up
+          exactly. Masking the track's own content instead means the fade is
+          painted in the *same* layer as the covers — there's no seam to
+          leak through because there's no second layer. */}
 
       {/* Glow overlays when hovering scroll zones */}
       <div
@@ -116,11 +115,27 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
         <span className="text-white text-lg">›</span>
       </div>
 
-      {/* Scrollable track — min-width:0 prevents iOS Safari from inflating parent to scroll-content width */}
+      {/* Scrollable track — min-width:0 prevents iOS Safari from inflating parent
+          to scroll-content width. position+z-index here isn't cosmetic: a plain
+          `position: static` scroll container is a non-positioned box, which per
+          spec should paint *before* (under) the z-index:20 glow/arrow overlays
+          above — but Chromium promotes scrolling overflow to its own composited
+          layer, which doesn't reliably honor that ordering. An explicit
+          z-index puts the track in the same directly-compared stacking bucket
+          as the overlays, so 0 < 20 is actually respected.
+          The edge fade itself is a mask on the track, not a painted-over div —
+          a separate div and this composited layer meeting at an edge can leave
+          a hairline seam where the layer underneath shows through by a
+          subpixel. A mask fades the track's own pixels directly, so there's
+          no second layer for a seam to leak through. */}
       <div
         ref={trackRef}
-        className="flex gap-3 overflow-x-auto pb-6"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', minWidth: 0 }}
+        className="cover-track relative z-0 flex gap-3 overflow-x-auto pb-1"
+        style={{
+          minWidth: 0,
+          maskImage: `linear-gradient(to right, ${scrolled ? 'transparent, black 64px,' : 'black,'} black calc(100% - 64px), transparent)`,
+          WebkitMaskImage: `linear-gradient(to right, ${scrolled ? 'transparent, black 64px,' : 'black,'} black calc(100% - 64px), transparent)`,
+        }}
         onScroll={handleScroll}
       >
         {books.map((book) => (

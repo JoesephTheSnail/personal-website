@@ -7,6 +7,7 @@ import { HiArrowUpRight, HiArrowRight } from 'react-icons/hi2';
 import { FaHome, FaFolder, FaBook, FaHeartbeat, FaNewspaper, FaEnvelope } from 'react-icons/fa';
 import ThemeToggle from './ThemeToggle';
 import MobileNav from './MobileNav';
+import { playTick, playSuccess } from '@/lib/sound';
 
 const nav = [
   { href: '/',                             label: 'Home',       icon: FaHome,      external: false },
@@ -83,6 +84,7 @@ export default function TopNav({ onContactClick }: Props) {
       '_blank',
       'noopener,noreferrer',
     );
+    playSuccess();
     setSent(true);
     setEmail('');
     setTimeout(() => setSent(false), 3000);
@@ -140,10 +142,21 @@ export default function TopNav({ onContactClick }: Props) {
                 target={external ? '_blank' : undefined}
                 rel={external ? 'noopener noreferrer' : undefined}
                 onMouseEnter={onLinkEnter}
-                className={`topnav-link relative z-10 flex items-center gap-3 px-3 py-3 rounded-xl text-[0.9375rem] transition-colors duration-150${active ? ' topnav-link--active' : ''}`}
-                style={{ color: active ? 'var(--fg)' : 'var(--fg-dim)' }}
+                onClick={() => !active && playTick()}
+                className={`topnav-link relative z-10 flex items-center gap-3 px-3 py-[11px] rounded-xl text-[0.9063rem] transition-colors duration-150${active ? ' topnav-link--active' : ''}`}
+                style={{ color: active ? 'var(--fg)' : 'var(--fg-dim)', letterSpacing: '-0.008em' }}
               >
-                <Icon size={16} style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }} />
+                {/* Accent bar on the active item: the moving pill alone
+                    reads as hover state, so the current page needs a mark
+                    that hovering can't imitate. */}
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 rounded-r"
+                    style={{ top: '50%', transform: 'translateY(-50%)', width: 2.5, height: 17, background: 'var(--indigo)' }}
+                  />
+                )}
+                <Icon size={16} className="topnav-icon" style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }} />
                 <span className={active ? 'font-medium' : ''}>{label}</span>
                 {external && <HiArrowUpRight size={11} className="ml-auto" style={{ color: 'var(--indigo)', opacity: 0.75 }} />}
               </Link>
@@ -156,10 +169,7 @@ export default function TopNav({ onContactClick }: Props) {
 
         {/* Newsletter subscribe */}
         <div className="px-1 mb-5">
-          <p
-            className="text-[11px] font-semibold mb-2.5"
-            style={{ color: 'var(--fg-dim)' }}
-          >
+          <p className="text-[11px] font-semibold mb-2.5" style={{ color: 'var(--fg-dim)' }}>
             {sent ? 'Opening Substack…' : 'Follow for Monthly Updates'}
           </p>
           <form onSubmit={handleSubscribe} className="flex gap-1.5">
@@ -168,7 +178,7 @@ export default function TopNav({ onContactClick }: Props) {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Your email"
-              className="flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg outline-none"
+              className="sidebar-input flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg outline-none"
               style={{
                 background: 'var(--input-bg, rgba(255,255,255,0.06))',
                 border: '1px solid var(--border)',
@@ -178,7 +188,7 @@ export default function TopNav({ onContactClick }: Props) {
             <button
               type="submit"
               aria-label="Subscribe"
-              className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
+              className="sidebar-send flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
               style={{
                 background: 'var(--hover-bg)',
                 border: '1px solid var(--border-med)',

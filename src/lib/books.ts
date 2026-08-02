@@ -40,5 +40,13 @@ export function getAllBooks(): Book[] {
     };
   });
 
-  return books.sort((a, b) => (a.frontmatter.order ?? 99) - (b.frontmatter.order ?? 99));
+  return books.sort((a, b) => parseReadDate(b.frontmatter.date) - parseReadDate(a.frontmatter.date));
+}
+
+// Dates are hand-written ("May 21, 2026", or just "March 2025" for older
+// entries) rather than ISO, so sorting goes through Date.parse rather than
+// a string compare — most recently read first.
+function parseReadDate(date: string): number {
+  const t = Date.parse(date);
+  return Number.isNaN(t) ? 0 : t;
 }

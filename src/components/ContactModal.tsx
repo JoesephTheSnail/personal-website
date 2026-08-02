@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FaLinkedin, FaMedium, FaEnvelope, FaCalendarAlt, FaTimes } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 import { SiSubstack } from 'react-icons/si';
+import { playPop } from '@/lib/sound';
 
 const links = [
   { label: 'LinkedIn',  href: 'https://www.linkedin.com/in/arnav-chandra-b33660293/', icon: FaLinkedin  },
@@ -22,6 +23,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   useEffect(() => {
     if (isOpen) {
       setMounted(true);
+      playPop(true);
       requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
     } else {
       setVisible(false);
@@ -30,15 +32,31 @@ export default function ContactModal({ isOpen, onClose }: Props) {
     }
   }, [isOpen]);
 
+  const handleClose = () => {
+    playPop(false);
+    onClose();
+  };
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose]);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (!isOpen) return;
+    // Locking scroll removes the scrollbar, which widens body's content
+    // box by the scrollbar's own width and shifts everything behind the
+    // blur over by a few pixels. Reserving that width back as padding is
+    // what keeps the page from visibly shifting when the modal opens.
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
   }, [isOpen]);
 
   if (!mounted) return null;
@@ -52,7 +70,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         WebkitBackdropFilter: `blur(${visible ? 4 : 0}px)`,
         transition: 'background 0.22s ease, backdrop-filter 0.18s ease, -webkit-backdrop-filter 0.18s ease',
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative w-full max-w-sm rounded-2xl p-8"
@@ -67,26 +85,32 @@ export default function ContactModal({ isOpen, onClose }: Props) {
       >
         {/* Close */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-white/30 hover:text-white transition-colors"
+          onClick={handleClose}
+          className="absolute top-4 right-4 hover:text-white transition-colors"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
           aria-label="Close"
         >
           <FaTimes size={15} />
         </button>
 
         {/* Heading */}
-        <h2 className="font-poppins font-semibold text-[#FFFFFF] text-2xl mb-6 tracking-tight">
+        <h2 className="font-poppins font-semibold text-2xl mb-6 tracking-tight" style={{ color: '#ffffff' }}>
           Get in touch
         </h2>
 
-        {/* Email as text */}
+        {/* Email as text — this card is always dark regardless of site
+            theme, so colors are inline rather than Tailwind's text-white
+            utilities: a sitewide `html.light .text-white` rule flips those
+            to near-black for the rest of the site's light mode, which
+            turned this text invisible against the still-dark #141414 card. */}
         <div className="mb-6">
-          <p className="text-white/40 text-xs uppercase tracking-widest mb-1.5">Email</p>
+          <p className="text-xs uppercase tracking-widest mb-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Email</p>
           <div className="flex items-center gap-2">
-            <FaEnvelope size={13} className="text-white/30" />
+            <FaEnvelope size={13} style={{ color: 'rgba(255,255,255,0.3)' }} />
             <a
               href="mailto:chandraarnav09@gmail.com"
-              className="text-white text-sm hover:text-[#FFFFFF] transition-colors"
+              className="text-sm hover:text-white transition-colors"
+              style={{ color: '#ffffff' }}
             >
               chandraarnav09@gmail.com
             </a>
@@ -97,7 +121,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         <div className="mb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }} />
 
         {/* Social icons — centered */}
-        <p className="text-white/40 text-xs uppercase tracking-widest mb-4 text-center">
+        <p className="text-xs uppercase tracking-widest mb-4 text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Find me on
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
@@ -111,12 +135,12 @@ export default function ContactModal({ isOpen, onClose }: Props) {
               className="group flex flex-col items-center gap-1.5"
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:border-[#FFFFFF]/50 group-hover:bg-[#FFFFFF]/5"
+                className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:border-white/50 group-hover:bg-white/5"
                 style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}
               >
-                <Icon size={18} className="text-white/70 group-hover:text-[#FFFFFF] transition-colors" />
+                <Icon size={18} className="group-hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.7)' }} />
               </div>
-              <span className="text-[0.65rem] text-white/30 group-hover:text-[#FFFFFF] transition-colors">
+              <span className="text-[0.65rem] group-hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 {label}
               </span>
             </a>

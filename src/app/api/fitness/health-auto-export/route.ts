@@ -46,6 +46,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
 import { parseHealthAutoExport, type ParsedWorkout } from '@/lib/fitness/healthAutoExportParser';
 import { upsertWorkoutDay, type WorkoutLog, type WorkoutLogEntry } from '@/lib/fitness/workoutLog';
+import { checkFitnessAuth, parseJsonBody } from '@/lib/fitness/auth';
 
 const SPORT_FIELD: Record<ParsedWorkout['sport'], { minKey: keyof WorkoutLogEntry; kmKey?: keyof WorkoutLogEntry }> = {
   swim: { minKey: 'swimMin', kmKey: 'swimKm' },
@@ -93,24 +94,13 @@ interface StoredVitals {
 }
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.HEALTH_WEBHOOK_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: 'HEALTH_WEBHOOK_SECRET is not configured on the server' }, { status: 503 });
-  }
+  const authError = checkFitnessAuth(req);
+  if (authError) return authError;
 
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const parsed = await parseJsonBody(req);
+  if ('error' in parsed) return parsed.error;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const { vitals, workouts, matched, unmatched } = parseHealthAutoExport(body);
+  const { vitals, workouts, matched, unmatched } = parseHealthAutoExport(parsed.body);
 
   if (Object.keys(vitals).length === 0 && workouts.length === 0) {
     return NextResponse.json(

@@ -32,16 +32,20 @@ export default function CustomCursor() {
   const dotIndigoRefs  = useRef<(HTMLDivElement | null)[]>([]);
   const [isFine, setIsFine] = useState(false);
 
+  // Native cursor hiding lives once in globals.css (`@media (pointer:
+  // fine)`), which is always live — so this listens for the query
+  // itself changing (e.g. a 2-in-1 laptop switching between touch and
+  // mouse) rather than checking it only once at mount. A stale one-time
+  // check here was the cause of the cursor going fully invisible on
+  // those devices: the CSS hid the native cursor (still live/correct),
+  // but this component had already decided isFine=false at mount and
+  // never rendered the replacement.
   useEffect(() => {
-    const fine = window.matchMedia('(pointer: fine)').matches;
-    setIsFine(fine);
-    if (fine) {
-      const s = document.createElement('style');
-      s.id = 'cursor-none';
-      s.textContent = '*, *::before, *::after { cursor: none !important; }';
-      document.head.appendChild(s);
-      return () => { document.getElementById('cursor-none')?.remove(); };
-    }
+    const mql = window.matchMedia('(pointer: fine)');
+    setIsFine(mql.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsFine(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
   }, []);
 
   useEffect(() => {

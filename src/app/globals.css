@@ -42,6 +42,19 @@
   --gold:          #f59e0b;
   --gold-bg:       rgba(245,158,11,0.10);
   --gold-border:   rgba(245,158,11,0.28);
+
+  /* ── Project card surface (dark) ──
+     A three-stop gradient rather than a flat fill: the top of the card sits
+     a few percent lighter than the bottom, which is what stops a large dark
+     rectangle reading as a hole in the page. */
+  --pcard-surface:      linear-gradient(168deg, #1b1b1d 0%, #151517 55%, #121214 100%);
+  --pcard-border:       rgba(255,255,255,0.075);
+  --pcard-inset-top:    rgba(255,255,255,0.065);
+  --pcard-shadow:       0 1px 2px rgba(0,0,0,0.40), 0 8px 24px -10px rgba(0,0,0,0.55);
+  --pcard-shadow-hover: 0 2px 6px rgba(0,0,0,0.45), 0 20px 48px -16px rgba(0,0,0,0.70);
+  --pchip-bg:           rgba(255,255,255,0.07);
+  --pchip-border:       rgba(255,255,255,0.10);
+  --pchip-fg:           rgba(255,255,255,0.62);
 }
 
 html.light {
@@ -83,6 +96,16 @@ html.light {
   --gold:          #b45309;
   --gold-bg:       rgba(180,83,9,0.07);
   --gold-border:   rgba(180,83,9,0.22);
+
+  /* ── Project card surface (light) ── */
+  --pcard-surface:      linear-gradient(168deg, #ffffff 0%, #fdfdfb 55%, #faf9f6 100%);
+  --pcard-border:       rgba(0,0,0,0.075);
+  --pcard-inset-top:    rgba(255,255,255,0.9);
+  --pcard-shadow:       0 1px 2px rgba(0,0,0,0.05), 0 8px 22px -12px rgba(0,0,0,0.16);
+  --pcard-shadow-hover: 0 2px 6px rgba(0,0,0,0.07), 0 20px 44px -16px rgba(0,0,0,0.22);
+  --pchip-bg:           rgba(0,0,0,0.045);
+  --pchip-border:       rgba(0,0,0,0.07);
+  --pchip-fg:           rgba(0,0,0,0.55);
 }
 
 html { scroll-behavior: smooth; }
@@ -111,6 +134,34 @@ html { scroll-behavior: smooth; }
   opacity: 0.88;
 }
 
+/* Nav icons brighten and nudge with their row rather than sitting inert
+   while only the label changes color. */
+.topnav-icon { transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.22, 0.8, 0.3, 1); }
+.topnav-link:hover .topnav-icon { opacity: 0.9 !important; transform: translateX(1px); }
+
+.sidebar-input {
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.sidebar-input::placeholder { color: var(--fg-30); }
+.sidebar-input:focus {
+  border-color: var(--indigo-border) !important;
+  box-shadow: 0 0 0 3px var(--indigo-bg);
+}
+.sidebar-send {
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.28s cubic-bezier(0.22, 0.8, 0.3, 1);
+}
+.sidebar-send:hover {
+  background: var(--indigo-bg) !important;
+  border-color: var(--indigo-border) !important;
+  color: var(--indigo) !important;
+  transform: translateX(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topnav-icon, .sidebar-send { transition: none; }
+  .topnav-link:hover .topnav-icon, .sidebar-send:hover { transform: none; }
+}
+
 /* ── Spring physics — reusable hover animations ── */
 .spring-scale {
   transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
@@ -129,6 +180,195 @@ html { scroll-behavior: smooth; }
   will-change: transform;
 }
 .spring-slide:hover { transform: translateX(5px); }
+
+/* ── Project cards ─────────────────────────────────────
+   One shared surface treatment so every card reads as the same material.
+   Category color arrives as an accent — a bloom in the corner, the icon,
+   the ring that appears on hover — never as the card's outline, which is
+   what previously had every tile competing for attention. Each card sets
+   --accent / --accent-soft inline; everything below reads from those.
+
+   `--ease-premium` is the single easing used for card motion: fast to
+   commit, long slow tail. It's what separates a considered lift from a
+   generic CSS `ease`. */
+:root { --ease-premium: cubic-bezier(0.22, 0.8, 0.3, 1); }
+
+.pcard {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 16px;
+  background: var(--pcard-surface);
+  border: 1px solid var(--pcard-border);
+  box-shadow: var(--pcard-shadow);
+  transition: transform 0.3s var(--ease-premium), box-shadow 0.3s var(--ease-premium);
+  will-change: transform;
+}
+/* Hairline of light along the top edge — the single cheapest cue that a
+   surface is a physical panel catching light rather than a filled div. */
+.pcard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--pcard-inset-top);
+}
+.pcard--link:hover {
+  transform: translateY(-4px) scale(1.012);
+  box-shadow: var(--pcard-shadow-hover), 0 0 0 1px var(--accent-soft), 0 12px 40px -14px var(--accent-soft);
+}
+/* Unfinished work gets a dashed edge — the same convention as a dashed
+   drop zone or placeholder: present, outlined, not yet filled in. */
+.pcard--wip { border-style: dashed; }
+
+.pcard--link:focus-visible {
+  outline: none;
+  transform: translateY(-4px) scale(1.012);
+  box-shadow: var(--pcard-shadow-hover), 0 0 0 2px var(--accent);
+}
+
+/* Accent bloom: drifts and swells on hover. Motion in the *background*
+   rather than on the whole card is what keeps the interaction feeling
+   alive without anything visibly sliding around. */
+.pcard__bloom {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: transform 0.5s var(--ease-premium), opacity 0.35s ease;
+}
+.pcard--link:hover .pcard__bloom { transform: scale(1.16) translate(3%, -3%); opacity: 1; }
+
+.pcard__icon { transition: transform 0.3s var(--ease-premium); }
+.pcard--link:hover .pcard__icon { transform: translateY(-2px) scale(1.07); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard, .pcard__bloom, .pcard__icon { transition: none; }
+  .pcard--link:hover, .pcard--link:focus-visible { transform: none; }
+  .pcard--link:hover .pcard__bloom { transform: none; }
+  .pcard--link:hover .pcard__icon { transform: none; }
+}
+
+/* Frosted metadata chip. Small, quiet, and legible on both a flat card
+   surface and a photograph — hence the blur rather than a flat fill. */
+.pchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--pchip-fg);
+  background: var(--pchip-bg);
+  border: 1px solid var(--pchip-border);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+}
+
+/* ── Books sort / genre dropdown ──
+   Reads as a label until you reach for it: no border or fill at rest, so
+   it sits quietly above the list rather than competing with it. */
+/* The strip scrolls horizontally, and the global ::-webkit-scrollbar rule
+   only sets `width` — which does nothing for a *horizontal* bar, whose
+   thickness comes from `height`. So WebKit still reserved a full-height
+   scrollbar under the covers, which is what the old pb-6 was compensating
+   for with 24px of dead space. Hide it outright and the padding goes away. */
+.cover-track { scrollbar-width: none; -ms-overflow-style: none; }
+.cover-track::-webkit-scrollbar { display: none; height: 0; }
+
+.books-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  /* No negative margin here: the page root sets overflow-x:hidden, so
+     pulling the button past the container edge sliced its hover/open
+     background clean off on the right. */
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--fg-35);
+  background: transparent;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+.books-trigger:hover { color: var(--fg-70); background: var(--hover-bg); }
+.books-trigger[aria-expanded='true'] { color: var(--fg-70); background: var(--hover-bg); }
+
+.books-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 178px;
+  padding: 5px;
+  border-radius: 12px;
+  background: var(--sheet-bg);
+  border: 1px solid var(--border-med);
+  box-shadow: 0 10px 34px -10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.22);
+  animation: books-menu-in 0.14s ease-out;
+}
+@keyframes books-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.books-menu__label {
+  padding: 5px 8px 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-30);
+}
+.books-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--fg-60);
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.books-menu__item:hover { color: var(--fg); background: var(--hover-bg); }
+.books-menu__item[aria-checked='true'] { color: var(--fg); }
+.books-menu__sep { height: 1px; margin: 5px 3px; background: var(--border); }
+/* Genres grow with the library — cap the list instead of letting the menu
+   run off the bottom of the viewport. */
+.books-menu__scroll { max-height: 168px; overflow-y: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .books-trigger, .books-menu__item { transition: none; }
+  .books-menu { animation: none; }
+}
+
+/* The one chip allowed to carry the category accent. Everything else on a
+   card stays neutral, so colour itself becomes the signal for "this is
+   featured" rather than decoration competing across every tile. */
+.pchip--accent {
+  color: var(--accent);
+  background: var(--accent-chip-bg);
+  border-color: var(--accent-chip-border);
+}
+
+/* ── Category index rows (projects, filtered by subject) ── */
+.cat-index-title { transition: color 0.15s ease; }
+.cat-index-row:hover .cat-index-title { color: var(--row-color); }
+.cat-index-dot { transition: background 0.15s ease, border-color 0.15s ease; }
+.cat-index-row:hover .cat-index-dot { background: var(--row-color); border-color: var(--row-color); }
+.cat-index-sweep {
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; width: 0;
+  background: var(--row-color); transition: width 0.3s ease;
+}
+.cat-index-row:hover .cat-index-sweep { width: 100%; }
 
 /* ── Mobile menu bubble animations ── */
 @keyframes bubble-in {
@@ -191,6 +431,10 @@ body {
 .prose strong { color: var(--fg); font-weight: 600; }
 .prose ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 1rem; color: var(--fg-muted); }
 .prose li { margin-bottom: 0.4rem; line-height: 1.7; }
+/* Tailwind's preflight zeroes <hr> margin, which left the rule sitting
+   flush against whatever followed it (16px above from the preceding
+   paragraph's own margin, 0px below) — this makes it symmetric. */
+.prose hr { margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-8); }
 
 /* ── Light mode Tailwind overrides ── */
 html.light .text-white { color: #0D0D0D !important; }

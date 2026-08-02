@@ -9,6 +9,7 @@ import {
   FaNewspaper, FaHeartbeat, FaBars, FaTimes,
 } from 'react-icons/fa';
 import { HiArrowUpRight } from 'react-icons/hi2';
+import { playPop } from '@/lib/sound';
 
 const nav = [
   { href: '/',                               label: 'Home',       icon: FaHome,      external: false },
@@ -34,6 +35,7 @@ export default function MobileNav({ onContactClick }: Props) {
   const close = () => {
     setMenuState(current => {
       if (current === 'closed') return 'closed';
+      playPop(false);
       closeTimer.current = setTimeout(() => setMenuState('closed'), 180);
       return 'closing';
     });
@@ -43,6 +45,7 @@ export default function MobileNav({ onContactClick }: Props) {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setOpenKey(k => k + 1); // force fresh mount so animation always restarts cleanly
     setMenuState('open');
+    playPop(true);
   };
 
   useEffect(() => { close(); }, [pathname]);

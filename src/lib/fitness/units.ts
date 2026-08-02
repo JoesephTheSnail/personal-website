@@ -7,8 +7,11 @@ export function formatKm(km: number, decimals = 1): string {
 }
 
 export function formatPacePerKm(minPerKm: number): string {
-  const whole = Math.floor(minPerKm);
-  const sec = Math.round((minPerKm - whole) * 60);
+  let whole = Math.floor(minPerKm);
+  let sec = Math.round((minPerKm - whole) * 60);
+  // A fractional part that rounds up to a full 60 (e.g. 4.9999 min/km)
+  // would otherwise print as "4:60/km" instead of carrying to "5:00/km".
+  if (sec === 60) { whole += 1; sec = 0; }
   return `${whole}:${sec.toString().padStart(2, '0')}/km`;
 }
 

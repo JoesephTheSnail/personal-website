@@ -1,25 +1,7 @@
 import Link from 'next/link';
-import {
-  FaMobileAlt, FaFlask, FaFilm, FaCog, FaRunning,
-  FaFolder, FaLightbulb, FaChalkboard,
-} from 'react-icons/fa';
 import { HiArrowUpRight } from 'react-icons/hi2';
-
-type CatMeta = { icon: React.ElementType; color: string; bg: string };
-
-const CATEGORY_META: Record<string, CatMeta> = {
-  'Creative':    { icon: FaLightbulb,  color: '#fbbf24', bg: 'rgba(251,191,36,0.12)'  },
-  'Product':     { icon: FaMobileAlt,  color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
-  'Research':    { icon: FaFlask,      color: '#34d399', bg: 'rgba(52,211,153,0.12)'  },
-  'Pitch Deck':  { icon: FaChalkboard, color: '#818cf8', bg: 'rgba(129,140,248,0.12)' },
-  'Film':        { icon: FaFilm,       color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  'Engineering': { icon: FaCog,        color: '#fb923c', bg: 'rgba(251,146,60,0.12)'  },
-  'Training':    { icon: FaRunning,    color: '#ef4444', bg: 'rgba(239,68,68,0.12)'   },
-};
-
-function getCatMeta(cat: string): CatMeta {
-  return CATEGORY_META[cat] ?? { icon: FaFolder, color: 'var(--fg-45)', bg: 'rgba(255,255,255,0.08)' };
-}
+import { getCategoryMeta } from '@/lib/categoryMeta';
+import ThemedIcon from './ThemedIcon';
 
 export interface NowItem {
   slug: string;
@@ -42,7 +24,7 @@ export default function NowSection({ items }: { items: NowItem[] }) {
 
       <div className="space-y-2">
         {items.map((item) => {
-          const meta = getCatMeta(item.category);
+          const meta = getCategoryMeta(item.category);
           const Icon = meta.icon;
           // Plain div, not a Link — these are 'upcoming' projects with no
           // real case-study page yet, so making them clickable just sent
@@ -57,7 +39,9 @@ export default function NowSection({ items }: { items: NowItem[] }) {
                 className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: meta.bg }}
               >
-                <Icon size={15} style={{ color: meta.color }} />
+                <ThemedIcon color={meta.color} lightColor={meta.lightColor}>
+                  <Icon size={15} />
+                </ThemedIcon>
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-sm mb-0.5" style={{ color: 'var(--fg)' }}>
