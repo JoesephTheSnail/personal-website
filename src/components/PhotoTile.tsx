@@ -27,7 +27,7 @@ interface PhotoTileProps {
   icon?: React.ElementType;
   title: string;
   subtitle: string;
-  /** Featured work: brighter accent, corner brackets, richer metadata. */
+  /** Featured work: brighter accent, an explicit "Featured" chip, richer metadata. */
   featured?: boolean;
   /** In progress rather than a finished write-up — softened, with a live status chip. */
   inProgress?: boolean;
@@ -198,7 +198,7 @@ function CardFace({
             // leading-[1.35], not 1.25/1.3: Poppins' natural line box at 17px
             // is 23px, so a 21px line-height box had the clamp's
             // overflow:hidden shaving 2px off descenders ("g", "y", "p").
-            className={`font-poppins font-semibold ${wide ? 'text-[17px] leading-[1.35] line-clamp-none sm:line-clamp-2' : 'text-[15px] leading-[1.35] line-clamp-1'}`}
+            className={`font-poppins font-semibold ${wide ? 'text-[17px] leading-[1.35] line-clamp-none sm:line-clamp-2' : 'text-[15px] leading-[1.35] line-clamp-none sm:line-clamp-1'}`}
             style={{ color: 'var(--fg)', letterSpacing: '-0.012em' }}
           >
             {title}
@@ -209,7 +209,7 @@ function CardFace({
               doesn't need dimming past the point of legibility to read as
               secondary. */}
           <span
-            className={`mt-1.5 text-[12px] leading-[1.5] ${wide ? 'line-clamp-none sm:line-clamp-2' : 'line-clamp-1'}`}
+            className={`mt-1.5 text-[12px] leading-[1.5] ${wide ? 'line-clamp-none sm:line-clamp-2' : 'line-clamp-none sm:line-clamp-1'}`}
             style={{ color: 'var(--fg-60)' }}
           >
             {subtitle}

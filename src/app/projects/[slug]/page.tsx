@@ -211,7 +211,11 @@ export default async function ProjectPage({ params }: Props) {
 
     const Icon = category.icon;
     return (
-      <div className="max-w-3xl mx-auto">
+      <div
+        className="max-w-3xl mx-auto"
+        data-project-transition={slug}
+        style={{ viewTransitionName: projectCardTransitionName(slug) }}
+      >
         <BackLink fallbackHref="/projects" label="Back to Projects" />
 
         <div className="flex items-center gap-2.5 mb-2">
