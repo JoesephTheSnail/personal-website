@@ -1,11 +1,8 @@
 'use client';
 
-import { startTransition } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { FaStar } from 'react-icons/fa';
 import { playHover } from '@/lib/sound';
-import { projectCardTransitionName } from '@/lib/viewTransition';
 import { useIsLight } from '@/lib/useIsLight';
 import { motifStyle, type CategoryMotif } from '@/lib/categoryMeta';
 
@@ -225,12 +222,9 @@ export default function PhotoTile({
   featured, inProgress, meta, chip, motif, hoverIndex = 0, bgImage,
 }: PhotoTileProps) {
   const isLight = useIsLight();
-  const router = useRouter();
   const accent = isLight ? (lightColor ?? color) : color;
 
   const className = `pcard ${href ? 'pcard--link' : ''} ${inProgress ? 'pcard--wip' : ''} col-span-1 ${size === 'wide' ? 'sm:col-span-2' : ''}`;
-
-  const projectSlug = href?.startsWith('/projects/') ? href.slice('/projects/'.length) : undefined;
 
   const style: React.CSSProperties = {
     // Read by the hover ring/glow in globals.css. Featured cards get a
@@ -243,47 +237,12 @@ export default function PhotoTile({
     // contrast ratio (11% tint pushed amber down to 4.05:1).
     ['--accent-chip-bg' as string]: `${accent}${isLight ? '10' : '22'}`,
     ['--accent-chip-border' as string]: `${accent}${isLight ? '3d' : '42'}`,
-    ...(projectSlug && { viewTransitionName: projectCardTransitionName(projectSlug) }),
   };
 
   // No hover click on whatever's in progress — it's the one card you're
   // likely to linger over while reading, where a tick every pass reads as
   // noise rather than feedback.
   const onMouseEnter = inProgress ? undefined : () => playHover(hoverIndex);
-
-  // View Transitions only make sense for genuine in-app navigation — a
-  // modifier-click (new tab, etc.) or a browser without support falls
-  // through to the plain Link navigation underneath.
-  const onClick = (e: React.MouseEvent) => {
-    if (!href) return;
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    type ViewTransition = { ready?: Promise<void>; finished?: Promise<void> };
-    const startViewTransition = (document as unknown as { startViewTransition?: (cb: () => Promise<void>) => ViewTransition }).startViewTransition;
-    if (typeof startViewTransition !== 'function') return;
-    e.preventDefault();
-
-    const transition = startViewTransition.call(document, () => new Promise<void>((resolve) => {
-      startTransition(() => router.push(href));
-      // The callback only *starts* the navigation — router.push() returns
-      // long before the new route renders. Resolving immediately made the
-      // browser snapshot the "after" state while the old page was still up,
-      // so the transition had nothing to morph into and aborted with no
-      // visible animation. Wait for the destination's root (tagged with the
-      // same slug) to actually mount, with a hard cutoff so a slow or failed
-      // navigation can't hang the page.
-      const deadline = performance.now() + 1500;
-      const check = () => {
-        if (document.querySelector(`[data-project-transition="${projectSlug}"]`) || performance.now() > deadline) {
-          resolve();
-        } else {
-          requestAnimationFrame(check);
-        }
-      };
-      requestAnimationFrame(check);
-    }));
-    transition?.finished?.catch(() => {});
-    transition?.ready?.catch(() => {});
-  };
 
   const face = (
     <CardFace
@@ -295,7 +254,7 @@ export default function PhotoTile({
 
   if (href) {
     return (
-      <Link href={href} className={className} style={style} onMouseEnter={onMouseEnter} onClick={onClick}>
+      <Link href={href} className={className} style={style} onMouseEnter={onMouseEnter}>
         {face}
       </Link>
     );

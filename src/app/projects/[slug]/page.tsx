@@ -7,7 +7,6 @@ import { HiOutlineDocumentText, HiArrowUpRight } from 'react-icons/hi2';
 import CategoryIndexList from '@/components/CategoryIndexList';
 import ThemedIcon from '@/components/ThemedIcon';
 import BackLink from '@/components/BackLink';
-import { projectCardTransitionName } from '@/lib/viewTransition';
 
 interface Props { params: Promise<{ slug: string }>; }
 
@@ -211,11 +210,7 @@ export default async function ProjectPage({ params }: Props) {
 
     const Icon = category.icon;
     return (
-      <div
-        className="max-w-3xl mx-auto"
-        data-project-transition={slug}
-        style={{ viewTransitionName: projectCardTransitionName(slug) }}
-      >
+      <div className="max-w-3xl mx-auto">
         <BackLink fallbackHref="/projects" label="Back to Projects" />
 
         <div className="flex items-center gap-2.5 mb-2">
@@ -246,7 +241,7 @@ export default async function ProjectPage({ params }: Props) {
   const backHref = parentCategory ? `/projects/${parentCategory.slug}` : '/projects';
 
   return (
-    <div className="max-w-3xl mx-auto" data-project-transition={slug} style={{ viewTransitionName: projectCardTransitionName(slug) }}>
+    <div className="max-w-3xl mx-auto">
       <BackLink fallbackHref={backHref} label="Back to Projects" />
 
       {/* Header */}
