@@ -21,7 +21,7 @@ export default function BackLink({ fallbackHref, label }: { fallbackHref: string
         }
       }}
       className="inline-flex items-center gap-1.5 text-sm transition-colors mb-8"
-      style={{ color: 'var(--fg-35)' }}
+      style={{ color: 'var(--fg-eyebrow)' }}
     >
       ← {label}
     </button>

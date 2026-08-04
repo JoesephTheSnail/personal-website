@@ -3,6 +3,7 @@ import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 import SiteWrapper from '@/components/SiteWrapper';
 import CustomCursor from '@/components/CustomCursor';
+import AccessibilityMenu from '@/components/AccessibilityMenu';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -68,16 +69,32 @@ const personJsonLd = {
   ],
 };
 
+// Runs before hydration paint so the page never flashes the wrong theme.
+// Defaults to the OS/browser preference — dark or light is never assumed —
+// and only overrides that once the visitor has actually used the toggle.
+const themeInitScript = `(function(){
+  try {
+    var saved = localStorage.getItem('theme');
+    var light = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (light) document.documentElement.classList.add('light');
+  } catch (e) {}
+})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="bg-[#0D0D0D] text-white font-sans" suppressHydrationWarning>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
         <CustomCursor />
+        {/* After SiteWrapper, not before — the skip-link inside it must be
+            the very first Tab stop on the page, and DOM order is what
+            determines that for elements with no explicit tabindex. */}
         <SiteWrapper>{children}</SiteWrapper>
+        <AccessibilityMenu />
         <Analytics />
         <SpeedInsights />
       </body>

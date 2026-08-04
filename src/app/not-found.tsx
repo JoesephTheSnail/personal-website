@@ -100,7 +100,7 @@ export default function NotFound() {
 
       {/* Search checklist */}
       <div className="text-left w-full mb-10 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--fg-30)' }}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--fg-eyebrow)' }}>
           We searched
         </p>
         {CHECKS.map(({ text, found }) => (

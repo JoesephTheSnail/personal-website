@@ -3,10 +3,11 @@ import { CATEGORIES, getCategoryBySlug, getCategoryByLabel } from '@/lib/categor
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { HiOutlineDocumentText, HiArrowUpRight } from 'react-icons/hi2';
+import { FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import CategoryIndexList from '@/components/CategoryIndexList';
 import ThemedIcon from '@/components/ThemedIcon';
 import BackLink from '@/components/BackLink';
+import EmbedFrame from '@/components/EmbedFrame';
 
 interface Props { params: Promise<{ slug: string }>; }
 
@@ -74,12 +75,13 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
       <div className="mb-4">
         <p className="text-xs mb-2 uppercase tracking-wider" style={{ color: 'var(--fg-dim)' }}>{label}</p>
         <div className="relative w-full rounded-xl overflow-hidden" style={{ paddingBottom: '56.25%' }}>
-          <iframe
+          <EmbedFrame
             className="absolute inset-0 w-full h-full"
             src={`https://www.youtube.com/embed/${ytId}`}
             title={label}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+            fallbackHref={url}
           />
         </div>
       </div>
@@ -92,12 +94,13 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
       <div className="mb-4">
         <p className="text-xs mb-2 uppercase tracking-wider" style={{ color: 'var(--fg-dim)' }}>{label}</p>
         <div className="relative w-full rounded-xl overflow-hidden border" style={{ paddingBottom: '56.25%', borderColor: 'var(--border-8)' }}>
-          <iframe
+          <EmbedFrame
             className="absolute inset-0 w-full h-full"
             src={`https://drive.google.com/file/d/${driveId}/preview`}
             title={label}
             allow="autoplay"
             allowFullScreen
+            fallbackHref={url}
           />
         </div>
       </div>
@@ -129,13 +132,13 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <HiOutlineDocumentText size={15} style={{ color: 'var(--fg-dim)' }} />
+              <FaFileLines size={14} style={{ color: 'var(--fg-dim)' }} />
               <span className="font-poppins font-semibold text-sm" style={{ color: 'var(--fg)' }}>{label}</span>
             </div>
             <p className="text-xs" style={{ color: 'var(--fg-dim)' }}>PDF Report · Opens in a new tab</p>
           </div>
-          <HiArrowUpRight
-            size={16}
+          <FaArrowUpRightFromSquare
+            size={13}
             className="flex-shrink-0 opacity-40 group-hover:opacity-80 transition-opacity"
             style={{ color: 'var(--fg-dim)' }}
           />
@@ -152,11 +155,12 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
         <p className="text-xs mb-2 uppercase tracking-wider" style={{ color: 'var(--fg-dim)' }}>{label}</p>
         <div className="flex justify-center">
           <div className="rounded-xl overflow-hidden border w-full" style={{ height: 'min(700px, 80vh)', borderColor: 'var(--border-8)' }}>
-            <iframe
+            <EmbedFrame
               className="w-full h-full"
               src={`https://www.figma.com/embed?embed_host=personal-site&url=${encodeURIComponent(url)}`}
               title={label}
               allowFullScreen
+              fallbackHref={url}
             />
           </div>
         </div>
@@ -168,11 +172,12 @@ function MediaEmbed({ url, label }: { url: string; label: string }) {
       <div className="mb-4">
         <p className="text-xs mb-2 uppercase tracking-wider" style={{ color: 'var(--fg-dim)' }}>{label}</p>
         <div className="relative w-full rounded-xl overflow-hidden border" style={{ paddingBottom: '56.25%', borderColor: 'var(--border-8)' }}>
-          <iframe
+          <EmbedFrame
             className="absolute inset-0 w-full h-full"
             src={`https://www.figma.com/embed?embed_host=personal-site&url=${encodeURIComponent(url)}`}
             title={label}
             allowFullScreen
+            fallbackHref={url}
           />
         </div>
       </div>
@@ -210,7 +215,7 @@ export default async function ProjectPage({ params }: Props) {
 
     const Icon = category.icon;
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto">
         <BackLink fallbackHref="/projects" label="Back to Projects" />
 
         <div className="flex items-center gap-2.5 mb-2">
@@ -233,7 +238,7 @@ export default async function ProjectPage({ params }: Props) {
   const project = getAllProjects().find((p) => p.slug === slug);
   if (!project) notFound();
 
-  const { title, date, description, links, category: categoryLabel } = project.frontmatter;
+  const { title, date, description, links, category: categoryLabel, artifactType, tools } = project.frontmatter;
   // Falls back to the project's own category page (not the full grid) when
   // there's no in-site history to go back to — a shared/direct link to a
   // Robotics writeup should land back on Engineering, not the top grid.
@@ -248,7 +253,9 @@ export default async function ProjectPage({ params }: Props) {
       <h1 className="font-poppins font-semibold text-3xl tracking-tight mb-2" style={{ color: 'var(--fg)' }}>
         {title}
       </h1>
-      <p className="text-sm mb-1" style={{ color: 'var(--fg-dim)' }}>{date}</p>
+      <p className="text-sm mb-1" style={{ color: 'var(--fg-dim)' }}>
+        {date}{artifactType ? ` · ${artifactType}` : ''}
+      </p>
       <p className="text-base mb-8 leading-relaxed" style={{ color: 'var(--fg-60)' }}>{description}</p>
 
       {/* Media: embeddable links (YouTube, Google Drive, Figma) first, then button links */}
@@ -279,7 +286,7 @@ export default async function ProjectPage({ params }: Props) {
       ) : (
         <div
           className="rounded-xl p-6 border text-sm italic"
-          style={{ borderColor: 'var(--border-8)', background: 'var(--card-bg)', color: 'var(--fg-30)' }}
+          style={{ borderColor: 'var(--border-8)', background: 'var(--card-bg)', color: 'var(--fg-eyebrow)' }}
         >
           <p className="mb-1 not-italic font-medium" style={{ color: 'var(--fg-muted)' }}>This page is empty.</p>
           To add content, open{' '}
@@ -288,6 +295,13 @@ export default async function ProjectPage({ params }: Props) {
           </code>{' '}
           and write below the second <code className="bg-white/8 px-1 rounded text-white/40">---</code>.
         </div>
+      )}
+
+      {/* Plain text, no chip — a footnote, not another badge to scan. */}
+      {tools && tools.length > 0 && (
+        <p className="mt-10 text-xs" style={{ color: 'var(--fg-eyebrow)' }}>
+          Built with {tools.join(', ')}
+        </p>
       )}
     </div>
   );

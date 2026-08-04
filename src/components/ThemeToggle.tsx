@@ -7,11 +7,12 @@ import { playToggle } from '@/lib/sound';
 export default function ThemeToggle({ className = '' }: { className?: string }) {
   const [isDark, setIsDark] = useState(true);
 
+  // The class itself is already set correctly before hydration by the
+  // blocking script in layout.tsx (system preference, or the visitor's
+  // saved choice) — this just syncs local state to what's already there
+  // rather than recomputing the same decision a second time.
   useEffect(() => {
-    const saved = localStorage.getItem('theme');
-    const dark = saved !== 'light';
-    setIsDark(dark);
-    document.documentElement.classList.toggle('light', !dark);
+    setIsDark(!document.documentElement.classList.contains('light'));
   }, []);
 
   const toggle = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -46,13 +47,8 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
     <button
       onClick={toggle}
       aria-label="Toggle theme"
-      className={`p-2 rounded-full transition-all duration-150 ${className}`}
-      style={{
-        background: 'var(--hover-bg)',
-        color: 'var(--fg-35)',
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--fg)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--fg-35)'; }}
+      className={`theme-toggle-btn p-2 rounded-full transition-all duration-150 ${className}`}
+      style={{ background: 'var(--hover-bg)' }}
     >
       {isDark
         ? <FiSun size={16} />

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { HiArrowUpRight } from 'react-icons/hi2';
+import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { getCategoryMeta } from '@/lib/categoryMeta';
 import ThemedIcon from './ThemedIcon';
 
@@ -17,7 +17,7 @@ export default function NowSection({ items }: { items: NowItem[] }) {
     <section className="mb-10">
       <div className="flex items-center gap-2 mb-4">
         <span className="now-breathe inline-flex rounded-full h-1.5 w-1.5" style={{ background: '#34d399' }} />
-        <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: 'var(--fg-30)' }}>
+        <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: 'var(--fg-eyebrow)' }}>
           What I&apos;m doing now
         </p>
       </div>
@@ -62,7 +62,7 @@ export default function NowSection({ items }: { items: NowItem[] }) {
         style={{ color: 'var(--fg-dim)' }}
       >
         See all projects
-        <HiArrowUpRight size={11} />
+        <FaArrowUpRightFromSquare size={10} />
       </Link>
     </section>
   );

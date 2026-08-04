@@ -172,33 +172,39 @@ function CardFace({
         </span>
 
         <span className="flex flex-col">
-          {Icon && (
+          {/* Icon sits inline with the title rather than stacked above it in
+              its own row — a category icon floating alone between the chip
+              row and the title read as an orphaned, disconnected element,
+              especially repeated identically down a whole mobile grid. */}
+          <span className={`flex ${wide ? 'items-start' : 'items-center'} gap-2 mb-1`}>
+            {Icon && (
+              <span
+                className="pcard__icon flex items-center justify-center flex-shrink-0 rounded-[9px]"
+                style={{
+                  width: 28,
+                  height: 28,
+                  background: `${accent}${isLight ? '1f' : '24'}`,
+                  border: `1px solid ${accent}${isLight ? '33' : '38'}`,
+                }}
+              >
+                <Icon size={wide ? 14 : 13} style={{ color: accent }} aria-hidden="true" />
+              </span>
+            )}
+            {/* Title is the focal point: heavier, tighter tracking, and a full
+                step up in size from the supporting copy beneath it. */}
+            {/* Clamps only apply from `sm` up, where the grid rows are a fixed
+                height and overflowing copy would spill. Below that the rows
+                size to their content, so clamping there would hide text for
+                no reason — which it was doing to the longest description. */}
             <span
-              className="pcard__icon mb-2.5 flex items-center justify-center flex-shrink-0 rounded-[9px]"
-              style={{
-                width: 28,
-                height: 28,
-                background: `${accent}${isLight ? '1f' : '24'}`,
-                border: `1px solid ${accent}${isLight ? '33' : '38'}`,
-              }}
+              // leading-[1.35], not 1.25/1.3: Poppins' natural line box at 17px
+              // is 23px, so a 21px line-height box had the clamp's
+              // overflow:hidden shaving 2px off descenders ("g", "y", "p").
+              className={`font-poppins font-semibold ${wide ? 'text-[17px] leading-[1.35] line-clamp-none sm:line-clamp-2' : 'text-[15px] leading-[1.35] line-clamp-none sm:line-clamp-1'}`}
+              style={{ color: 'var(--fg)', letterSpacing: '-0.012em' }}
             >
-              <Icon size={wide ? 14 : 13} style={{ color: accent }} aria-hidden="true" />
+              {title}
             </span>
-          )}
-          {/* Title is the focal point: heavier, tighter tracking, and a full
-              step up in size from the supporting copy beneath it. */}
-          {/* Clamps only apply from `sm` up, where the grid rows are a fixed
-              height and overflowing copy would spill. Below that the rows
-              size to their content, so clamping there would hide text for
-              no reason — which it was doing to the longest description. */}
-          <span
-            // leading-[1.35], not 1.25/1.3: Poppins' natural line box at 17px
-            // is 23px, so a 21px line-height box had the clamp's
-            // overflow:hidden shaving 2px off descenders ("g", "y", "p").
-            className={`font-poppins font-semibold ${wide ? 'text-[17px] leading-[1.35] line-clamp-none sm:line-clamp-2' : 'text-[15px] leading-[1.35] line-clamp-none sm:line-clamp-1'}`}
-            style={{ color: 'var(--fg)', letterSpacing: '-0.012em' }}
-          >
-            {title}
           </span>
           {/* --fg-60 rather than --fg-45: at 45% the supporting copy measured
               3.34:1, under AA. The step down from the title is already

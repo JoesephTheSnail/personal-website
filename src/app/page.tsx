@@ -1,9 +1,10 @@
+import Link from 'next/link';
 import ContactTrigger from '@/components/ContactTrigger';
 import ProfilePhoto from '@/components/ProfilePhoto';
 import NowSection from '@/components/NowSection';
 import { getAllProjects } from '@/lib/projects';
-import { FaBook, FaNewspaper, FaHeartbeat, FaVideo } from 'react-icons/fa';
-import { HiArrowUpRight } from 'react-icons/hi2';
+import { FaBook, FaNewspaper, FaHeartbeat, FaVideo, FaLinkedin } from 'react-icons/fa';
+import { FaArrowUpRightFromSquare, FaArrowRight } from 'react-icons/fa6';
 
 const activities = [
   {
@@ -62,7 +63,7 @@ export default function HomePage() {
     }));
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl xl:max-w-3xl mx-auto">
 
       {/* ── Header ─────────────────────────────────────── */}
       <div className="mb-10">
@@ -70,15 +71,39 @@ export default function HomePage() {
           {/* Photo — perspective tilt handled in its own client component */}
           <ProfilePhoto />
           <div>
-            <h1
-              className="font-poppins font-semibold text-2xl sm:text-[1.75rem] tracking-tight leading-tight mb-1"
-              style={{ color: 'var(--fg)' }}
-            >
-              Arnav Chandra
-            </h1>
+            <div className="flex items-center gap-2.5 mb-1">
+              <h1
+                className="font-poppins font-semibold text-2xl sm:text-[1.75rem] tracking-tight leading-tight"
+                style={{ color: 'var(--fg)' }}
+              >
+                Arnav Chandra
+              </h1>
+              <a
+                href="https://www.linkedin.com/in/arnav-chandra-b33660293/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Arnav Chandra on LinkedIn"
+                className="linkedin-link flex-shrink-0"
+                style={{ color: 'var(--fg-dim)' }}
+              >
+                <FaLinkedin size={18} />
+              </a>
+            </div>
             <p className="text-sm" style={{ color: 'var(--fg-dim)' }}>
               Toronto, Ontario
             </p>
+            <Link
+              href="/projects"
+              className="positioning-link group mt-2.5 inline-block text-[13px]"
+              style={{ color: 'var(--fg-60)' }}
+            >
+              Building at the intersection of health and technology — see the work{' '}
+              <FaArrowRight
+                size={9}
+                className="inline-block transition-transform duration-200 group-hover:translate-x-0.5"
+                style={{ verticalAlign: 'middle' }}
+              />
+            </Link>
           </div>
         </div>
       </div>
@@ -115,7 +140,7 @@ export default function HomePage() {
       <section className="mb-10">
         <p
           className="text-[11px] font-semibold tracking-widest uppercase mb-6"
-          style={{ color: 'var(--fg-30)' }}
+          style={{ color: 'var(--fg-eyebrow)' }}
         >
           How I spend my time
         </p>
@@ -168,7 +193,7 @@ export default function HomePage() {
       <section className="mb-6">
         <p
           className="text-[11px] font-semibold tracking-widest uppercase mb-4"
-          style={{ color: 'var(--fg-30)' }}
+          style={{ color: 'var(--fg-eyebrow)' }}
         >
           Want to connect?
         </p>
@@ -202,7 +227,7 @@ export default function HomePage() {
             }}
           >
             Read my newsletter
-            <HiArrowUpRight size={13} />
+            <FaArrowUpRightFromSquare size={11} />
           </a>
         </div>
       </section>

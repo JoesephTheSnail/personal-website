@@ -14,6 +14,10 @@ export interface ProjectFrontmatter {
   status: 'published' | 'upcoming';
   category?: string;
   order?: number;
+  /** What kind of artifact this actually is, when it diverges from what the category implies (e.g. a "Creative" project that's really a pitch deck). */
+  artifactType?: string;
+  /** Concrete tools named in the write-up — never inferred, only what's explicitly stated. */
+  tools?: string[];
 }
 
 export interface Project {

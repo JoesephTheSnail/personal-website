@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HiArrowUpRight, HiArrowRight } from 'react-icons/hi2';
+import { FaArrowUpRightFromSquare, FaArrowRight } from 'react-icons/fa6';
 import { FaHome, FaFolder, FaBook, FaHeartbeat, FaNewspaper, FaEnvelope } from 'react-icons/fa';
 import ThemeToggle from './ThemeToggle';
 import MobileNav from './MobileNav';
@@ -17,7 +17,7 @@ const nav = [
   { href: 'https://arnav01.substack.com/', label: 'Newsletter', icon: FaNewspaper, external: true  },
 ];
 
-const SPRING = '0.38s cubic-bezier(0.34, 1.15, 0.64, 1)';
+const SPRING = '0.3s cubic-bezier(0.34, 1.06, 0.64, 1)';
 
 interface Props { onContactClick: () => void; }
 
@@ -158,7 +158,7 @@ export default function TopNav({ onContactClick }: Props) {
                 )}
                 <Icon size={16} className="topnav-icon" style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }} />
                 <span className={active ? 'font-medium' : ''}>{label}</span>
-                {external && <HiArrowUpRight size={11} className="ml-auto" style={{ color: 'var(--indigo)', opacity: 0.75 }} />}
+                {external && <FaArrowUpRightFromSquare size={10} className="ml-auto" style={{ color: 'var(--indigo)', opacity: 0.75 }} />}
               </Link>
             );
           })}
@@ -167,8 +167,23 @@ export default function TopNav({ onContactClick }: Props) {
         {/* Spacer */}
         <div className="flex-1" />
 
+        {/* Contact — the primary ask, so it leads; the newsletter signup
+            (a lower-stakes commitment for a visitor who hasn't decided
+            they're interested yet) trails it rather than asking first. */}
+        <button
+          onClick={onContactClick}
+          className="contact-glow-btn w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium mb-3"
+          style={{ color: 'var(--fg-dim)' }}
+        >
+          <FaEnvelope size={13} style={{ opacity: 0.6 }} />
+          Contact
+        </button>
+
+        {/* Separator */}
+        <div className="mx-1 mb-3" style={{ height: '1px', background: 'var(--border)' }} />
+
         {/* Newsletter subscribe */}
-        <div className="px-1 mb-5">
+        <div className="px-1">
           <p className="text-[11px] font-semibold mb-2.5" style={{ color: 'var(--fg-dim)' }}>
             {sent ? 'Opening Substack…' : 'Follow for Monthly Updates'}
           </p>
@@ -195,23 +210,10 @@ export default function TopNav({ onContactClick }: Props) {
                 color: 'var(--fg)',
               }}
             >
-              <HiArrowRight size={13} />
+              <FaArrowRight size={12} />
             </button>
           </form>
         </div>
-
-        {/* Separator */}
-        <div className="mx-1 mb-3" style={{ height: '1px', background: 'var(--border)' }} />
-
-        {/* Contact */}
-        <button
-          onClick={onContactClick}
-          className="contact-glow-btn w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium"
-          style={{ color: 'var(--fg-dim)' }}
-        >
-          <FaEnvelope size={13} style={{ opacity: 0.6 }} />
-          Contact
-        </button>
       </div>
 
       {/* ── Mobile top pill ── */}
@@ -233,6 +235,7 @@ export default function TopNav({ onContactClick }: Props) {
         >
           Arnav Chandra
         </Link>
+        <ThemeToggle />
         <MobileNav onContactClick={onContactClick} />
       </div>
     </>

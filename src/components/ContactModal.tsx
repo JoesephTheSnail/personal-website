@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FaLinkedin, FaMedium, FaEnvelope, FaCalendarAlt, FaTimes } from 'react-icons/fa';
 import { FaTiktok } from 'react-icons/fa6';
 import { SiSubstack } from 'react-icons/si';
@@ -19,6 +19,8 @@ interface Props { isOpen: boolean; onClose: () => void; }
 export default function ContactModal({ isOpen, onClose }: Props) {
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +32,44 @@ export default function ContactModal({ isOpen, onClose }: Props) {
       const t = setTimeout(() => setMounted(false), 300);
       return () => clearTimeout(t);
     }
+  }, [isOpen]);
+
+  // Focus management: move focus into the dialog on open, trap Tab inside
+  // it while open, and hand focus back to whatever opened it on close —
+  // without this, keyboard focus stays on (or drifts behind) the trigger,
+  // and Tab can walk straight out into the dimmed page underneath.
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement as HTMLElement | null;
+      requestAnimationFrame(() => {
+        panelRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
+      });
+    } else {
+      triggerRef.current?.focus();
+      triggerRef.current = null;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !panelRef.current) return;
+      const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [isOpen]);
 
   const handleClose = () => {
@@ -63,7 +103,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="contact-modal-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{
         background: `rgba(0,0,0,${visible ? '0.75' : '0'})`,
         backdropFilter: `blur(${visible ? 4 : 0}px)`,
@@ -73,6 +113,10 @@ export default function ContactModal({ isOpen, onClose }: Props) {
       onClick={handleClose}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-modal-heading"
         className="relative w-full max-w-sm rounded-2xl p-8"
         style={{
           background: '#141414',
@@ -86,6 +130,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         {/* Close */}
         <button
           onClick={handleClose}
+          data-modal-initial-focus
           className="absolute top-4 right-4 hover:text-white transition-colors"
           style={{ color: 'rgba(255,255,255,0.3)' }}
           aria-label="Close"
@@ -94,7 +139,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         </button>
 
         {/* Heading */}
-        <h2 className="font-poppins font-semibold text-2xl mb-6 tracking-tight" style={{ color: '#ffffff' }}>
+        <h2 id="contact-modal-heading" className="font-poppins font-semibold text-2xl mb-6 tracking-tight" style={{ color: '#ffffff' }}>
           Get in touch
         </h2>
 

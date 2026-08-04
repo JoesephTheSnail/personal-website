@@ -12,7 +12,7 @@ export default function ProfilePhoto() {
     el.style.transition = 'transform 0.12s ease-out';
     el.style.transform  = 'perspective(400px) scale(1.09)';
     setTimeout(() => {
-      el.style.transition = 'transform 0.55s cubic-bezier(0.34, 1.18, 0.64, 1)';
+      el.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.06, 0.64, 1)';
       el.style.transform  = 'perspective(400px) scale(1)';
     }, 120);
   };
@@ -30,7 +30,7 @@ export default function ProfilePhoto() {
   const handlePhotoLeave = () => {
     const el = photoRef.current;
     if (!el) return;
-    el.style.transition = 'transform 0.55s cubic-bezier(0.34, 1.15, 0.64, 1)';
+    el.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.06, 0.64, 1)';
     el.style.transform  = 'perspective(400px) rotateX(0deg) rotateY(0deg) scale(1)';
   };
 

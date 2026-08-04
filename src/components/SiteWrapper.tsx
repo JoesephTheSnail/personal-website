@@ -27,8 +27,9 @@ export default function SiteWrapper({ children }: { children: React.ReactNode })
 
   return (
     <>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <TopNav onContactClick={() => setContactOpen(true)} />
-      <main className="min-h-screen pt-24 md:pt-8 pb-16 px-6 sm:px-10 md:pl-[330px] md:pr-20">
+      <main id="main-content" tabIndex={-1} className="min-h-screen pt-24 md:pt-8 pb-16 px-6 sm:px-10 md:pl-[330px] md:pr-20">
         {children}
       </main>
       <ContactModal isOpen={contactOpen} onClose={() => setContactOpen(false)} />

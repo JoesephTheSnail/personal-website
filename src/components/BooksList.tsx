@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { HiChevronDown, HiCheck } from 'react-icons/hi2';
+import { FaChevronDown, FaCheck } from 'react-icons/fa6';
 
 // Each book's takeaway is MDX, which only renders on the server — so the
 // page renders it there and hands the finished node down as a prop. This
@@ -31,12 +31,16 @@ const SORTS: { key: SortKey; label: string }[] = [
 function StarRating({ rating }: { rating: number }) {
   const stars = rating / 2; // convert /10 → /5
   return (
-    <div className="flex items-center gap-0.5">
+    <div
+      className="flex items-center gap-0.5"
+      role="img"
+      aria-label={`Rated ${stars % 1 === 0 ? stars : stars.toFixed(1)} out of 5 stars`}
+    >
       {[1, 2, 3, 4, 5].map((n) => {
         const full = stars >= n;
         const half = !full && stars >= n - 0.5;
         return (
-          <span key={n} className="relative inline-block" style={{ fontSize: '0.8rem', lineHeight: 1 }}>
+          <span key={n} aria-hidden="true" className="relative inline-block" style={{ fontSize: '0.8rem', lineHeight: 1 }}>
             <span style={{ color: 'var(--fg)', opacity: 0.2 }}>★</span>
             {(full || half) && (
               <span className="absolute inset-0 overflow-hidden" style={{ width: full ? '100%' : '50%', color: 'var(--fg)' }}>
@@ -128,7 +132,7 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
             <span>{activeSort.label}</span>
             {genre && <span style={{ color: 'var(--fg-30)' }}>·</span>}
             {genre && <span>{genre}</span>}
-            <HiChevronDown
+            <FaChevronDown
               size={12}
               aria-hidden="true"
               style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
@@ -147,7 +151,7 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
                   className="books-menu__item"
                 >
                   <span>{s.label}</span>
-                  {sort === s.key && <HiCheck size={12} aria-hidden="true" />}
+                  {sort === s.key && <FaCheck size={12} aria-hidden="true" />}
                 </button>
               ))}
 
@@ -163,7 +167,7 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
                       className="books-menu__item"
                     >
                       <span>All genres</span>
-                      {genre === null && <HiCheck size={12} aria-hidden="true" />}
+                      {genre === null && <FaCheck size={12} aria-hidden="true" />}
                     </button>
                     {genres.map((g) => (
                       <button
@@ -174,7 +178,7 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
                         className="books-menu__item"
                       >
                         <span>{g}</span>
-                        {genre === g && <HiCheck size={12} aria-hidden="true" />}
+                        {genre === g && <FaCheck size={12} aria-hidden="true" />}
                       </button>
                     ))}
                   </div>
@@ -187,7 +191,7 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
 
       {/* Only worth saying when a filter is actually narrowing the list. */}
       {genre && (
-        <p className="text-xs mb-4" aria-live="polite" style={{ color: 'var(--fg-30)' }}>
+        <p className="text-xs mb-4" aria-live="polite" style={{ color: 'var(--fg-eyebrow)' }}>
           {shown.length} {shown.length === 1 ? 'book' : 'books'} in {genre}
         </p>
       )}
@@ -226,11 +230,11 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
                 {book.genres.length > 0 && <GenreTags genres={book.genres} />}
 
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2">
-                  <p className="text-xs" style={{ color: 'var(--fg-30)' }}>
+                  <p className="text-xs" style={{ color: 'var(--fg-eyebrow)' }}>
                     Read: <span style={{ color: 'var(--fg-muted)' }}>{book.date || 'N/A'}</span>
                   </p>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs" style={{ color: 'var(--fg-30)' }}>Rating:</span>
+                    <span className="text-xs" style={{ color: 'var(--fg-eyebrow)' }}>Rating:</span>
                     {book.rating > 0
                       ? <StarRating rating={book.rating} />
                       : <span className="text-xs" style={{ color: 'var(--fg-dimmer)' }}>N/A</span>}

@@ -8,7 +8,7 @@ import {
   FaHome, FaFolder, FaBook,
   FaNewspaper, FaHeartbeat, FaBars, FaTimes,
 } from 'react-icons/fa';
-import { HiArrowUpRight } from 'react-icons/hi2';
+import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { playPop } from '@/lib/sound';
 
 const nav = [
@@ -72,7 +72,7 @@ export default function MobileNav({ onContactClick }: Props) {
   const visible = menuState !== 'closed';
 
   const animStyle = open
-    ? { animation: 'bubble-in 0.42s cubic-bezier(0.34, 1.25, 0.64, 1) forwards' }
+    ? { animation: 'bubble-in 0.34s cubic-bezier(0.34, 1.08, 0.64, 1) forwards' }
     : { animation: 'bubble-out 0.18s ease-in forwards' };
 
   const panel = visible ? (
@@ -115,7 +115,7 @@ export default function MobileNav({ onContactClick }: Props) {
           >
             <Icon size={13} style={{ color: active ? 'var(--indigo)' : 'var(--fg-35)' }} />
             {label}
-            {external && <HiArrowUpRight size={11} className="ml-auto" style={{ color: 'var(--fg-35)' }} />}
+            {external && <FaArrowUpRightFromSquare size={10} className="ml-auto" style={{ color: 'var(--fg-35)' }} />}
           </Link>
         );
       })}

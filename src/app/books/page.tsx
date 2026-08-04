@@ -68,7 +68,7 @@ export default function BooksPage() {
   });
 
   return (
-    <div className="max-w-3xl mx-auto sm:px-0 px-2" style={{ overflowX: 'hidden' }}>
+    <div className="max-w-3xl xl:max-w-4xl mx-auto sm:px-0 px-2" style={{ overflowX: 'hidden' }}>
       <h1 className="font-poppins font-semibold text-4xl mb-2 tracking-tight" style={{ color: 'var(--fg)' }}>
         Books
       </h1>
@@ -79,7 +79,7 @@ export default function BooksPage() {
       {/* ── Currently Reading ── */}
       {currentlyReading.length > 0 && (
         <section className="mb-10">
-          <h2 className="font-poppins font-semibold text-sm mb-3 tracking-widest uppercase" style={{ color: 'var(--fg-35)' }}>
+          <h2 className="font-poppins font-semibold text-sm mb-3 tracking-widest uppercase" style={{ color: 'var(--fg-eyebrow)' }}>
             Now Reading
           </h2>
           <div className="space-y-3">

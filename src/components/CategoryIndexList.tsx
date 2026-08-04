@@ -55,9 +55,16 @@ export default function CategoryIndexList({
             className="cat-index-dot absolute rounded-full"
             style={{ left: -20, top: 32, width: 8, height: 8, background: 'var(--bg)', border: '1.5px solid var(--fg-dimmer)' }}
           />
-          <h3 className="cat-index-title font-poppins font-semibold text-lg sm:text-xl mb-1.5" style={{ color: 'var(--fg)' }}>
-            {p.frontmatter.title}
-          </h3>
+          <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+            <h3 className="cat-index-title font-poppins font-semibold text-lg sm:text-xl" style={{ color: 'var(--fg)' }}>
+              {p.frontmatter.title}
+            </h3>
+            {p.frontmatter.artifactType && (
+              <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--fg-eyebrow)' }}>
+                {p.frontmatter.artifactType}
+              </span>
+            )}
+          </div>
           <p className="text-sm max-w-xl leading-relaxed" style={{ color: 'var(--fg-dim)' }}>
             {p.frontmatter.description}
           </p>

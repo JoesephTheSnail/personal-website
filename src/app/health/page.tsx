@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { FaDumbbell, FaAppleAlt, FaBed, FaBrain, FaCapsules } from 'react-icons/fa';
 
 export const metadata = {
@@ -51,12 +52,22 @@ function Pill({ text }: { text: string }) {
 
 export default function HealthPage() {
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto">
       <h1 className="font-poppins font-semibold text-4xl mb-2 tracking-tight" style={{ color: 'var(--fg)' }}>
         Health
       </h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--fg-dim)' }}>
+      <p className="text-sm mb-2" style={{ color: 'var(--fg-dim)' }}>
         My personal health protocol: what I do, why I do it, and what I&apos;ve learned.
+      </p>
+      <p className="text-sm mb-8" style={{ color: 'var(--fg-eyebrow)' }}>
+        This is also the lived research behind{' '}
+        <Link href="/projects/mindset-app" className="hover:underline underline-offset-2" style={{ color: 'inherit' }}>
+          MindSet
+        </Link>{' '}
+        and{' '}
+        <Link href="/projects/screens-and-sleep-report" className="hover:underline underline-offset-2" style={{ color: 'inherit' }}>
+          Pre-Sleep Screen Restriction
+        </Link>.
       </p>
 
       <Section icon={FaDumbbell} color="#60a5fa" bg="rgba(96,165,250,0.12)" title="Training">

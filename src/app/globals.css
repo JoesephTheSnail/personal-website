@@ -17,6 +17,12 @@
   --fg-35: rgba(255,255,255,0.35);
   --fg-30: rgba(255,255,255,0.3);
   --fg-dimmer: rgba(255,255,255,0.25);
+  /* Section eyebrows/labels read as real structure, not decoration — they
+     need AA text contrast, not the ~2.7:1 that --fg-30/--fg-35 render at.
+     Aliased to --fg-60, the value this codebase already validated against
+     AA for exactly this reason (see the supporting-copy comment in
+     PhotoTile.tsx). */
+  --fg-eyebrow: var(--fg-60);
   --border: rgba(255,255,255,0.07);
   --border-8: rgba(255,255,255,0.08);
   --border-9: rgba(255,255,255,0.09);
@@ -71,6 +77,7 @@ html.light {
   --fg-35: rgba(0,0,0,0.35);
   --fg-30: rgba(0,0,0,0.3);
   --fg-dimmer: rgba(0,0,0,0.25);
+  --fg-eyebrow: var(--fg-60);
   --border: rgba(0,0,0,0.08);
   --border-8: rgba(0,0,0,0.08);
   --border-9: rgba(0,0,0,0.09);
@@ -120,14 +127,14 @@ html { scroll-behavior: smooth; }
   color: var(--fg);
 }
 .topnav-wordmark {
-  transition: background 0.18s ease, transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
+  transition: background 0.18s ease, transform 0.3s cubic-bezier(0.34, 1.06, 0.64, 1);
 }
 .topnav-wordmark:hover {
   background: var(--hover-bg);
   transform: scale(1.04);
 }
 .topnav-contact {
-  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1), opacity 0.18s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.06, 0.64, 1), opacity 0.18s ease;
 }
 .topnav-contact:hover {
   transform: scale(1.07);
@@ -138,6 +145,62 @@ html { scroll-behavior: smooth; }
    while only the label changes color. */
 .topnav-icon { transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.22, 0.8, 0.3, 1); }
 .topnav-link:hover .topnav-icon { opacity: 0.9 !important; transform: translateX(1px); }
+
+/* Visually hidden until it has keyboard focus, so sighted mouse users never
+   see it — but it's the very first focusable thing on the page, letting
+   keyboard/screen-reader visitors skip the ~7-stop sidebar on every load. */
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 16px;
+  z-index: 100;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.18s ease;
+}
+.skip-link:focus {
+  top: 16px;
+}
+
+/* The skip-link's destination, not an interactive element — it only holds
+   focus so screen readers land here, and it's sized to the whole page, so
+   the browser's default ring would otherwise trace the entire viewport
+   edge the moment the skip-link is activated. The skip-link itself already
+   carries a visible focus style; the jump target doesn't need its own. */
+#main-content:focus,
+#main-content:focus-visible {
+  outline: none;
+}
+
+/* Loading placeholder for embedded video/design previews — a soft sheen
+   sweep rather than a static block, so a slow embed reads as "working on
+   it" instead of "stuck." */
+.embed-skeleton {
+  display: block;
+  width: 42px; height: 42px;
+  border-radius: 999px;
+  border: 2px solid var(--border-med);
+  border-top-color: var(--fg-dim);
+  animation: embed-spin 0.8s linear infinite;
+}
+@keyframes embed-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .embed-skeleton { animation: none; opacity: 0.5; }
+}
+
+.theme-toggle-btn { color: var(--fg-35); transition: color 0.18s ease; }
+.theme-toggle-btn:hover { color: var(--fg); }
+
+.linkedin-link { transition: color 0.18s ease, transform 0.18s ease; display: inline-flex; }
+.linkedin-link:hover, .linkedin-link:focus-visible { color: var(--indigo); transform: translateY(-1px); }
+
+.positioning-link { transition: color 0.18s ease; }
+.positioning-link:hover, .positioning-link:focus-visible { color: var(--fg); }
 
 .sidebar-input {
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -162,24 +225,27 @@ html { scroll-behavior: smooth; }
   .topnav-link:hover .topnav-icon, .sidebar-send:hover { transform: none; }
 }
 
-/* ── Spring physics — reusable hover animations ── */
+/* ── Spring physics — reusable hover animations ──
+   Bounce kept (that's the site's character), just dialed back — these fire
+   on plain hover, dozens of times a session, so 1.15's overshoot and 420ms
+   read as slow/toylike rather than crisp. `will-change` is scoped to
+   :hover/:focus-visible rather than sitting on the base class, so elements
+   aren't kept on their own compositor layer at rest with nothing to show
+   for it. */
 .spring-scale {
-  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
-  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.34, 1.06, 0.64, 1);
 }
-.spring-scale:hover { transform: scale(1.05); }
+.spring-scale:hover, .spring-scale:focus-visible { transform: scale(1.05); will-change: transform; }
 
 .spring-lift {
-  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
-  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.34, 1.06, 0.64, 1);
 }
-.spring-lift:hover { transform: translateY(-4px) scale(1.02); }
+.spring-lift:hover, .spring-lift:focus-visible { transform: translateY(-4px) scale(1.02); will-change: transform; }
 
 .spring-slide {
-  transition: transform 0.42s cubic-bezier(0.34, 1.15, 0.64, 1);
-  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.34, 1.06, 0.64, 1);
 }
-.spring-slide:hover { transform: translateX(5px); }
+.spring-slide:hover, .spring-slide:focus-visible { transform: translateX(5px); will-change: transform; }
 
 /* ── Project cards ─────────────────────────────────────
    One shared surface treatment so every card reads as the same material.
@@ -203,8 +269,8 @@ html { scroll-behavior: smooth; }
   border: 1px solid var(--pcard-border);
   box-shadow: var(--pcard-shadow);
   transition: transform 0.3s var(--ease-premium), box-shadow 0.3s var(--ease-premium);
-  will-change: transform;
 }
+.pcard--link:hover, .pcard--link:focus-visible { will-change: transform; }
 /* Hairline of light along the top edge — the single cheapest cue that a
    surface is a physical panel catching light rather than a filled div. */
 .pcard::after {
@@ -311,11 +377,14 @@ html { scroll-behavior: smooth; }
   background: var(--sheet-bg);
   border: 1px solid var(--border-med);
   box-shadow: 0 10px 34px -10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.22);
+  transform-origin: top right;
   animation: books-menu-in 0.14s ease-out;
 }
+/* Scales up from the trigger's corner rather than just sliding down — a
+   popover should read as unfolding from the thing that opened it. */
 @keyframes books-menu-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .books-menu__label {
   padding: 5px 8px 3px;
@@ -323,7 +392,7 @@ html { scroll-behavior: smooth; }
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--fg-30);
+  color: var(--fg-eyebrow);
 }
 .books-menu__item {
   display: flex;
@@ -350,6 +419,154 @@ html { scroll-behavior: smooth; }
   .books-menu { animation: none; }
 }
 
+/* Fixed to the viewport corner — one instance, same spot on every page and
+   every breakpoint, deliberately tiny so it never competes with the theme
+   toggle or nav for attention. */
+.a11y-corner {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 45;
+}
+.a11y-corner-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: var(--fg-dim);
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border-med);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.a11y-corner-btn:hover { color: var(--fg); background: var(--hover-bg); }
+
+/* Same shape as .books-menu, anchored above the corner icon instead of
+   below a text trigger. */
+.a11y-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: 208px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--sheet-bg);
+  border: 1px solid var(--border-med);
+  box-shadow: 0 10px 34px -10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.22);
+  transform-origin: top right;
+  animation: books-menu-in 0.14s ease-out;
+}
+/* The corner icon sits at the bottom of the viewport, so its popover opens
+   upward instead of down off the bottom edge. */
+.a11y-menu--corner {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform-origin: bottom right;
+  animation-name: books-menu-in-up;
+}
+@keyframes books-menu-in-up {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.a11y-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--fg-60);
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.a11y-menu__item:hover { color: var(--fg); background: var(--hover-bg); }
+.a11y-menu__item[aria-checked='true'] { color: var(--fg); }
+
+.a11y-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: var(--border-med);
+  transition: background 0.16s ease;
+}
+.a11y-switch::before {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--fg);
+  opacity: 0.75;
+  transition: transform 0.16s ease;
+}
+.a11y-switch--on { background: var(--accent, var(--indigo)); }
+.a11y-switch--on::before { transform: translateX(13px); opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .a11y-menu { animation: none; }
+  .a11y-switch, .a11y-switch::before, .a11y-menu__item { transition: none; }
+}
+
+/* Manual overrides — the same treatment prefers-reduced-motion already
+   gives each animated component above, but from a user's own choice on
+   this site rather than (only) an OS-level setting. This mirrors each of
+   the @media (prefers-reduced-motion) blocks above one-for-one, scoped to
+   named classes, rather than a blanket `*` rule forcing every transition
+   and animation on the page to ~0 duration: that blanket version broke
+   Next.js Image's own load-reveal (a transition it uses functionally, not
+   decoratively) and left every book cover invisible. Scoping to the
+   specific decorative animations this site actually owns avoids touching
+   anything's internal, functional transitions. */
+html.reduce-motion .embed-skeleton { animation: none; opacity: 0.5; }
+html.reduce-motion .topnav-icon,
+html.reduce-motion .sidebar-send { transition: none; }
+html.reduce-motion .topnav-link:hover .topnav-icon,
+html.reduce-motion .sidebar-send:hover { transform: none; }
+html.reduce-motion .pcard,
+html.reduce-motion .pcard__bloom,
+html.reduce-motion .pcard__icon { transition: none; }
+html.reduce-motion .pcard--link:hover,
+html.reduce-motion .pcard--link:focus-visible { transform: none; }
+html.reduce-motion .pcard--link:hover .pcard__bloom,
+html.reduce-motion .pcard--link:hover .pcard__icon { transform: none; }
+html.reduce-motion .spring-scale,
+html.reduce-motion .spring-lift,
+html.reduce-motion .spring-slide { transition: none; }
+html.reduce-motion .spring-scale:hover,
+html.reduce-motion .spring-lift:hover,
+html.reduce-motion .spring-slide:hover { transform: none; }
+html.reduce-motion .books-trigger,
+html.reduce-motion .books-menu__item { transition: none; }
+html.reduce-motion .books-menu { animation: none; }
+html.reduce-motion .a11y-menu { animation: none; }
+html.reduce-motion .a11y-switch,
+html.reduce-motion .a11y-switch::before,
+html.reduce-motion .a11y-menu__item { transition: none; }
+html.reduce-motion .now-breathe { animation: none; }
+html.reduce-motion .theme-toggle-btn,
+html.reduce-motion .a11y-corner-btn,
+html.reduce-motion .skip-link { transition: none; }
+html.reduce-motion { scroll-behavior: auto !important; }
+html.reduce-transparency .pcard,
+html.reduce-transparency .pchip,
+html.reduce-transparency .books-menu,
+html.reduce-transparency .a11y-menu,
+html.reduce-transparency .books-trigger,
+html.reduce-transparency .contact-modal-overlay {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* .pchip leans on its blur for legibility over varied artwork — give it a
+   solid-enough backing when the blur itself is turned off. */
+html.reduce-transparency .pchip { background: var(--sheet-bg) !important; }
+
 /* The one chip allowed to carry the category accent. Everything else on a
    card stays neutral, so colour itself becomes the signal for "this is
    featured" rather than decoration competing across every tile. */
@@ -372,9 +589,9 @@ html { scroll-behavior: smooth; }
 
 /* ── Mobile menu bubble animations ── */
 @keyframes bubble-in {
-  0%   { opacity: 0; transform: translateX(-50%) scale(0.82) translateY(-6px); }
-  55%  { opacity: 1; transform: translateX(-50%) scale(1.05) translateY(2px); }
-  75%  { transform: translateX(-50%) scale(0.97) translateY(0); }
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-6px); }
+  55%  { opacity: 1; transform: translateX(-50%) scale(1.025) translateY(1px); }
+  75%  { transform: translateX(-50%) scale(0.99) translateY(0); }
   100% { transform: translateX(-50%) scale(1)    translateY(0); }
 }
 @keyframes bubble-out {

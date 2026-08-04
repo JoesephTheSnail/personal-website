@@ -7,6 +7,15 @@ import PhotoTile from './PhotoTile';
 
 const FEATURED_SLUGS = ['mindset-app', 'anywear', 'screens-and-sleep-report'];
 
+// A genuine, quantifiable standout result, surfaced once on the category
+// subtitle — deliberately not applied to every category. "3 projects" is
+// neutral; these are the ones that have actually earned a stronger claim.
+const CATEGORY_HIGHLIGHT: Record<string, string> = {
+  Creative: '1st place at DragonzDen',
+  Research: '$2.21/unit built',
+  'Pitch Deck': 'presented to Meta',
+};
+
 // A faded photo behind the tile instead of the flat gradient wash — keyed
 // by project slug for pinned tiles, or category slug for subject tiles.
 const TILE_BG_IMAGES: Record<string, string> = {
@@ -64,7 +73,7 @@ export default function ProjectsList({ projects }: { projects: Project[] }) {
           title={p.frontmatter.title}
           subtitle={p.frontmatter.description}
           featured
-          meta={p.frontmatter.date}
+          meta={p.frontmatter.artifactType ? `${p.frontmatter.date} · ${p.frontmatter.artifactType}` : p.frontmatter.date}
           chip={meta.label}
           hoverIndex={i}
           bgImage={TILE_BG_IMAGES[p.slug]}
@@ -109,7 +118,7 @@ export default function ProjectsList({ projects }: { projects: Project[] }) {
         size={size}
         icon={c.icon}
         title={c.label}
-        subtitle={`${count} project${count === 1 ? '' : 's'}`}
+        subtitle={CATEGORY_HIGHLIGHT[c.label] ? `${count} project${count === 1 ? '' : 's'} · ${CATEGORY_HIGHLIGHT[c.label]}` : `${count} project${count === 1 ? '' : 's'}`}
         motif={c.motif}
         hoverIndex={pinnedCount + i}
         bgImage={TILE_BG_IMAGES[c.slug]}
@@ -136,10 +145,10 @@ export default function ProjectsList({ projects }: { projects: Project[] }) {
   ].filter(Boolean);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto">
       <div className="flex items-center gap-2.5 mb-3">
         <span aria-hidden="true" className="block flex-shrink-0" style={{ width: 18, height: 1, background: 'var(--fg-30)' }} />
-        <span className="text-[10px] font-semibold uppercase" style={{ letterSpacing: '0.16em', color: 'var(--fg-35)' }}>
+        <span className="text-[10px] font-semibold uppercase" style={{ letterSpacing: '0.16em', color: 'var(--fg-eyebrow)' }}>
           Selected work
         </span>
       </div>
