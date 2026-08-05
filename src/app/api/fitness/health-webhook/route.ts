@@ -56,7 +56,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
 import { upsertWorkoutDay, type WorkoutLogEntry, type WorkoutLog } from '@/lib/fitness/workoutLog';
-import { checkFitnessAuth, parseJsonBody } from '@/lib/fitness/auth';
+import { checkFitnessAuth, checkRateLimit, parseJsonBody } from '@/lib/fitness/auth';
 
 interface HealthWebhookPayload {
   date: string;
@@ -94,6 +94,9 @@ const OPTIONAL_NUMBER_FIELDS: Array<keyof HealthWebhookPayload> = [
 const WORKOUT_LOG_FIELDS: Array<keyof WorkoutLogEntry> = ['swimMin', 'swimKm', 'bikeMin', 'bikeKm', 'runMin', 'runKm', 'liftMin'];
 
 export async function POST(req: NextRequest) {
+  const rateLimitError = await checkRateLimit(req, 'health-webhook');
+  if (rateLimitError) return rateLimitError;
+
   const authError = checkFitnessAuth(req);
   if (authError) return authError;
 

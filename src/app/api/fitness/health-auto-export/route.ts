@@ -46,7 +46,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, HEALTH_VITALS_KEY, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
 import { parseHealthAutoExport, type ParsedWorkout } from '@/lib/fitness/healthAutoExportParser';
 import { upsertWorkoutDay, type WorkoutLog, type WorkoutLogEntry } from '@/lib/fitness/workoutLog';
-import { checkFitnessAuth, parseJsonBody } from '@/lib/fitness/auth';
+import { checkFitnessAuth, checkRateLimit, parseJsonBody } from '@/lib/fitness/auth';
 
 const SPORT_FIELD: Record<ParsedWorkout['sport'], { minKey: keyof WorkoutLogEntry; kmKey?: keyof WorkoutLogEntry }> = {
   swim: { minKey: 'swimMin', kmKey: 'swimKm' },
@@ -94,6 +94,9 @@ interface StoredVitals {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimitError = await checkRateLimit(req, 'health-auto-export');
+  if (rateLimitError) return rateLimitError;
+
   const authError = checkFitnessAuth(req);
   if (authError) return authError;
 

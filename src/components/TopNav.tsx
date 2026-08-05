@@ -214,6 +214,10 @@ export default function TopNav({ onContactClick }: Props) {
             </button>
           </form>
         </div>
+
+        <p className="mt-4 px-1 text-[10px]" style={{ color: 'var(--fg-dimmer)' }}>
+          © {new Date().getFullYear()} Arnav Chandra
+        </p>
       </div>
 
       {/* ── Mobile top pill ── */}

@@ -21,7 +21,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvSet, ACTIVITY_LOG_KEY } from '@/lib/fitness/kv';
 import type { WorkoutLog, WorkoutLogEntry } from '@/lib/fitness/workoutLog';
-import { checkFitnessAuth, parseJsonBody } from '@/lib/fitness/auth';
+import { checkFitnessAuth, checkRateLimit, parseJsonBody } from '@/lib/fitness/auth';
 
 const NUMBER_FIELDS: Array<keyof WorkoutLogEntry> = [
   'swimMin', 'swimKm', 'bikeMin', 'bikeKm', 'runMin', 'runKm', 'walkMin', 'walkKm', 'liftMin',
@@ -36,6 +36,9 @@ function isValidEntry(entry: unknown): entry is WorkoutLogEntry {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimitError = await checkRateLimit(req, 'strava-import');
+  if (rateLimitError) return rateLimitError;
+
   const authError = checkFitnessAuth(req);
   if (authError) return authError;
 
