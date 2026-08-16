@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Poppins } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import SiteWrapper from '@/components/SiteWrapper';
 import CustomCursor from '@/components/CustomCursor';
@@ -84,7 +85,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="bg-[#0D0D0D] text-white font-sans" suppressHydrationWarning>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* next/script + beforeInteractive, not a plain <script> tag: a raw
+            <script> is a one-shot DOM node React only installs from the
+            initial SSR HTML. Any subsequent render that "encounters" it
+            again (e.g. App Router's root-layout re-render on client
+            navigation) logs a "scripts are never executed on the client"
+            warning, even though this one only ever needs to run once,
+            pre-hydration. beforeInteractive is Next's dedicated mechanism
+            for exactly that — injected into the initial HTML and tracked
+            outside React's normal re-render bookkeeping, so it never
+            re-triggers the warning. */}
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}

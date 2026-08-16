@@ -140,12 +140,19 @@ export default function MobileNav({ onContactClick }: Props) {
 
   return (
     <>
+      {/* p-[13px] brings the tap target up to the 44x44px minimum (Apple
+          HIG / WCAG 2.5.5) around an 18px icon — the visible icon was
+          previously sitting in only a 26x26px hit area, easy to miss with
+          a thumb even though it's trivial to hit with a mouse pointer. The
+          matching -m-[9px] pulls the extra padding back out of the flex
+          row's layout so the pill's width and the gap to ThemeToggle don't
+          change — only the invisible hit area grows, not anything visual. */}
       <button
         onClick={() => {
           if (menuState === 'open') close();
           else openMenu();
         }}
-        className="p-1 transition-all duration-200"
+        className="p-[13px] -m-[9px] transition-all duration-200"
         style={{
           color:     'var(--fg-50)',
           transform: open ? 'rotate(90deg) scale(0.9)' : 'rotate(0deg) scale(1)',

@@ -12,14 +12,13 @@ const FEATURED_SLUGS = ['mindset-app', 'anywear', 'screens-and-sleep-report'];
 // neutral; these are the ones that have actually earned a stronger claim.
 const CATEGORY_HIGHLIGHT: Record<string, string> = {
   Creative: '1st place at DragonzDen',
-  Research: '$2.21/unit built',
   'Pitch Deck': 'presented to Meta',
 };
 
 // A faded photo behind the tile instead of the flat gradient wash — keyed
 // by project slug for pinned tiles, or category slug for subject tiles.
 const TILE_BG_IMAGES: Record<string, string> = {
-  'pitch-deck': 'https://www.unicef.org/guineabissau/sites/unicef.org.guineabissau/files/styles/hero_extended/public/IMG_3644.JPG.webp?itok=cuAwL9s3',
+  research: 'https://www.unicef.org/guineabissau/sites/unicef.org.guineabissau/files/styles/hero_extended/public/IMG_3644.JPG.webp?itok=cuAwL9s3',
   anywear: '/projects/anywear-bg.png',
 };
 
