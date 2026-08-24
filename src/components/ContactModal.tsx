@@ -177,15 +177,15 @@ export default function ContactModal({ isOpen, onClose }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className="group flex flex-col items-center gap-1.5"
+              className="contact-social-link group flex flex-col items-center gap-1.5"
             >
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:border-white/50 group-hover:bg-white/5"
                 style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}
               >
-                <Icon size={18} className="group-hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.7)' }} />
+                <Icon size={18} className="contact-social-icon" />
               </div>
-              <span className="text-[0.65rem] group-hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <span className="contact-social-label text-[0.65rem]">
                 {label}
               </span>
             </a>
