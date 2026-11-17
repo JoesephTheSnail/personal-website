@@ -132,13 +132,20 @@ function useTargetRect(key: TargetKey | undefined, enabled: boolean) {
 
 // ---- tiny looping gesture demos --------------------------------------------
 
+// Chrome's forced dark mode darkens any CSS *background* lighter than ~205
+// brightness, which would turn white knobs and pale progress dots invisible on
+// this dark card. So backgrounds here stay at or below that (soft grey, not
+// white); light colours are only used for text and SVG strokes, which it leaves alone.
+const KNOB = '#c3c8ce';
+const TRACK = '#5b6068';
+
 const demoBox: CSSProperties = { width: 52, height: 52, flex: 'none', position: 'relative' };
 const dot = (extra: CSSProperties): CSSProperties => ({
   position: 'absolute',
   width: 14,
   height: 14,
   borderRadius: '50%',
-  background: '#fff',
+  background: KNOB,
   left: 19,
   top: 19,
   ...extra,
@@ -160,7 +167,7 @@ function Demo({ id, mode, done }: { id: StepId; mode: Mode; done: boolean }) {
   if (id === 'orbit') {
     inner = (
       <>
-        <div style={{ position: 'absolute', left: 6, right: 6, top: 25, height: 2, borderRadius: 1, background: 'rgba(255,255,255,0.25)' }} />
+        <div style={{ position: 'absolute', left: 6, right: 6, top: 25, height: 2, borderRadius: 1, background: TRACK }} />
         <div data-cc-anim style={dot({ animation: 'cc-tut-drag 1.6s ease-in-out infinite alternate' })} />
       </>
     );
@@ -182,7 +189,7 @@ function Demo({ id, mode, done }: { id: StepId; mode: Mode; done: boolean }) {
   } else if (id === 'tap') {
     inner = (
       <>
-        <div data-cc-anim style={dot({ width: 30, height: 30, left: 11, top: 11, background: 'transparent', border: '2px solid #fff', animation: 'cc-tut-tap 1.4s ease-out infinite' })} />
+        <div data-cc-anim style={dot({ width: 30, height: 30, left: 11, top: 11, background: 'transparent', border: `2px solid ${KNOB}`, animation: 'cc-tut-tap 1.4s ease-out infinite' })} />
         <div style={dot({ width: 10, height: 10, left: 21, top: 21 })} />
       </>
     );
@@ -451,10 +458,10 @@ export default function Tutorial({
           display: 'flex',
           flexDirection: 'column',
           gap: compact ? 8 : 10,
-          padding: compact ? '10px 12px' : '13px 16px',
+          padding: compact ? '13px 12px 10px' : '16px 16px 13px',
+          position: 'relative',
           borderRadius: 14,
           border: '1px solid rgba(255,255,255,0.14)',
-          borderTop: `3px solid ${ACCENT}`,
           background: 'rgba(21,23,26,0.94)',
           backdropFilter: 'blur(10px)',
           boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
@@ -463,6 +470,8 @@ export default function Tutorial({
           animation: 'cc-facts-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}
       >
+        {/* accent edge as a background, not a border: forced dark mode dims coloured borders */}
+        <div aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 3, borderRadius: '14px 14px 0 0', background: ACCENT }} />
         <div key={idx} data-cc-anim style={{ display: 'flex', alignItems: 'center', gap: 12, animation: 'cc-tut-swap 0.38s cubic-bezier(0.22, 1, 0.36, 1) both' }}>
           <Demo id={step.id} mode={mode} done={ok} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
@@ -481,7 +490,7 @@ export default function Tutorial({
                   width: i === idx ? 16 : 6,
                   height: 6,
                   borderRadius: 3,
-                  background: i === idx ? ACCENT : i < idx ? 'rgba(226,136,63,0.5)' : 'rgba(255,255,255,0.25)',
+                  background: i === idx ? ACCENT : i < idx ? 'rgba(226,136,63,0.5)' : TRACK,
                   transition: 'width 0.25s ease, background 0.25s ease',
                 }}
               />
@@ -513,15 +522,16 @@ export default function Tutorial({
               onClick={finish}
               style={{
                 minHeight: 36,
-                padding: '0 6px',
-                border: 'none',
-                background: 'transparent',
-                color: 'rgba(255,255,255,0.72)',
+                padding: '0 14px',
+                borderRadius: 999,
+                // a solid pill, not bare text: it has to stay visible whatever the
+                // browser does to colours (see KNOB above)
+                border: '1px solid #6a7078',
+                background: '#2d3136',
+                color: '#e9ebee',
                 fontSize: 12.5,
                 fontWeight: 600,
                 fontFamily: 'inherit',
-                textDecoration: 'underline',
-                textUnderlineOffset: 3,
                 cursor: 'pointer',
                 touchAction: 'manipulation',
               }}
