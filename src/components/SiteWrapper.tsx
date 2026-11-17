@@ -43,7 +43,9 @@ export default function SiteWrapper({ children }: { children: React.ReactNode })
         <Link
           href={backHref}
           aria-label={demoMatch ? 'Back to the project page' : 'Back to home'}
-          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+          // native-cursor: the custom cursor is off on these pages, so the
+          // global cursor-hiding rule would leave this link with no cursor at all
+          className="native-cursor fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
         >
           {demoMatch ? <FaArrowLeft size={15} /> : <FaHome size={16} />}
         </Link>
