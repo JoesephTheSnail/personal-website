@@ -407,7 +407,8 @@ const STACK_SHIELD_Y1 = STACK_SHIELD_Y0 + 24; // in — shield top; the bend sta
 const STACK_SHIELD_R = 4.75; // in — about twice the pipe's diameter, as on a real stack
 const STACK_ELBOW_Y = STACK_SHIELD_Y1; // the pipe bends just above the shield
 const TAILPIPE_Z = 34; // in — each tailpipe's offset from the truck's centreline (cab is 96in wide)
-const STACK_CROSS_Y = 118; // in — height of the crossover pipe: above the TEG sleeve (98-113), below the roof
+const STACK_CROSS_Y = 64; // in — height of the crossover: low, where exhaust comes up from the engine, tee'd into the middle pipe (just above the dark feet)
+const STACK_COLLECTOR_TOP = 118; // in — top of the middle pipe: above the TEG sleeve (98-113) and the duct tap (~100), below the roof
 const STACK_CHROME = '#cfd4db';
 const STACK_DARK_CHROME = '#8d939b';
 
@@ -435,14 +436,17 @@ function ExhaustStackParts() {
     return t;
   }, []);
   // the top section: straight up through the roof, then a gentle bend back
-  const elbow = useMemo(() => {
+  const { elbow, tipAngle } = useMemo(() => {
     const curve = new THREE.CubicBezierCurve3(
       new THREE.Vector3(0, IN(STACK_ELBOW_Y), 0),
       new THREE.Vector3(0, IN(STACK_ELBOW_Y + 7), 0),
       new THREE.Vector3(IN(0.9), IN(TRUCK.stackHeight - 5), 0),
       new THREE.Vector3(IN(4.2), IN(TRUCK.stackHeight), 0),
     );
-    return new THREE.TubeGeometry(curve, 28, IN(STACK_R), 18, false);
+    // the mouth has to sit square on the pipe's own end, so take its lean from
+    // the curve's tangent there (an earlier hand-picked tilt stuck out sideways)
+    const t = curve.getTangent(1);
+    return { elbow: new THREE.TubeGeometry(curve, 28, IN(STACK_R), 18, false), tipAngle: Math.atan2(t.x, t.y) };
   }, []);
   const chrome = { color: STACK_CHROME, metalness: 0.55, roughness: 0.28 } as const;
   const shieldH = STACK_SHIELD_Y1 - STACK_SHIELD_Y0;
@@ -479,11 +483,11 @@ function ExhaustStackParts() {
       <mesh geometry={elbow} castShadow>
         <meshStandardMaterial {...chrome} />
       </mesh>
-      {/* angled mouth: a short open collar tilted off the pipe's axis, with a dark
-          disc set back inside it. (The first version capped the collar and laid the
+      {/* mouth: a short open collar lined up with the pipe's end (leaning back with the
+          bend), with a dark disc set back inside it. (The first version capped the collar and laid the
           disc 0.01in above that cap — the two surfaces z-fought and the tip looked
           broken. Open collar + recessed disc share no surface.) */}
-      <group position={[IN(4.2), IN(TRUCK.stackHeight), 0]} rotation={[0, 0, -1.13]}>
+      <group position={[IN(4.2), IN(TRUCK.stackHeight), 0]} rotation={[0, 0, -tipAngle]}>
         <mesh>
           <cylinderGeometry args={[IN(STACK_R + 0.1), IN(STACK_R + 0.1), IN(0.7), 24, 1, true]} />
           <meshStandardMaterial {...darkChrome} side={THREE.DoubleSide} />
@@ -500,11 +504,11 @@ function ExhaustStackParts() {
     <group position={[IN(stackX), 0, 0]}>
       {/* the original stack, now the collector in the middle: it carries the TEG
           sleeve and the duct tap, and the crossover feeds it from both tailpipes */}
-      <mesh position={[0, IN((TRUCK.frameHeight + STACK_CROSS_Y) / 2), IN(stackZ)]} castShadow>
-        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_CROSS_Y - TRUCK.frameHeight), 20]} />
+      <mesh position={[0, IN((TRUCK.frameHeight + STACK_COLLECTOR_TOP) / 2), IN(stackZ)]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_COLLECTOR_TOP - TRUCK.frameHeight), 20]} />
         <meshStandardMaterial {...chrome} />
       </mesh>
-      {/* crossover pipe joining the two tailpipes, tee'd into the collector */}
+      {/* crossover pipe joining the two tailpipes, low down, tee'd into the middle pipe that rises to the TEG sleeve and the duct tap */}
       <mesh position={[0, IN(STACK_CROSS_Y), 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[IN(STACK_R * 0.9), IN(STACK_R * 0.9), IN(TAILPIPE_Z * 2), 20]} />
         <meshStandardMaterial {...darkChrome} />
