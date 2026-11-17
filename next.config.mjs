@@ -10,6 +10,22 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['react-icons', 'recharts'],
   },
+  // The project and its 3D model used to live under /projects/truck-exhaust-carbon-capture.
+  // Permanent redirects keep links that were already shared working.
+  async redirects() {
+    return [
+      {
+        source: '/projects/truck-exhaust-carbon-capture',
+        destination: '/projects/carbon-capture-model',
+        permanent: true,
+      },
+      {
+        source: '/projects/truck-exhaust-carbon-capture/demo',
+        destination: '/projects/carbon-capture-model/demo',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

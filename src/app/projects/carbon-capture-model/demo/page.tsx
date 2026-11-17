@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Truck Exhaust Carbon Capture: 3D walkthrough',
   description:
     'An interactive 3D walkthrough of a carbon capture system mounted on a diesel truck. Orbit, zoom, and step through each part.',
-  alternates: { canonical: 'https://arnavchandra.com/projects/truck-exhaust-carbon-capture/demo' },
+  alternates: { canonical: 'https://arnavchandra.com/projects/carbon-capture-model/demo' },
 };
 
 export default function TruckExhaustCarbonCaptureDemoPage() {

@@ -75,7 +75,7 @@ export const TRUCK = {
   cabLength: 170, // NEW for 3D — hood + sleeper, approximate
   cabRoofHeight: 132,
   gapLength: 48, // NEW for 3D — cab-to-trailer gap
-  stackHeight: 120,
+  stackHeight: 168, // top of the pipe: about level with the trailer roof, like a real cab-mounted stack
   stackDiameter: 5,
   trailerWidth: 100, // NEW for 3D
   trailerRoofHeight: 162,

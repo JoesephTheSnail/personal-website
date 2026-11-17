@@ -4,34 +4,39 @@
 
 ## Goal
 
-Polish the truck-exhaust carbon-capture interactive 3D demo (`src/components/carbon-capture/Scene3D.tsx`, previewed at `/dev-preview/carbon-capture-3d`) for a portfolio/internship use case. Currently in an iterative fix-and-verify loop driven by direct user feedback, not a first build — see the long project history in Claude's own memory file `carbon_capture_project.md` for prior rounds' rationale (not part of this repo).
+Polish the truck-exhaust carbon-capture project: the 3D demo (`src/components/carbon-capture/Scene3D.tsx`) and its project page. Iterative fix-and-verify loop driven by user feedback, not a first build. Rationale for earlier rounds is in Claude's memory file `carbon_capture_project.md` (not in this repo).
 
-## Current State (verified live in the browser pane + `tsc --noEmit`, this session)
+## Current State (verified in browser pane, headless Chrome and `tsc --noEmit`)
 
-Just finished a round of 5 user-reported fixes, all confirmed working via screenshots and in-scene clicks (not just code review):
+**URLs (renamed this round).** Project page `/projects/carbon-capture-model` (`content/projects/carbon-capture-model.mdx`); demo `/projects/carbon-capture-model/demo`. The old `/projects/truck-exhaust-carbon-capture[/demo]` URLs 308-redirect via `redirects()` in `next.config.mjs` (checked with curl). `/projects/carbon-capture` is a different, existing page (direct-air-capture research) and was not touched, so don't reuse that slug. `src/app/dev-preview/` is an untracked scratch copy of the demo.
 
-1. **TEG housing clickable.** `TEGUnit`'s outer housing mesh (`Scene3D.tsx`) had `raycast={() => null}` so clicks could reach the modules/fins/controller inside it — but that also meant clicking the bare housing did nothing. Re-enabled raycasting on it with its own `onClick`/`onPointerOver` handlers, but *without* unconditional `stopPropagation()`: fiber calls the nearer (housing) handler first, then the farther (module/fin/controller) handler still fires after and overwrites the selection, so precise clicks on a sub-part still win. `e.intersections` + a `userData.partId` tag on the 3 child parts decides whether to stop propagation at all. New `PART_FACTS.tegUnit` entry added.
-2. **Hover/select glow clipping to flat white.** Added `EMISSIVE_CLAMP = 0.95` and wrapped every `emissiveIntensity` write that stacks a hover boost on an existing pulse glow (module-interior chambers, `BulkBin` fill, `TEGSleeve`, `TEGUnit` modules) in `Math.min(EMISSIVE_CLAMP, ...)`. Cut every hover boost to a flat 0.12 (was 0.16–0.22).
-3. **Items disappearing inside the translucent cab on `module-exterior`.** Root cause found (not just worked around, unlike an earlier round's attempt): `useFadeGroup`'s `depthWrite` was keyed to the truck's overall opacity, never the cab-specific tint, so a visually-translucent cab panel kept writing depth and corrupted sort order against the other overlapping cab panels at their seams. Fixed by basing `depthWrite` on the real rendered opacity (`opacity * tint`) and giving tinted meshes a high `renderOrder` (50) so they always draw last.
-4. **TEG heat-exchanger fins blending into the housing color.** Gave the fins their own cool-blue emissive glow (`#6fc3e0`, tied to `open * glowPulse() * 0.5`) plus a lighter base color (`#e3ecf2`, was `#c7ccd1`) — the cold-side complement to the hot side's existing orange glow.
-5. **Labels staying visible on the "back" of a part.** Added optional `facingDir` prop to the `Label` component — a world-space direction (derived per-step from that step's own `cameraPos - cameraTarget` via `stepFacingDir()`) that each frame is dotted against the label-to-camera direction, fading opacity via `THREE.MathUtils.smoothstep`. Wired to all 13 `<Label>` calls in `Rig` via 5 shared constants (`MODULE_EXTERIOR_FACING`, `MODULE_INTERIOR_FACING`, `TANKS_FACING`, `BULK_BIN_FACING`, `TEG_FACING`).
+**This round (all uncommitted):**
+1. **Forced dark mode vs. the truck button.** Chrome's force dark recoloured `TruckButton` (reproduced with CDP `Emulation.setAutoDarkModeOverride`). Rule found by testing: it inverts SVG fills, text and borders darker than ~150 brightness and darkens CSS backgrounds lighter than ~205, including SVG gradients. `color-scheme` opt-outs do not work when the OS is light. The truck now keeps dark/mid colours as CSS backgrounds and light colours as SVG fills (comment above `.truck-cta` in `globals.css`). On/off screenshots match pixel for pixel.
+2. **Same rule applied to the demo UI.** Tutorial knob/track/dots, legend swatch outlines, accent edges on the Guide chip and tutorial card, and tour-nav dots were recoloured or moved from borders to backgrounds. The tutorial's "Skip tutorial" is now a solid pill. I could not reproduce the reported "Skip hidden" in five force-dark variants, so that report is not confirmed fixed.
+3. **Tail pipe (3D model).** `ExhaustStackParts` in `Scene3D.tsx`: short dark pipe, perforated chrome heat shield (canvas texture) sitting on the cab roof, bent pipe with angled mouth. `TRUCK.stackHeight` is now 168. The button truck's stack is back to its original small shape.
+4. **Page text** rewritten in plainer language: what amine is, what it does to CO₂ when cool, what heating to 90-100°C does, matching the model's steps.
 
-**Not yet done:** nothing committed or pushed — user's standing preference is to stay local/uncommitted until they explicitly review and approve.
+**Earlier rounds (merged in PR #3):** TEG housing clickable; `EMISSIVE_CLAMP = 0.95` with hover boost 0.12; `useFadeGroup` `depthWrite` from real opacity (cab items no longer vanish); fins glow `#6fc3e0`; `Label` `facingDir` fading.
 
 ## Modified Files
 
-- `src/components/carbon-capture/Scene3D.tsx` — primary file, all 5 fixes above.
-- `src/app/globals.css` — `cc-rotate-hint` keyframe (from an earlier round's mobile-rotate-gate feature, unrelated to this round).
-- `findings.md`, `fixes.md` — untracked scratch files from an earlier QA-audit round (two-subagent findings/fix-plan exchange). Reference only, not meant to be committed as-is.
-- *(Unconfirmed/assumption: `package.json`, `package-lock.json`, `src/components/CustomCursor.tsx`, `src/components/SiteWrapper.tsx` show as modified in `git status` from before this session's work — not touched this round, origin not verified here.)*
+- `src/components/carbon-capture/Scene3D.tsx` — stack, legend, guide chip, nav dots.
+- `src/components/carbon-capture/Tutorial.tsx`, `captureUnitParts.ts` — force-dark colours; stack height.
+- `src/components/TruckButton.tsx`, `src/app/globals.css` — force-dark-safe truck.
+- `content/projects/carbon-capture-model.mdx`, `src/app/projects/carbon-capture-model/`, `next.config.mjs` — rename, redirects, text.
+- `findings.md`, `fixes.md`, `CLAUDE.md` — untracked scratch from earlier QA rounds, reference only.
 
 ## Failed Attempts
 
-- Three different camera-distance values for the `tanks` step all rendered pixel-identical in an earlier round — turned out to be `HologramAutoRotate` silently overriding `camera.position` every frame from a stale "home" position captured mid-transition. Not this round's bug, but the same `transitioningRef` guard this round's code still depends on.
-- This round: several screenshot-coordinate clicks aimed at "bare TEG housing" instead landed on the Capture Module's overlapping chimney or empty space (camera-angle/perspective made the two look adjacent on screen). Resolved by zooming in, orbiting to isolate the housing, and reading the resulting `FactsCard` text back as ground truth rather than trusting pixel position alone.
-- A stale dev-server build (`ChunkLoadError`, Fast-Refresh full-reload loop) and a stale-closure HMR error (`finsGlowRef is not defined` after renaming it to `finsMatRefs`) both required a full `preview_stop` + `rm -rf .next` + fresh tab (not a soft reload) to clear.
+- `color-scheme: dark` on the truck (and `light dark` on `html`) did not stop force dark when the OS preference is light.
+- An SVG gradient for the trailer was still darkened; it had to be a CSS gradient capped near brightness 205.
+- Borders cannot be protected by colour (even `#a3a8ae` was inverted); use a 1px background frame instead.
+- Earlier: three `tanks` camera distances rendered identically because `HologramAutoRotate` overwrote `camera.position` (`transitioningRef` guard); screenshot-coordinate clicks on the bare TEG housing hit the chimney instead (read the `FactsCard` text as ground truth); stale dev builds (`ChunkLoadError`) needed `preview_stop` + `rm -rf .next`.
 
 ## Immediate Next Steps
 
-- Still open from earlier phases (not this round): rework the assembled (non-exploded) layout into a cleaner rectangle; reconsider `enableZoom={false}` on `OrbitControls`; richer/less-flat background environment; hover tooltips on the inter-component pipes; review a user-provided Spline reference for color/material ideas.
-- Waiting on the user for either more fix requests or explicit go-ahead to commit — nothing should be committed without that.
+- **Code review must check force dark:** any new light CSS background (above ~205 brightness), dark SVG fill, dark or translucent-white border, or coloured border is likely to break under Chrome force dark. Recheck the truck button, tutorial card, legend, Guide chip and nav. The WebGL scene itself is not recoloured.
+- **Unconfirmed:** the reported hidden "Skip tutorial" under force dark; get a screenshot and Chrome flag variant from the user.
+- **Known limit:** iPhone Safari has no Fullscreen API, so there is no full-screen button there. Landscape shows a one-time "Add to Home Screen" tip instead (`A2HS_DISMISS_KEY`), hidden once dismissed. Android Chrome and iPad get the button. Not tested on a real iPhone.
+- Still open from earlier: tidier assembled layout; reconsider `enableZoom={false}`; richer background; hover tooltips on pipes; Spline reference.
+- Nothing from this round is committed; wait for the user's go-ahead.

@@ -399,6 +399,94 @@ function useFadeGroup(
   return groupRef;
 }
 
+// ---- exhaust stack ----------------------------------------------------------
+const STACK_R = TRUCK.stackDiameter / 2;
+const STACK_FOOT_Y1 = 58; // in — top of the short dark pipe out of the frame
+const STACK_SHIELD_Y0 = TRUCK.cabRoofHeight - 4; // in — heat shield starts a hair under the roof, so it reads as sitting on it
+const STACK_SHIELD_Y1 = STACK_SHIELD_Y0 + 24; // in — shield top; the bend starts here
+const STACK_SHIELD_R = 4.75; // in — about twice the pipe's diameter, as on a real stack
+const STACK_ELBOW_Y = STACK_SHIELD_Y1; // the pipe bends just above the shield
+const STACK_CHROME = '#cfd4db';
+const STACK_DARK_CHROME = '#8d939b';
+
+function ExhaustStackParts() {
+  // perforated sheet: a tile of staggered dark holes on bright metal
+  const holes = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    if (g) {
+      g.fillStyle = STACK_CHROME;
+      g.fillRect(0, 0, 64, 64);
+      g.fillStyle = '#1f2226';
+      for (const [x, y] of [[16, 16], [48, 16], [0, 48], [32, 48], [64, 48]]) {
+        g.beginPath();
+        g.arc(x, y, 6.5, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(17, 20);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }, []);
+  // the top section: straight up through the roof, then a gentle bend back
+  const elbow = useMemo(() => {
+    const curve = new THREE.CubicBezierCurve3(
+      new THREE.Vector3(0, IN(STACK_ELBOW_Y), 0),
+      new THREE.Vector3(0, IN(STACK_ELBOW_Y + 7), 0),
+      new THREE.Vector3(IN(0.9), IN(TRUCK.stackHeight - 5), 0),
+      new THREE.Vector3(IN(4.2), IN(TRUCK.stackHeight), 0),
+    );
+    return new THREE.TubeGeometry(curve, 28, IN(STACK_R), 18, false);
+  }, []);
+  const chrome = { color: STACK_CHROME, metalness: 0.55, roughness: 0.28 } as const;
+  const shieldH = STACK_SHIELD_Y1 - STACK_SHIELD_Y0;
+  const lowerH = STACK_SHIELD_Y0 - STACK_FOOT_Y1;
+  return (
+    <group position={[IN(stackX), 0, IN(stackZ)]}>
+      {/* short darker pipe up out of the frame */}
+      <mesh position={[0, IN((TRUCK.frameHeight + STACK_FOOT_Y1) / 2), 0]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_FOOT_Y1 - TRUCK.frameHeight), 20]} />
+        <meshStandardMaterial color={STACK_DARK_CHROME} metalness={0.5} roughness={0.35} />
+      </mesh>
+      {/* perforated heat shield, with a collar at each end */}
+      <mesh position={[0, IN(STACK_SHIELD_Y0 + shieldH / 2), 0]} castShadow>
+        <cylinderGeometry args={[IN(STACK_SHIELD_R), IN(STACK_SHIELD_R), IN(shieldH), 40]} />
+        <meshStandardMaterial map={holes} color="#ffffff" metalness={0.5} roughness={0.3} />
+      </mesh>
+      {[STACK_SHIELD_Y0 + 0.8, STACK_SHIELD_Y1 - 0.8].map((y) => (
+        <mesh key={y} position={[0, IN(y), 0]}>
+          <cylinderGeometry args={[IN(STACK_SHIELD_R + 0.25), IN(STACK_SHIELD_R + 0.25), IN(1.6), 40]} />
+          <meshStandardMaterial color={STACK_DARK_CHROME} metalness={0.55} roughness={0.3} />
+        </mesh>
+      ))}
+      {/* straight chrome pipe from the foot up to the shield (passes the TEG sleeve and the duct tap) */}
+      <mesh position={[0, IN(STACK_FOOT_Y1 + lowerH / 2), 0]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(lowerH), 20]} />
+        <meshStandardMaterial {...chrome} />
+      </mesh>
+      {/* bend at the top */}
+      <mesh geometry={elbow} castShadow>
+        <meshStandardMaterial {...chrome} />
+      </mesh>
+      {/* angled mouth: a short collar tilted off the pipe's axis, dark inside */}
+      <group position={[IN(4.2), IN(TRUCK.stackHeight), 0]} rotation={[0, 0, -1.13]}>
+        <mesh>
+          <cylinderGeometry args={[IN(STACK_R + 0.1), IN(STACK_R + 0.1), IN(0.7), 24]} />
+          <meshStandardMaterial color={STACK_DARK_CHROME} metalness={0.55} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, IN(0.36), 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[IN(STACK_R - 0.25), 24]} />
+          <meshStandardMaterial color="#1b1d20" metalness={0.2} roughness={0.8} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
 /** The truck body — cab, trailer, wheels, lights, doors. The ground/bed deck
  *  and the CO2 capture equipment live outside this group (see Rig), so
  *  they're untouched by the fade — only the vehicle itself steps back (or
@@ -687,16 +775,12 @@ function TruckContext({
       <Wheel x={REAR_AXLE_X} z={half} />
       <Wheel x={REAR_AXLE_X} z={-half} />
 
-      {/* exhaust stack */}
+      {/* exhaust stack: short pipe up out of the frame, a perforated chrome
+          heat shield around the lower part, then a tall pipe that rises
+          through the roofline and bends back at the top with an angled
+          mouth (modelled on a real cab-mounted stack) */}
       <group ref={exhaustStackRef} {...clickable('exhaustStack', onSelectPart)}>
-        <mesh position={[IN(stackX), IN((TRUCK.frameHeight + TRUCK.stackHeight) / 2), IN(stackZ)]} castShadow>
-          <cylinderGeometry args={[IN(TRUCK.stackDiameter / 2), IN(TRUCK.stackDiameter / 2), IN(TRUCK.stackHeight - TRUCK.frameHeight), 16]} />
-          <meshStandardMaterial color="#8a8f96" metalness={0.6} roughness={0.35} />
-        </mesh>
-        <mesh position={[IN(stackX), IN(TRUCK.stackHeight + 2), IN(stackZ)]}>
-          <cylinderGeometry args={[IN(TRUCK.stackDiameter / 2 + 1), IN(TRUCK.stackDiameter / 2 + 1), IN(4), 16]} />
-          <meshStandardMaterial color="#6b7076" metalness={0.6} roughness={0.35} />
-        </mesh>
+        <ExhaustStackParts />
       </group>
     </group>
   );
@@ -3248,16 +3332,18 @@ function Legend({ deviceClass }: { deviceClass: DeviceClass }) {
     >
       {LEGEND_ITEMS.map((item) => (
         <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8 }}>
-          <span
-            style={{
-              width: compact ? 9 : 11,
-              height: compact ? 9 : 11,
-              borderRadius: 3,
-              background: item.color2 ? `linear-gradient(90deg, ${item.color} 50%, ${item.color2} 50%)` : item.color,
-              flex: 'none',
-              border: '1px solid rgba(255,255,255,0.4)',
-            }}
-          />
+          {/* the outline is a 1px frame of grey *background*, not a border: forced
+              dark mode inverts borders (even light ones) but leaves mid-grey backgrounds alone */}
+          <span style={{ flex: 'none', padding: 1, borderRadius: 4, background: '#8a9097', display: 'flex' }}>
+            <span
+              style={{
+                width: compact ? 9 : 11,
+                height: compact ? 9 : 11,
+                borderRadius: 3,
+                background: item.color2 ? `linear-gradient(90deg, ${item.color} 50%, ${item.color2} 50%)` : item.color,
+              }}
+            />
+          </span>
           {item.label}
         </div>
       ))}
@@ -3785,12 +3871,12 @@ function FactsCard({
           flexDirection: 'column',
           gap: compact ? 3 : 5,
           maxWidth: '100%',
-          padding: compact ? '7px 12px 8px 10px' : '10px 16px 11px 13px',
+          padding: compact ? '7px 12px 8px 13px' : '10px 16px 11px 16px',
+          position: 'relative',
           borderRadius: 10,
           borderTop: '1px solid rgba(255,255,255,0.12)',
           borderRight: '1px solid rgba(255,255,255,0.12)',
           borderBottom: '1px solid rgba(255,255,255,0.12)',
-          borderLeft: `3px solid ${accent}`,
           background: 'rgba(21,23,26,0.86)',
           backdropFilter: 'blur(8px)',
           boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
@@ -3804,6 +3890,8 @@ function FactsCard({
             : 'cc-facts-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both, cc-guide-ping 1.3s ease-out 0.3s 1 both',
         }}
       >
+        {/* accent edge as a background, not a border: forced dark mode dims coloured borders */}
+        <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderRadius: '10px 0 0 10px', background: accent }} />
         <span
           style={{
             fontSize: compact ? 9.5 : 10.5,
@@ -3925,7 +4013,7 @@ function TourNav({
                 border: 'none',
                 padding: 0,
                 cursor: 'pointer',
-                background: i === stepIndex ? '#e2883f' : 'rgba(255,255,255,0.25)',
+                background: i === stepIndex ? '#e2883f' : '#7d838b', // solid grey: reads on a light or dark ground, and forced dark leaves it alone
                 transition: 'background-color 0.15s ease',
               }}
             />
