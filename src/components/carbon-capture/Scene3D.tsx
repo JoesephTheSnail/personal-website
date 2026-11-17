@@ -406,6 +406,8 @@ const STACK_SHIELD_Y0 = TRUCK.cabRoofHeight - 4; // in — heat shield starts a 
 const STACK_SHIELD_Y1 = STACK_SHIELD_Y0 + 24; // in — shield top; the bend starts here
 const STACK_SHIELD_R = 4.75; // in — about twice the pipe's diameter, as on a real stack
 const STACK_ELBOW_Y = STACK_SHIELD_Y1; // the pipe bends just above the shield
+const TAILPIPE_Z = 34; // in — each tailpipe's offset from the truck's centreline (cab is 96in wide)
+const STACK_CROSS_Y = 118; // in — height of the crossover pipe: above the TEG sleeve (98-113), below the roof
 const STACK_CHROME = '#cfd4db';
 const STACK_DARK_CHROME = '#8d939b';
 
@@ -445,25 +447,30 @@ function ExhaustStackParts() {
   const chrome = { color: STACK_CHROME, metalness: 0.55, roughness: 0.28 } as const;
   const shieldH = STACK_SHIELD_Y1 - STACK_SHIELD_Y0;
   const lowerH = STACK_SHIELD_Y0 - STACK_FOOT_Y1;
-  return (
-    <group position={[IN(stackX), 0, IN(stackZ)]}>
+  const darkChrome = { color: STACK_DARK_CHROME, metalness: 0.5, roughness: 0.35 } as const;
+
+  // one of the two tailpipes: foot, chrome riser, perforated shield, bend, mouth
+  const tailpipe = (
+    <>
       {/* short darker pipe up out of the frame */}
       <mesh position={[0, IN((TRUCK.frameHeight + STACK_FOOT_Y1) / 2), 0]} castShadow>
         <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_FOOT_Y1 - TRUCK.frameHeight), 20]} />
-        <meshStandardMaterial color={STACK_DARK_CHROME} metalness={0.5} roughness={0.35} />
+        <meshStandardMaterial {...darkChrome} />
       </mesh>
       {/* perforated heat shield, with a collar at each end */}
       <mesh position={[0, IN(STACK_SHIELD_Y0 + shieldH / 2), 0]} castShadow>
-        <cylinderGeometry args={[IN(STACK_SHIELD_R), IN(STACK_SHIELD_R), IN(shieldH), 40]} />
+        {/* open-ended: the collars cover both ends, and a closed shield's end caps
+            sat at exactly the same height as the collars' faces (z-fighting) */}
+        <cylinderGeometry args={[IN(STACK_SHIELD_R), IN(STACK_SHIELD_R), IN(shieldH), 40, 1, true]} />
         <meshStandardMaterial map={holes} color="#ffffff" metalness={0.5} roughness={0.3} />
       </mesh>
       {[STACK_SHIELD_Y0 + 0.8, STACK_SHIELD_Y1 - 0.8].map((y) => (
         <mesh key={y} position={[0, IN(y), 0]}>
           <cylinderGeometry args={[IN(STACK_SHIELD_R + 0.25), IN(STACK_SHIELD_R + 0.25), IN(1.6), 40]} />
-          <meshStandardMaterial color={STACK_DARK_CHROME} metalness={0.55} roughness={0.3} />
+          <meshStandardMaterial {...darkChrome} />
         </mesh>
       ))}
-      {/* straight chrome pipe from the foot up to the shield (passes the TEG sleeve and the duct tap) */}
+      {/* straight chrome pipe from the foot up to the shield (the crossover joins it on the way) */}
       <mesh position={[0, IN(STACK_FOOT_Y1 + lowerH / 2), 0]} castShadow>
         <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(lowerH), 20]} />
         <meshStandardMaterial {...chrome} />
@@ -472,17 +479,42 @@ function ExhaustStackParts() {
       <mesh geometry={elbow} castShadow>
         <meshStandardMaterial {...chrome} />
       </mesh>
-      {/* angled mouth: a short collar tilted off the pipe's axis, dark inside */}
+      {/* angled mouth: a short open collar tilted off the pipe's axis, with a dark
+          disc set back inside it. (The first version capped the collar and laid the
+          disc 0.01in above that cap — the two surfaces z-fought and the tip looked
+          broken. Open collar + recessed disc share no surface.) */}
       <group position={[IN(4.2), IN(TRUCK.stackHeight), 0]} rotation={[0, 0, -1.13]}>
         <mesh>
-          <cylinderGeometry args={[IN(STACK_R + 0.1), IN(STACK_R + 0.1), IN(0.7), 24]} />
-          <meshStandardMaterial color={STACK_DARK_CHROME} metalness={0.55} roughness={0.3} />
+          <cylinderGeometry args={[IN(STACK_R + 0.1), IN(STACK_R + 0.1), IN(0.7), 24, 1, true]} />
+          <meshStandardMaterial {...darkChrome} side={THREE.DoubleSide} />
         </mesh>
-        <mesh position={[0, IN(0.36), 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[IN(STACK_R - 0.25), 24]} />
+        <mesh position={[0, IN(-0.25), 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[IN(STACK_R - 0.2), 24]} />
           <meshStandardMaterial color="#1b1d20" metalness={0.2} roughness={0.8} />
         </mesh>
       </group>
+    </>
+  );
+
+  return (
+    <group position={[IN(stackX), 0, 0]}>
+      {/* the original stack, now the collector in the middle: it carries the TEG
+          sleeve and the duct tap, and the crossover feeds it from both tailpipes */}
+      <mesh position={[0, IN((TRUCK.frameHeight + STACK_CROSS_Y) / 2), IN(stackZ)]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_CROSS_Y - TRUCK.frameHeight), 20]} />
+        <meshStandardMaterial {...chrome} />
+      </mesh>
+      {/* crossover pipe joining the two tailpipes, tee'd into the collector */}
+      <mesh position={[0, IN(STACK_CROSS_Y), 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R * 0.9), IN(STACK_R * 0.9), IN(TAILPIPE_Z * 2), 20]} />
+        <meshStandardMaterial {...darkChrome} />
+      </mesh>
+      {/* a tailpipe on each side of the truck */}
+      {[-1, 1].map((side) => (
+        <group key={side} position={[0, 0, IN(side * TAILPIPE_Z)]}>
+          {tailpipe}
+        </group>
+      ))}
     </group>
   );
 }
@@ -3659,7 +3691,7 @@ const PART_FACTS: Record<string, PartFacts> = {
   exhaustStack: {
     label: 'Exhaust stack',
     accent: '#8a8f96',
-    blurb: "The truck's normal diesel exhaust stack. Exhaust gets tapped off it for both the capture module and the TEG unit.",
+    blurb: "The truck's exhaust: a tailpipe on each side joined by a crossover into a middle pipe. Exhaust gets tapped off that middle pipe for both the capture module and the TEG unit.",
   },
   exhaustFeed: {
     label: 'Exhaust inlet',
