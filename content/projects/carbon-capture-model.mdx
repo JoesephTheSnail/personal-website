@@ -11,23 +11,38 @@ demoLabel: "Explore the 3D model"
 demoNote: "Works with touch or a mouse. On a phone, turn it sideways."
 ---
 
-In Grade 9 I drew a carbon capture unit: a machine that bolts onto a diesel truck and catches CO₂, the gas that traps heat in the atmosphere, before it leaves the tailpipe. I thought it was a great idea, but I never checked whether it would actually help. Click <a href="https://medium.com/@arnav0/eco-trucks-3c9d5dc10f63" target="_blank" rel="noopener noreferrer">here</a> to read the original Grade 9 version.
+In Grade 9 I drew a unit that bolts onto a diesel truck and catches CO₂ before it leaves the tailpipe. I never checked whether it would actually help. Click <a href="https://medium.com/@arnav0/eco-trucks-3c9d5dc10f63" target="_blank" rel="noopener noreferrer">here</a> to read the original Grade 9 version.
 
-So I went back and worked it out properly. The key is a liquid called amine. It's a chemical that grabs onto CO₂, a bit like a sponge soaking up water, and it only does that when it's cool. So some of the exhaust is piped into the unit and cooled to about 40°C. There it meets a spray of amine. The amine soaks up the CO₂ and the cleaner gas goes on its way.
+So I went back and worked it out properly.
 
-Now the amine is full of CO₂, and that CO₂ has to come back out. Heating the amine to about 90 to 100°C does that: the heat makes it let go, like squeezing the sponge dry. The CO₂ is piped off into tanks on the truck. The amine, empty again, is pumped back to soak up more, so the same liquid gets used over and over. The heat comes from the exhaust itself, so the truck doesn't need a separate burner. A small bin of spare amine tops things up as the liquid slowly wears out.
+## How it works
 
-The tricky part is energy. The system needs power to run, and that power isn't free: it costs CO₂ too. So how much CO₂ it catches isn't the real number. What matters is what's left after you take that away. That's why I added a unit that turns some of the leftover exhaust heat back into electricity.
+The key is a liquid called amine. It grabs CO₂ like a sponge soaks up water, but only when it's cool.
 
-**Why it matters.** Diesel trucks are some of the hardest vehicles to switch to electric, and they put out CO₂ the whole time they drive. Catching it at the tailpipe could cut emissions from trucks that will be on the road for a long time yet. But it only works if the system removes more CO₂ than it costs to run, which is the question I kept coming back to.
+1. **Cool it.** Some of the exhaust is piped in and cooled to about 40°C.
+2. **Soak it up.** A spray of amine soaks up the CO₂. The cleaner gas goes on its way.
+3. **Squeeze it out.** Heating the amine to 90 to 100°C makes it let go of the CO₂.
+4. **Store and reuse.** The CO₂ goes into tanks on the truck. The amine goes back for more.
 
-A drawing can't show how all of this fits together, so I built the truck in 3D (with a tool called React Three Fiber). It walks you through each step, from the exhaust going in to the CO₂ going into the tanks. Spin it, zoom in, and tap any part to see what it does.
+The heat comes from the exhaust itself, so there's no separate burner. A small bin of spare amine tops things up as the liquid wears out.
+
+## Current limitations
+
+Running the system takes power, and that power costs CO₂ too. So how much it catches isn't the real number. What's left after you take that away is.
+
+That's why I added a unit that turns leftover exhaust heat back into electricity.
+
+## Why it matters
+
+Diesel trucks are some of the hardest vehicles to switch to electric, and they put out CO₂ the whole time they drive.
+
+Catching it at the tailpipe could cut emissions from trucks that will be on the road for a long time yet. But only if the system removes more than it costs to run.
 
 ---
 
 **Outcome:** Turned a Grade 9 idea into a worked-out system for capturing CO₂ from truck exhaust, plus a 3D model that shows how each part works.
 
 **What I took from it:**
-- How much CO₂ a system captures sounds impressive. What's left after its own energy use is the number that counts, and it's a lot smaller.
-- Going back to an old idea means finding out what you got wrong. Most of my fixes were to assumptions, not to the drawing.
-- If you can't explain something, build it. Making the 3D model showed me parts of my layout that didn't fit together.
+- Captured isn't the same as saved. What's left after the system's own energy use is the number that counts, and it's a lot smaller.
+- Going back to an old idea means finding out what you got wrong. Most of my fixes were to assumptions, not the drawing.
+- If you can't explain something, build it. The 3D model showed me parts of my layout that didn't fit together.

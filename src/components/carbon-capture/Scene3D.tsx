@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
-import { Billboard, OrbitControls, RoundedBox, SoftShadows, Text } from '@react-three/drei';
+import { Billboard, OrbitControls, PerformanceMonitor, RoundedBox, SoftShadows, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   toUnits,
@@ -138,9 +138,6 @@ const moduleX1 = moduleX0 + MODULE.depth;
 const tankX0 = cabX1 - WALL_EMBED;
 const tankX1 = tankX0 + TANK.diameter; // shallower — sits closer to the wall
 
-const stackX = cabX1 - 10;
-const stackZ = moduleZCenter; // same side as the module, for the short tap-off
-
 // bulk bin sits directly beneath the capture module, flush against the same
 // back wall, so the module + bin read as one vertical stack instead of two
 // separate pieces joined by a hose. Flush with moduleX0 (not centered on the
@@ -164,12 +161,7 @@ const bedTopY = BED_DECK_CENTER_Y + BED_DECK_THICKNESS / 2;
 const bulkBinY0 = bedTopY; // rests on top of the bed deck (checked clear of wheels: nearest wheel is 19in further along X)
 const bulkBinY1 = bulkBinY0 + BULK_BIN.height;
 
-// TEG sleeve: clamps around the existing stack, roughly level with the module's
-// own vertical band so the lead run to the radiator unit stays short
 const moduleYCenter = (assemblyBottom + assemblyTop) / 2;
-const tegSleeveY0 = moduleYCenter - TEG_SLEEVE.length / 2;
-const tegSleeveY1 = moduleYCenter + TEG_SLEEVE.length / 2;
-const tegSleeveYCenter = moduleYCenter;
 
 // radiator/controller unit: same wall, same flush depth as the module, offset
 // in Z beyond the module's far edge — "Waste-heat recovery unit" figure
@@ -184,6 +176,25 @@ const tegUnitY1 = tegUnitY0 + TEG_UNIT.height;
 // module body bounds (pre-chimney) — shared by the shell and its internals
 const bodyY0 = assemblyBottom;
 const bodyY1 = assemblyTop - MODULE.chimneyHeight;
+
+// Exhaust stack: just behind the sleeper's back wall. (It used to sit 10in
+// INSIDE the cab, so the pipes, the TEG sleeve and the duct tap all ran
+// through the sleeper.) X is the module's own centre line, so the inlet duct
+// is one straight run along Z into the flange; 178.3in is 8.3in off the wall,
+// enough for the 4.75in heat shield. The middle (collector) pipe sits
+// outboard of the TEG unit, 7.5in clear of its far face.
+const stackX = moduleXCenter;
+const stackZ = tegUnitZ1 + 10;
+// TEG sleeve on the collector, level with the TEG unit (tops aligned), so the
+// lead from sleeve to unit is a short straight run
+const tegSleeveY1 = tegUnitY1;
+const tegSleeveY0 = tegSleeveY1 - TEG_SLEEVE.length;
+const tegSleeveYCenter = (tegSleeveY0 + tegSleeveY1) / 2;
+// exhaust inlet height (flange + duct): the 1.8in duct passes over the TEG
+// unit and the sleeve on its way in, so it sits 0.7in clear of their 98.5in tops
+const EXHAUST_FEED_Y = bodyY0 + 12.5;
+// CO₂ transfer port on the tank-side wall, where the fill line leaves the module
+const FILL_PORT_Y = bodyY0 + 17;
 
 // internal chamber bands, stacked bottom-up with no gaps: reservoir ->
 // heating/regen -> de-tox -> headspace, reaching the shell's inner top
@@ -202,23 +213,29 @@ const detoxY1 = detoxY0 + INTERNALS.detoxHeight;
 const demisterY1 = bodyY1 - DEMISTER.offsetBelowBodyTop;
 const demisterY0 = demisterY1 - DEMISTER.height;
 
-// PCM block: exhaust-inlet side of the heating band
-const pcmZ0 = intZ0 + PCM_BLOCK.offsetFromInletEdge;
-const pcmZ1 = pcmZ0 + PCM_BLOCK.width;
+// PCM block: exhaust-inlet side of the heating band. The inlet flange is on
+// the module's +Z wall (moduleZ1, see CaptureModule), so the offset is
+// measured in from intZ1, not intZ0 (which is the tank side).
+const pcmZ1 = intZ1 - PCM_BLOCK.offsetFromInletEdge;
+const pcmZ0 = pcmZ1 - PCM_BLOCK.width;
 const pcmY0 = heatingY0;
 const pcmY1 = pcmY0 + PCM_BLOCK.height;
 
 // rich amine pool: fills the rest of the heating band's width, at its bottom
-const poolZ0 = pcmZ1;
-const poolZ1 = intZ1;
+const poolZ0 = intZ0;
+const poolZ1 = pcmZ0;
 const poolY0 = heatingY0;
 const poolY1 = poolY0 + RICH_AMINE_POOL.height;
 
 // explode offsets (inches) for the guided-tour "inside the module" step —
 // shell lifts clear of the internals; internal bands spread apart from the
-// reservoir (the anchor) in the same bottom-up order they're stacked in
+// reservoir (the anchor) in the same bottom-up order they're stacked in.
+// The shell has to clear the highest internal: the demister ends up at
+// 142.5-145in (112.5-115 + 30), so the shell's floor (88.5 + lift) needs a
+// lift of ~66 to leave the same ~10in gap the other bands get. At 42 the
+// lifted shell (130.5-160.5) swallowed the demister whole.
 const EXPLODE = {
-  shellLift: 42,
+  shellLift: 66,
   heatingLift: 10,
   detoxLift: 20,
   demisterLift: 30,
@@ -319,6 +336,10 @@ function useFadeGroup(
   const lastOpacity = useRef<number | null>(null);
   const lastTint = useRef<number | null>(null);
   const lastTrailer = useRef<number | null>(null);
+  // each mesh's own declared castShadow, captured once. Kept here rather than
+  // on mesh.userData because R3F replaces userData wholesale whenever a
+  // parent re-renders with a fresh userData object.
+  const baseCastShadow = useRef(new WeakMap<THREE.Object3D, boolean>());
 
   useFrame(() => {
     const group = groupRef.current;
@@ -367,9 +388,17 @@ function useFadeGroup(
         // and scaling THAT down by the fade (rather than overwriting it
         // with the fade value) keeps them reading as glass instead of
         // flashing fully solid at opacity 1
-        if (m.userData.baseOpacity === undefined) m.userData.baseOpacity = m.opacity;
-        m.transparent = true;
+        if (m.userData.baseOpacity === undefined) {
+          m.userData.baseOpacity = m.opacity;
+          m.userData.baseTransparent = m.transparent;
+        }
         m.opacity = m.userData.baseOpacity * effectiveOpacity;
+        // Only blend while something is actually see-through. Forcing every
+        // material into the transparent pass at full opacity drew ~90 truck
+        // meshes back-to-front (no early depth rejection, maximum overdraw)
+        // under the soft-shadow shader, which costs real frame time on
+        // iPad/phone GPUs.
+        setBlend(m, m.userData.baseTransparent || m.opacity < 0.999);
         // Previously keyed only to the truck-level `opacity` (never the
         // tint) — on module-exterior the cab panels stay at opacity=1
         // (fully shown) while tint alone drops them to ~0.82, which kept
@@ -391,7 +420,11 @@ function useFadeGroup(
         m.depthWrite = effectiveOpacity > 0.9;
       });
       mesh.renderOrder = tinted && tint < 0.95 ? 50 : 0;
-      mesh.castShadow = effectiveOpacity > 0.5;
+      // a faded mesh stops casting, but one declared without castShadow
+      // (lights, trim, rims) never starts: every caster is another draw
+      // into the shadow map
+      if (!baseCastShadow.current.has(mesh)) baseCastShadow.current.set(mesh, mesh.castShadow);
+      mesh.castShadow = baseCastShadow.current.get(mesh)! && effectiveOpacity > 0.5;
       mesh.visible = !isTrailer || trailer > 0.004;
     });
   });
@@ -399,16 +432,39 @@ function useFadeGroup(
   return groupRef;
 }
 
+/** Puts a material in (or takes it out of) the blended, back-to-front pass.
+ *  Flipping `transparent` changes the compiled shader (three.js adds an
+ *  OPAQUE define to non-transparent materials), so the material has to be
+ *  recompiled whenever it actually flips. */
+function setBlend(m: THREE.Material, blend: boolean) {
+  if (m.transparent === blend) return;
+  m.transparent = blend;
+  m.needsUpdate = true;
+}
+
+/** Opacity for a shell that turns glass-like on its own step. depthWrite
+ *  drops once it's see-through, so it never hides what's inside it. */
+function setShellOpacity(m: THREE.Material, opacity: number) {
+  m.opacity = opacity;
+  setBlend(m, opacity < 0.999);
+  m.depthWrite = opacity > 0.9;
+}
+
 // ---- exhaust stack ----------------------------------------------------------
 const STACK_R = TRUCK.stackDiameter / 2;
-const STACK_FOOT_Y1 = 58; // in — top of the short dark pipe out of the frame
-const STACK_SHIELD_Y0 = TRUCK.cabRoofHeight - 4; // in — heat shield starts a hair under the roof, so it reads as sitting on it
+const STACK_FOOT_Y1 = 58; // in — top of the short dark pipe up from the crossover
+const STACK_SHIELD_Y0 = TRUCK.cabRoofHeight - 4; // in — heat shield starts a hair under the roofline
 const STACK_SHIELD_Y1 = STACK_SHIELD_Y0 + 24; // in — shield top; the bend starts here
 const STACK_SHIELD_R = 4.75; // in — about twice the pipe's diameter, as on a real stack
 const STACK_ELBOW_Y = STACK_SHIELD_Y1; // the pipe bends just above the shield
-const TAILPIPE_Z = 34; // in — each tailpipe's offset from the truck's centreline (cab is 96in wide)
-const STACK_CROSS_Y = 64; // in — height of the crossover: low, where exhaust comes up from the engine, tee'd into the middle pipe (just above the dark feet)
-const STACK_COLLECTOR_TOP = 118; // in — top of the middle pipe: above the TEG sleeve (98-113) and the duct tap (~100), below the roof
+// in — each tailpipe's offset from the centreline: at the sleeper's back
+// corners (cab is ±48), outboard of the bed deck (±43) and of all the
+// wall-mounted equipment (tanks -14 … TEG sleeve 38.5)
+const TAILPIPE_Z = 46;
+// in — the crossover runs low, under the frame rails (their underside is at
+// 29in), where exhaust comes up from the engine, and tees into the middle pipe
+const STACK_CROSS_Y = 25;
+const STACK_COLLECTOR_TOP = 118; // in — top of the middle pipe: above the duct tap (EXHAUST_FEED_Y, 101)
 const STACK_CHROME = '#cfd4db';
 const STACK_DARK_CHROME = '#8d939b';
 
@@ -456,9 +512,9 @@ function ExhaustStackParts() {
   // one of the two tailpipes: foot, chrome riser, perforated shield, bend, mouth
   const tailpipe = (
     <>
-      {/* short darker pipe up out of the frame */}
-      <mesh position={[0, IN((TRUCK.frameHeight + STACK_FOOT_Y1) / 2), 0]} castShadow>
-        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_FOOT_Y1 - TRUCK.frameHeight), 20]} />
+      {/* short darker pipe up from the crossover, past the edge of the bed */}
+      <mesh position={[0, IN((STACK_CROSS_Y + STACK_FOOT_Y1) / 2), 0]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_FOOT_Y1 - STACK_CROSS_Y), 20]} />
         <meshStandardMaterial {...darkChrome} />
       </mesh>
       {/* perforated heat shield, with a collar at each end */}
@@ -504,8 +560,8 @@ function ExhaustStackParts() {
     <group position={[IN(stackX), 0, 0]}>
       {/* the original stack, now the collector in the middle: it carries the TEG
           sleeve and the duct tap, and the crossover feeds it from both tailpipes */}
-      <mesh position={[0, IN((TRUCK.frameHeight + STACK_COLLECTOR_TOP) / 2), IN(stackZ)]} castShadow>
-        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_COLLECTOR_TOP - TRUCK.frameHeight), 20]} />
+      <mesh position={[0, IN((STACK_CROSS_Y + STACK_COLLECTOR_TOP) / 2), IN(stackZ)]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_COLLECTOR_TOP - STACK_CROSS_Y), 20]} />
         <meshStandardMaterial {...chrome} />
       </mesh>
       {/* crossover pipe joining the two tailpipes, low down, tee'd into the middle pipe that rises to the TEG sleeve and the duct tap */}
@@ -523,6 +579,40 @@ function ExhaustStackParts() {
   );
 }
 
+/** The exhaust system as its own piece: both tailpipes, the crossover and
+ *  middle pipe, plus the TEG sleeve clamped on that pipe and the lead to the
+ *  TEG unit. It used to live inside the truck body's fade group, so the
+ *  'teg' step (truck hidden) hid the very pipe the sleeve clamps onto and
+ *  left the sleeve floating. It fades on its own `opacityRef` instead: shown
+ *  wherever the exhaust is part of the story (TEG included), hidden on the
+ *  close-ups of unrelated equipment. */
+function ExhaustStack({
+  opacityRef,
+  tegOpenRef,
+  onSelectPart,
+}: {
+  opacityRef: MutableRefObject<number>;
+  tegOpenRef: MutableRefObject<number>;
+  onSelectPart: SelectPartFn;
+}) {
+  const groupRef = useFadeGroup(opacityRef);
+  const pipesRef = useRef<THREE.Group>(null);
+  const hoverAmt = useRef(0);
+  useFrame(() => {
+    if (pipesRef.current) applyHoverGlow(pipesRef.current, 'exhaustStack', hoverAmt);
+  });
+
+  return (
+    <group ref={groupRef}>
+      <group ref={pipesRef} {...clickable('exhaustStack', onSelectPart)}>
+        <ExhaustStackParts />
+      </group>
+      <TEGSleeve openRef={tegOpenRef} onSelectPart={onSelectPart} />
+      <TEGLead />
+    </group>
+  );
+}
+
 /** The truck body — cab, trailer, wheels, lights, doors. The ground/bed deck
  *  and the CO2 capture equipment live outside this group (see Rig), so
  *  they're untouched by the fade — only the vehicle itself steps back (or
@@ -530,11 +620,13 @@ function ExhaustStackParts() {
 function TruckContext({
   opacityRef,
   cabTintRef,
-  onSelectPart,
+  onBackgroundClick,
 }: {
   opacityRef: MutableRefObject<number>;
   cabTintRef: MutableRefObject<number>;
-  onSelectPart: SelectPartFn;
+  // the truck isn't a selectable part — clicking it acts like clicking
+  // empty space (clears the selection)
+  onBackgroundClick: () => void;
 }) {
   const half = TRUCK.axleTrack / 2;
   const cabBottom = TRUCK.frameHeight - 6;
@@ -547,15 +639,22 @@ function TruckContext({
   // the cab — overview and the closing full-system shot keep it solid, per
   // useFadeGroup's own tag mechanism (see its docstring for why depthWrite
   // stays tied to opacityRef rather than this tint)
-  const cabTintTag = { fadeTint: true };
-  const exhaustStackRef = useRef<THREE.Group>(null);
-  const exhaustStackHoverAmt = useRef(0);
-  useFrame(() => {
-    if (exhaustStackRef.current) applyHoverGlow(exhaustStackRef.current, 'exhaustStack', exhaustStackHoverAmt);
-  });
+  const cabTintTag = CAB_TINT_TAG;
 
+  // The truck body is an occluder for picking. R3F only raycasts objects that
+  // have handlers, so without these a solid cab or trailer never blocked the
+  // ray and parts behind it lit up and selected through it. These stop the
+  // event at the truck; a still click (not the end of an orbit drag) clears
+  // the selection like a click on empty space.
   return (
-    <group ref={groupRef}>
+    <group
+      ref={groupRef}
+      onPointerOver={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.delta <= CLICK_DRAG_TOLERANCE_PX) onBackgroundClick();
+      }}
+    >
       {/* hood — shorter and lower than the cabin, so the silhouette isn't
           one giant prism; rounded edges instead of hard box corners */}
       <RoundedBox
@@ -811,16 +910,14 @@ function TruckContext({
       <Wheel x={REAR_AXLE_X} z={half} />
       <Wheel x={REAR_AXLE_X} z={-half} />
 
-      {/* exhaust stack: short pipe up out of the frame, a perforated chrome
-          heat shield around the lower part, then a tall pipe that rises
-          through the roofline and bends back at the top with an angled
-          mouth (modelled on a real cab-mounted stack) */}
-      <group ref={exhaustStackRef} {...clickable('exhaustStack', onSelectPart)}>
-        <ExhaustStackParts />
-      </group>
+      {/* the exhaust stack is its own component now (ExhaustStack), behind
+          the cab rather than inside it, with its own fade */}
     </group>
   );
 }
+
+// shared, so a TruckContext re-render doesn't hand R3F a new userData object
+const CAB_TINT_TAG = { fadeTint: true };
 
 /** Small, soft, slow-moving markers tracing an actual process path —
  *  reused across every system page (module interior, tanks, bulk bin, TEG)
@@ -993,7 +1090,7 @@ function Label({
 
     let visTarget = 1;
     if (facingVec) {
-      const toCamera = camera.position.clone().sub(group.position).normalize();
+      const toCamera = labelScratch.copy(camera.position).sub(group.position).normalize();
       const dot = toCamera.dot(facingVec);
       visTarget = THREE.MathUtils.smoothstep(dot, -0.25, 0.15);
     }
@@ -1048,7 +1145,28 @@ function Label({
   );
 }
 
+// reused every frame by each Label, instead of cloning a vector per label per frame
+const labelScratch = new THREE.Vector3();
+
 type SelectPartFn = (id: string) => void;
+
+/** True only if the object and every ancestor are visible, i.e. it's drawn. */
+function isWorldVisible(obj: THREE.Object3D) {
+  for (let o: THREE.Object3D | null = obj; o; o = o.parent) if (!o.visible) return false;
+  return true;
+}
+
+// A click whose pointer travelled further than this between press and release
+// was an orbit drag, not a click. R3F only applies its own 2px check to
+// misses; a drag that starts and ends on the same part still fires onClick.
+const CLICK_DRAG_TOLERANCE_PX = 4;
+
+// The canvas element, so hover can set the cursor on it directly. (Setting it
+// on <body> never showed: the canvas computes its own cursor.)
+const canvasCursor: { el: HTMLElement | null } = { el: null };
+function setPartCursor(on: boolean) {
+  if (canvasCursor.el) canvasCursor.el.style.cursor = on ? 'pointer' : '';
+}
 
 // Which part (if any) the pointer is currently over — a single module-scope
 // slot rather than something threaded through props, since there's only
@@ -1076,16 +1194,17 @@ function clickable(id: string, onSelect: SelectPartFn) {
   return {
     onClick: (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation();
+      if (e.delta > CLICK_DRAG_TOLERANCE_PX) return; // end of an orbit drag
       onSelect(id);
     },
     onPointerOver: (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation();
-      document.body.style.cursor = 'pointer';
+      setPartCursor(true);
       hoverState.id = id;
       if (e.nativeEvent.pointerType !== 'touch') sfx.hover(id);
     },
-    onPointerOut: (e: ThreeEvent<PointerEvent>) => {
-      document.body.style.cursor = 'auto';
+    onPointerOut: () => {
+      setPartCursor(false);
       if (hoverState.id === id) hoverState.id = null;
     },
   };
@@ -1280,7 +1399,7 @@ function CaptureModule({
           not a narrow instrument fitting */}
       <mesh
         ref={flangeRef}
-        position={[IN((moduleX0 + moduleX1) / 2), IN(bodyY0 + 12), IN(moduleZ1 + 1)]}
+        position={[IN((moduleX0 + moduleX1) / 2), IN(EXHAUST_FEED_Y), IN(moduleZ1 + 1)]}
         rotation={[Math.PI / 2, 0, 0]}
         {...clickable('exhaustFeed', onSelectPart)}
       >
@@ -1293,7 +1412,7 @@ function CaptureModule({
           own curve actually starts */}
       <mesh
         ref={transferPortRef}
-        position={[IN((moduleX0 + moduleX1) / 2), IN(bodyY0 + 17), IN(moduleZ0 - 1)]}
+        position={[IN((moduleX0 + moduleX1) / 2), IN(FILL_PORT_Y), IN(moduleZ0 - 1)]}
         rotation={[Math.PI / 2, 0, 0]}
         {...clickable('fillLine', onSelectPart)}
       >
@@ -1360,7 +1479,9 @@ function MountingRail({
       {/* wall brackets — tie the rails to the cab's structural mounts */}
       {[tankZCenter, moduleZCenter].map((z) => (
         <mesh key={z} position={[IN(railXCenter), IN((railTop + railBottom) / 2), IN(z)]}>
-          <boxGeometry args={[IN(railXThickness + 0.6), IN(railBottom - railTop), IN(2.5)]} />
+          {/* railTop - railBottom (40in): the reverse order gave BoxGeometry a
+              negative height, which builds the box inside-out */}
+          <boxGeometry args={[IN(railXThickness + 0.6), IN(railTop - railBottom), IN(2.5)]} />
           <meshStandardMaterial color={PALETTE.rail.bracket} metalness={0.25} roughness={0.65} />
         </mesh>
       ))}
@@ -1596,9 +1717,7 @@ function Tank({
     const hoverGlow = shellHoverAmt.current < 0.003 ? 0 : shellHoverAmt.current;
     [bodyMatRef.current, domeMatRef.current].forEach((m) => {
       if (!m) return;
-      m.transparent = true;
-      m.opacity = shellOpacity;
-      m.depthWrite = shellOpacity > 0.9;
+      setShellOpacity(m, shellOpacity);
       if (hoverGlow > 0) {
         m.emissive.setHex(0xffffff);
         m.emissiveIntensity = hoverGlow * HOVER_GLOW_BOOST;
@@ -1697,21 +1816,57 @@ function StackedTanks({
 const TANK_TOP_Y = assemblyBottom + TANK.gap + TANK_UNIT_HEIGHT * 2;
 const tankXCenterTop = (tankX0 + tankX1) / 2;
 
+/** A pipe run through `pts` (inches): straight legs joined by bends of radius
+ *  `bend`, in scene units. Real pipe and duct runs are straight with tight
+ *  elbows; a Catmull-Rom through a few points instead bulges wherever it
+ *  likes, which is how the old runs ended up passing through the module.
+ *  The flow trails sample the same curve, so a trail can't drift off its pipe. */
+function pipeRun(pts: [number, number, number][], bend = 1): THREE.CurvePath<THREE.Vector3> {
+  const v = pts.map(([x, y, z]) => new THREE.Vector3(IN(x), IN(y), IN(z)));
+  const path = new THREE.CurvePath<THREE.Vector3>();
+  let from = v[0].clone();
+  for (let i = 1; i < v.length - 1; i++) {
+    const corner = v[i];
+    const cut = Math.min(IN(bend), corner.distanceTo(v[i - 1]) / 2.01, corner.distanceTo(v[i + 1]) / 2.01);
+    const a = corner.clone().addScaledVector(corner.clone().sub(v[i - 1]).normalize(), -cut);
+    const b = corner.clone().addScaledVector(v[i + 1].clone().sub(corner).normalize(), cut);
+    path.add(new THREE.LineCurve3(from, a));
+    path.add(new THREE.QuadraticBezierCurve3(a, corner.clone(), b));
+    from = b;
+  }
+  path.add(new THREE.LineCurve3(from, v[v.length - 1].clone()));
+  return path;
+}
+
+/** Fills a FlowTrail's waypoint array with evenly spaced points along `run`
+ *  (arc-length spacing, so the beads keep a steady speed round the bends). */
+function trailAlong(run: THREE.Curve<THREE.Vector3>, count: number) {
+  const pts = run.getSpacedPoints(count - 1);
+  return (out: THREE.Vector3[]) => out.forEach((p, i) => p.copy(pts[i]));
+}
+
+// CO₂ fill line: out of the transfer-port fitting on the module's tank-side
+// wall (FILL_PORT_Y, moduleZ0 - 1), straight up the 3.4in gap between that
+// wall and the upper tank (clear of both: tank surface is at z -5.43 there),
+// over the tank top and down into its cap. It used to start 11in above the
+// fitting, floating off the wall with an open end.
+const FILL_LINE_RUN = pipeRun(
+  [
+    [moduleXCenter, FILL_PORT_Y, moduleZ0 - 1],
+    [moduleXCenter, TANK_TOP_Y + 2.5, moduleZ0 - 1],
+    [tankXCenterTop, TANK_TOP_Y + 2.5, tankZCenter],
+    [tankXCenterTop, TANK_TOP_Y + 0.7, tankZCenter],
+  ],
+  1.2,
+);
+const FILL_TRAIL_POINTS = 24;
+
 /** The one pipe that's actually filling the tanks — CO2 leaves the module
  *  (its near, tank-facing wall) and enters the top of the upper tank. Static
  *  geometry, like the other inter-component tubes (TransferAuger, TEGLead);
  *  the flow trail (see Rig) is what shows it actively carrying CO2. */
 function TankFillLine({ onSelectPart }: { onSelectPart: SelectPartFn }) {
-  const points = useMemo(
-    () => [
-      new THREE.Vector3(IN(moduleXCenter), IN(bodyY1 - 2), IN(moduleZ0 - 0.5)),
-      new THREE.Vector3(IN((moduleXCenter + tankXCenterTop) / 2), IN((bodyY1 + TANK_TOP_Y) / 2 + 3), IN((moduleZ0 + tankZ1) / 2)),
-      new THREE.Vector3(IN(tankXCenterTop), IN(TANK_TOP_Y + 1), IN(tankZCenter)),
-    ],
-    []
-  );
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points]);
-  const geometry = useMemo(() => new THREE.TubeGeometry(curve, 28, IN(0.4), 10, false), [curve]);
+  const geometry = useMemo(() => new THREE.TubeGeometry(FILL_LINE_RUN, 96, IN(0.4), 10, false), []);
   const meshRef = useRef<THREE.Mesh>(null);
   const hoverAmt = useRef(0);
   useFrame(() => {
@@ -1762,9 +1917,7 @@ function BulkBin({
     const m = shellMatRef.current;
     const open = openRef.current;
     if (m) {
-      m.transparent = true;
-      m.opacity = 1 - open * 0.82; // 1 → 0.18
-      m.depthWrite = m.opacity > 0.9;
+      setShellOpacity(m, 1 - open * 0.82); // 1 → 0.18
     }
     // shell/nub/feet have no other per-frame writer, so this group gets the
     // generic hover-glow pass; the auger shaft+flights are a second,
@@ -1946,9 +2099,7 @@ function TEGUnit({
     const m = shellMatRef.current;
     const open = openRef.current;
     if (m) {
-      m.transparent = true;
-      m.opacity = 1 - open * 0.82; // 1 → 0.18
-      m.depthWrite = m.opacity > 0.9;
+      setShellOpacity(m, 1 - open * 0.82); // 1 → 0.18
     }
     // the housing's OWN hover feedback — only ever touches emissive, never
     // fought by the opacity write above
@@ -2017,16 +2168,17 @@ function TEGUnit({
         castShadow
         onClick={(e) => {
           if (!hasTegChildBehind(e)) e.stopPropagation();
+          if (e.delta > CLICK_DRAG_TOLERANCE_PX) return; // end of an orbit drag
           onSelectPart('tegUnit');
         }}
         onPointerOver={(e) => {
           if (!hasTegChildBehind(e)) e.stopPropagation();
-          document.body.style.cursor = 'pointer';
+          setPartCursor(true);
           hoverState.id = 'tegUnit';
           if (e.nativeEvent.pointerType !== 'touch') sfx.hover('tegUnit');
         }}
         onPointerOut={() => {
-          document.body.style.cursor = 'auto';
+          setPartCursor(false);
           if (hoverState.id === 'tegUnit') hoverState.id = null;
         }}
       >
@@ -2101,21 +2253,17 @@ function TEGUnit({
   );
 }
 
-function TEGLead() {
-  const start = new THREE.Vector3(
-    IN(stackX + TEG_SLEEVE.outerDiameter / 2),
-    IN(tegSleeveYCenter),
-    IN(stackZ)
-  );
-  const mid = new THREE.Vector3(
-    IN((stackX + tegUnitX1) / 2),
-    IN((tegSleeveYCenter + tegUnitY1) / 2),
-    IN((stackZ + tegUnitZCenter) / 2)
-  );
-  const end = new THREE.Vector3(IN((tegUnitX0 + tegUnitX1) / 2), IN(tegUnitY1), IN(tegUnitZCenter));
+// TEG lead: straight across the 5.5in gap from the sleeve's near face to the
+// TEG unit's far (+Z) face, at the unit's mid-height. Both ends sit 0.3in
+// inside the parts they join, so neither shows an open tube end. (The old
+// curve's midpoint was inside the module box, so it tunnelled through it.)
+const TEG_LEAD_RUN = pipeRun([
+  [stackX, (tegUnitY0 + tegUnitY1) / 2, stackZ - TEG_SLEEVE.outerDiameter / 2 + 0.3],
+  [stackX, (tegUnitY0 + tegUnitY1) / 2, tegUnitZ1 - 0.3],
+]);
 
-  const curve = useMemo(() => new THREE.CatmullRomCurve3([start, mid, end]), []);
-  const geometry = useMemo(() => new THREE.TubeGeometry(curve, 24, IN(0.35), 10, false), [curve]);
+function TEGLead() {
+  const geometry = useMemo(() => new THREE.TubeGeometry(TEG_LEAD_RUN, 8, IN(0.35), 10, false), []);
 
   return (
     <mesh geometry={geometry}>
@@ -2132,7 +2280,15 @@ function TEGLead() {
 // module explodes (the shell — and the coupling riding along with it — is
 // flying out of frame at that point anyway) rather than trying to keep a
 // static tube glued to a moving target.
-const EXHAUST_FEED_Y = bodyY0 + 12; // matches the coupling nub's own height
+//
+// One straight run along Z: from inside the collector pipe (stackX is the
+// module's own centre line) to the flange centre on the module's +Z wall,
+// arriving along the flange's axis and passing 0.7in over the TEG unit. The
+// old curve cut through ~6.5in of the module box before reaching the flange.
+const EXHAUST_FEED_RUN = pipeRun([
+  [stackX, EXHAUST_FEED_Y, stackZ],
+  [moduleXCenter, EXHAUST_FEED_Y, moduleZ1 + 1],
+]);
 function ExhaustFeed({
   visibleRef,
   onSelectPart,
@@ -2149,21 +2305,12 @@ function ExhaustFeed({
     }
   });
 
-  const points = useMemo(
-    () => [
-      new THREE.Vector3(IN(stackX), IN(EXHAUST_FEED_Y), IN(stackZ)),
-      new THREE.Vector3(IN((stackX + moduleXCenter) / 2), IN(EXHAUST_FEED_Y), IN((stackZ + (moduleZ1 + 1)) / 2)),
-      new THREE.Vector3(IN(moduleXCenter), IN(EXHAUST_FEED_Y), IN(moduleZ1 + 1)),
-    ],
-    []
-  );
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points]);
   // noticeably thicker than the other inter-component tubes (TankFillLine,
   // TransferAuger, TEGLead) on purpose: those carry a thin liquid/solid
   // stream or a control line, while this one carries the truck's ENTIRE
   // exhaust flow — a real duct that size would read closer to the stack's
   // own diameter (5in) than to a 1in instrument line
-  const geometry = useMemo(() => new THREE.TubeGeometry(curve, 24, IN(1.8), 14, false), [curve]);
+  const geometry = useMemo(() => new THREE.TubeGeometry(EXHAUST_FEED_RUN, 8, IN(1.8), 14, false), []);
 
   return (
     <group ref={groupRef}>
@@ -2247,11 +2394,23 @@ type TourStep = {
   tegOpen: number;
   // 1 = trailer shown (default), 0 = gone; see `trailerFade`
   trailerOpacity?: number;
+  // the exhaust stack + TEG sleeve/lead (see ExhaustStack): 1 wherever the
+  // exhaust is part of the story, 0 on the close-ups of unrelated equipment
+  stackOpacity: number;
 };
 
 const TRUCK_OPACITY_FULL = 1;
 const TRUCK_OPACITY_FOCUSED = 0.12;
 const TRUCK_OPACITY_HIDDEN = 0;
+const STACK_OPACITY_SHOWN = 1;
+const STACK_OPACITY_HIDDEN = 0;
+
+// module-interior framing: the exploded span runs from the reservoir floor to
+// the lifted chimney top; the target sits a little below its midpoint
+const MI_SPAN_Y0 = reservoirY0;
+const MI_SPAN_Y1 = assemblyTop + EXPLODE.shellLift;
+const MI_FRAME_SCALE = (MI_SPAN_Y1 - MI_SPAN_Y0) / 75.5; // 75.5in = the span the base framing was tuned on
+const MI_TARGET_Y = (MI_SPAN_Y0 + MI_SPAN_Y1) / 2 - 8.75 * MI_FRAME_SCALE;
 const CAB_TINT_SOLID = 1;
 const CAB_TINT_SEE_THROUGH = 0.82;
 const RAIL_OPACITY_FULL = 1;
@@ -2282,6 +2441,7 @@ const TOUR_STEPS: TourStep[] = [
     cameraTarget: OVERVIEW_TARGET,
     explode: 0,
     truckOpacity: TRUCK_OPACITY_FULL,
+    stackOpacity: STACK_OPACITY_SHOWN,
     cabTint: CAB_TINT_SOLID,
     railOpacity: RAIL_OPACITY_FULL,
     tankOpen: 0,
@@ -2304,6 +2464,7 @@ const TOUR_STEPS: TourStep[] = [
     cameraTarget: sceneVec(moduleXCenter, moduleYCenter, moduleZCenter),
     explode: 0,
     truckOpacity: TRUCK_OPACITY_FULL,
+    stackOpacity: STACK_OPACITY_SHOWN,
     // the one step where the cab goes see-through — it's what houses the
     // exhaust stack/duct this whole demo is about, so seeing how it connects
     // is the point of this particular shot
@@ -2327,14 +2488,23 @@ const TOUR_STEPS: TourStep[] = [
     // like looking across at a hologram rather than down at a diagram;
     // paired with slow auto-rotate once arrived (see Rig) for the
     // "Stark/Jarvis" live-hologram feel.
+    // The shell lift went from 42 to 66in (so the demister isn't swallowed by
+    // the lifted shell), so the exploded span is now reservoir 89 -> chimney
+    // 188.5in. The framing below is the one tuned for the old 89-164.5 span,
+    // scaled by the new/old span ratio so the stack fills the frame the same way.
     id: 'module-interior',
     label: 'Inside the module',
-    cameraPos: sceneVec(moduleXCenter + 150, moduleYCenter + 160, moduleZCenter + 195),
-    cameraTarget: sceneVec(moduleXCenter, 118, moduleZCenter),
+    cameraPos: sceneVec(
+      moduleXCenter + 150 * MI_FRAME_SCALE,
+      MI_TARGET_Y + 147.5 * MI_FRAME_SCALE,
+      moduleZCenter + 195 * MI_FRAME_SCALE,
+    ),
+    cameraTarget: sceneVec(moduleXCenter, MI_TARGET_Y, moduleZCenter),
     explode: 1,
     // the truck is hidden entirely here — only the mounting rail (dimmed,
     // not hidden) stays, as the one thread connecting the system to it
     truckOpacity: TRUCK_OPACITY_HIDDEN,
+    stackOpacity: STACK_OPACITY_HIDDEN,
     cabTint: CAB_TINT_SOLID,
     railOpacity: RAIL_OPACITY_DIMMED,
     tankOpen: 0,
@@ -2356,6 +2526,7 @@ const TOUR_STEPS: TourStep[] = [
     cameraTarget: sceneVec(tankXCenter, 105.5, tankZCenter),
     explode: 0,
     truckOpacity: TRUCK_OPACITY_HIDDEN,
+    stackOpacity: STACK_OPACITY_HIDDEN,
     cabTint: CAB_TINT_SOLID,
     railOpacity: RAIL_OPACITY_DIMMED,
     tankOpen: 1,
@@ -2379,6 +2550,7 @@ const TOUR_STEPS: TourStep[] = [
     cameraTarget: sceneVec(bulkBinXCenter, (bulkBinY0 + assemblyTop) / 2, bulkBinZCenter),
     explode: 0,
     truckOpacity: TRUCK_OPACITY_HIDDEN,
+    stackOpacity: STACK_OPACITY_HIDDEN,
     cabTint: CAB_TINT_SOLID,
     railOpacity: RAIL_OPACITY_FULL,
     tankOpen: 0,
@@ -2388,17 +2560,18 @@ const TOUR_STEPS: TourStep[] = [
   {
     // same close-hero treatment; the TEG clamps onto the exhaust stack, not
     // the mounting rail, so the rail stays full opacity here too. Targets
-    // the midpoint between the sleeve and the unit (close enough together,
-    // ~24in, that one tight shot covers both) and approaches from -X — the
-    // sleeve sits at stackX (160), well before the module's own X range
-    // (169.8+), so a negative X offset puts the camera on the stack's own
-    // side, with the module behind the subject instead of blocking it
+    // the midpoint between the sleeve and the unit (14in apart along Z, so one
+    // tight shot covers both). Approaches from the rear (+X): from the +Z
+    // side the right-hand tailpipe (z 46) stood between the camera and the
+    // subject, and from -Z the module would. From here the module and that
+    // tailpipe sit off to either side, at the subject's own depth.
     id: 'teg',
     label: 'Waste-heat recovery',
-    cameraPos: sceneVec(tegMidX - 35, tegMidY + 40, tegMidZ + 40),
+    cameraPos: sceneVec(tegMidX + 55, tegMidY + 30, tegMidZ + 18),
     cameraTarget: sceneVec(tegMidX, tegMidY, tegMidZ),
     explode: 0,
     truckOpacity: TRUCK_OPACITY_HIDDEN,
+    stackOpacity: STACK_OPACITY_SHOWN,
     cabTint: CAB_TINT_SOLID,
     railOpacity: RAIL_OPACITY_FULL,
     tankOpen: 0,
@@ -2413,6 +2586,7 @@ const TOUR_STEPS: TourStep[] = [
     explode: 0,
     trailerOpacity: 0, // no trailer here: the whole rig on its own, and no repeat of the overview
     truckOpacity: TRUCK_OPACITY_FULL,
+    stackOpacity: STACK_OPACITY_SHOWN,
     cabTint: CAB_TINT_SOLID,
     railOpacity: RAIL_OPACITY_FULL,
     tankOpen: 0,
@@ -2496,6 +2670,7 @@ function TourController({
   tankOpenRef,
   binOpenRef,
   tegOpenRef,
+  stackOpacityRef,
   transitioningRef,
   onArrive,
 }: {
@@ -2507,6 +2682,7 @@ function TourController({
   tankOpenRef: MutableRefObject<number>;
   binOpenRef: MutableRefObject<number>;
   tegOpenRef: MutableRefObject<number>;
+  stackOpacityRef: MutableRefObject<number>;
   transitioningRef: MutableRefObject<boolean>;
   // called once the camera actually reaches `step` — lets the 2D chrome
   // (step label, Guide text) wait for the real arrival instead of swapping
@@ -2514,7 +2690,7 @@ function TourController({
   // to ~1.6s from catching up. See Scene3D's `displayedStepId`.
   onArrive: (stepId: string) => void;
 }) {
-  const { camera, controls } = useThree();
+  const { camera, controls, gl } = useThree();
   const targetPos = useMemo(() => new THREE.Vector3(...step.cameraPos), [step]);
   const targetLook = useMemo(() => new THREE.Vector3(...step.cameraTarget), [step]);
 
@@ -2529,6 +2705,11 @@ function TourController({
   const startTime = useRef<number | null>(null);
   const startPos = useRef(new THREE.Vector3());
   const startLook = useRef(new THREE.Vector3());
+  // where the camera is actually looking mid-flight. controls.target only
+  // catches up on arrival, so a flight interrupted by another Next/dot click
+  // has to restart from HERE, not from the last step's target (that was a
+  // one-frame snap of several degrees).
+  const currentLook = useRef(new THREE.Vector3());
   const duration = useRef(MIN_TRANSITION_DURATION);
 
   // every other animated scalar (explode amount, truck/rail opacity, each
@@ -2544,12 +2725,20 @@ function TourController({
       { ref: binOpenRef, start: { current: 0 } as MutableRefObject<number>, get: (s) => s.binOpen },
       { ref: tegOpenRef, start: { current: 0 } as MutableRefObject<number>, get: (s) => s.tegOpen },
       { ref: trailerFade, start: { current: 1 } as MutableRefObject<number>, get: (s) => s.trailerOpacity ?? 1 },
+      { ref: stackOpacityRef, start: { current: 1 } as MutableRefObject<number>, get: (s) => s.stackOpacity },
     ],
     // trailerFade is module-scope, listed so a hot reload that re-creates it re-binds this table
-    [explodeRef, truckOpacityRef, cabTintRef, railOpacityRef, tankOpenRef, binOpenRef, tegOpenRef, trailerFade]
+    [explodeRef, truckOpacityRef, cabTintRef, railOpacityRef, tankOpenRef, binOpenRef, tegOpenRef, trailerFade, stackOpacityRef]
   );
 
-  useEffect(() => {
+  // A layout effect, not a passive one: the 3D scene renders through R3F's
+  // own React root, whose passive effects can run a frame AFTER the commit.
+  // In that gap HologramAutoRotate saw the new step with the flight not yet
+  // flagged, and swung the camera round the new target on the previous
+  // step's stale orbit (a one-frame jump of ~430in, ~99°, from which the
+  // flight then started). Layout effects run inside the commit, before any
+  // frame can render.
+  useLayoutEffect(() => {
     if (activeStepId.current !== step.id) {
       activeStepId.current = step.id;
       transitioningRef.current = true;
@@ -2559,6 +2748,11 @@ function TourController({
 
   useFrame(() => {
     if (!transitioningRef.current) return; // idling — OrbitControls owns the camera entirely
+
+    // Shadows are only re-rendered while something can move: the shadow map
+    // is frozen between steps (see Rig), and flights are when parts explode,
+    // fade and stop or start casting.
+    gl.shadowMap.needsUpdate = true;
 
     const c = controls as {
       enabled: boolean;
@@ -2570,7 +2764,9 @@ function TourController({
 
     if (startTime.current === null) {
       startPos.current.copy(camera.position);
-      startLook.current.copy(c?.target ?? targetLook);
+      // controls are only disabled mid-flight (see below), so a disabled
+      // controls object means this flight is interrupting another one
+      startLook.current.copy(c && !c.enabled ? currentLook.current : (c?.target ?? targetLook));
       scalars.forEach((s) => {
         s.start.current = s.ref.current;
       });
@@ -2594,6 +2790,7 @@ function TourController({
       // view back toward wherever it last thought it was aimed
       camera.position.copy(targetPos);
       camera.lookAt(targetLook);
+      currentLook.current.copy(targetLook);
       if (c) {
         c.target.copy(targetLook);
         // Used to clamp min/maxAzimuthAngle on the hologram steps to keep
@@ -2623,7 +2820,8 @@ function TourController({
     // directly instead of going through controls.target
     if (c) c.enabled = false;
     camera.position.lerpVectors(startPos.current, targetPos, eased);
-    camera.lookAt(startLook.current.clone().lerp(targetLook, eased));
+    currentLook.current.lerpVectors(startLook.current, targetLook, eased);
+    camera.lookAt(currentLook.current);
     scalars.forEach((s) => {
       s.ref.current = s.start.current + (s.get(step) - s.start.current) * eased;
     });
@@ -2716,7 +2914,9 @@ function HologramAutoRotate({
   const rotateOffset = useRef(0);
   const rotateDir = useRef(1);
 
-  useEffect(() => {
+  // layout effect for the same reason as TourController's step effect: the
+  // stale "home" from the previous step must be dropped before the next frame
+  useLayoutEffect(() => {
     if (!active) return;
     idleSince.current = -1e9; // fresh arrival at this step — spin starts immediately
     interacting.current = false;
@@ -2792,13 +2992,9 @@ function HologramAutoRotate({
 // module-scope functions; the module's own trail needs the live explode
 // amount and is defined inline in Rig instead, where explodeRef is in scope
 
-function tankFlowWaypoints(pts: THREE.Vector3[]) {
-  // mirrors TankFillLine's own three points exactly — this is the pipe
-  // actually filling the tank, so the trail has to run along it precisely
-  pts[0].set(IN(moduleXCenter), IN(bodyY1 - 2), IN(moduleZ0 - 0.5));
-  pts[1].set(IN((moduleXCenter + tankXCenterTop) / 2), IN((bodyY1 + TANK_TOP_Y) / 2 + 3), IN((moduleZ0 + tankZ1) / 2));
-  pts[2].set(IN(tankXCenterTop), IN(TANK_TOP_Y + 1), IN(tankZCenter));
-}
+// sampled from the same runs the tubes are built from, so each trail stays
+// exactly inside its pipe
+const tankFlowWaypoints = trailAlong(FILL_LINE_RUN, FILL_TRAIL_POINTS);
 
 function binFlowWaypoints(pts: THREE.Vector3[]) {
   // bottom-to-top, matching the physical direction material actually
@@ -2811,12 +3007,9 @@ function binFlowWaypoints(pts: THREE.Vector3[]) {
   pts[3].set(IN(moduleXCenter), IN(assemblyBottom), IN(moduleZCenter));
 }
 
-function tegFlowWaypoints(pts: THREE.Vector3[]) {
-  // hot exhaust stack → TEG unit, the same path TEGLead's tube follows
-  pts[0].set(IN(stackX + TEG_SLEEVE.outerDiameter / 2), IN(tegSleeveYCenter), IN(stackZ));
-  pts[1].set(IN((stackX + tegUnitX1) / 2), IN((tegSleeveYCenter + tegUnitY1) / 2), IN((stackZ + tegUnitZCenter) / 2));
-  pts[2].set(IN((tegUnitX0 + tegUnitX1) / 2), IN(tegUnitY1), IN(tegUnitZCenter));
-}
+// hot exhaust stack -> TEG unit, along TEGLead's own run
+const tegFlowWaypoints = trailAlong(TEG_LEAD_RUN, 2);
+const exhaustFlowWaypoints = trailAlong(EXHAUST_FEED_RUN, 2);
 
 // Every step's camera position was framed for a wide screen. On a narrower
 // one (iPad held upright, a small window) the same vertical FOV leaves much
@@ -2854,7 +3047,9 @@ function Rig({
   tankOpenRef,
   binOpenRef,
   tegOpenRef,
+  stackOpacityRef,
   onSelectPart,
+  onBackgroundClick,
   onArrive,
 }: {
   step: TourStep;
@@ -2865,10 +3060,38 @@ function Rig({
   tankOpenRef: MutableRefObject<number>;
   binOpenRef: MutableRefObject<number>;
   tegOpenRef: MutableRefObject<number>;
+  stackOpacityRef: MutableRefObject<number>;
   onSelectPart: SelectPartFn;
+  onBackgroundClick: () => void;
   onArrive: (stepId: string) => void;
 }) {
   const controlsRef = useRef<any>(null);
+  const gl = useThree((s) => s.gl);
+  const setEvents = useThree((s) => s.setEvents);
+
+  useEffect(() => {
+    // Picking only sees what's drawn. three's Raycaster ignores `visible`, so
+    // a hidden truck/stack/duct (group.visible = false) still caught hover
+    // and clicks in empty space.
+    setEvents({ filter: (hits) => hits.filter((h) => isWorldVisible(h.object)) });
+    // hover sets the pointer cursor on the canvas itself (see setPartCursor)
+    canvasCursor.el = gl.domElement;
+    // The light and almost every shadow caster are static, so the 2048²
+    // shadow map is re-rendered only while a step transition is moving
+    // things (TourController sets needsUpdate then), not on every frame.
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+    return () => {
+      gl.domElement.style.cursor = '';
+      if (canvasCursor.el === gl.domElement) canvasCursor.el = null;
+    };
+  }, [gl, setEvents]);
+
+  // PCSS soft shadows cost ~2x16 shadow-map taps per shaded pixel; on touch
+  // devices (phones/iPads, high-DPI fill rate) half the samples is plenty
+  const [shadowSamples] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 8 : 16,
+  );
   // ExhaustFeed's duct only makes visual sense while the module shell sits
   // at rest — once it explodes away, the duct would have to stay glued to a
   // moving target, so this just hides it instead (inverse of explodeRef,
@@ -2899,6 +3122,7 @@ function Rig({
         tankOpenRef={tankOpenRef}
         binOpenRef={binOpenRef}
         tegOpenRef={tegOpenRef}
+        stackOpacityRef={stackOpacityRef}
         transitioningRef={transitioningRef}
         onArrive={onArrive}
       />
@@ -2906,7 +3130,7 @@ function Rig({
       {/* PCFShadowMap (the default now that PCFSoftShadowMap is gone from
           three.js) gives hard-edged shadows; this patches the shadow
           shader for a real soft falloff instead */}
-      <SoftShadows size={18} samples={16} focus={0.5} />
+      <SoftShadows size={18} samples={shadowSamples} focus={0.5} />
       <ambientLight intensity={0.9} />
       <directionalLight
         position={[20, 30, 15]}
@@ -2928,19 +3152,16 @@ function Rig({
           itself fades */}
       <HoverClock />
       <GroundAndRail />
-      <TruckContext opacityRef={truckOpacityRef} cabTintRef={cabTintRef} onSelectPart={onSelectPart} />
+      <TruckContext opacityRef={truckOpacityRef} cabTintRef={cabTintRef} onBackgroundClick={onBackgroundClick} />
+      <ExhaustStack opacityRef={stackOpacityRef} tegOpenRef={tegOpenRef} onSelectPart={onSelectPart} />
       <CaptureModule explodeRef={explodeRef} onSelectPart={onSelectPart} />
       <MountingRail opacityRef={railOpacityRef} onSelectPart={onSelectPart} />
       <ModuleInternals explodeRef={explodeRef} onSelectPart={onSelectPart} />
       <ExhaustFeed visibleRef={exhaustVisibleRef} onSelectPart={onSelectPart} />
       <FlowTrail
         activeRef={exhaustVisibleRef}
-        waypointCount={3}
-        updateWaypoints={(pts) => {
-          pts[0].set(IN(stackX), IN(EXHAUST_FEED_Y), IN(stackZ));
-          pts[1].set(IN((stackX + moduleXCenter) / 2), IN(EXHAUST_FEED_Y), IN((stackZ + (moduleZ1 + 1)) / 2));
-          pts[2].set(IN(moduleXCenter), IN(EXHAUST_FEED_Y), IN(moduleZ1 + 1));
-        }}
+        waypointCount={2}
+        updateWaypoints={exhaustFlowWaypoints}
         color="#ffcf9e"
         emissive="#ff9d5c"
         loopSeconds={4}
@@ -3038,7 +3259,7 @@ function Rig({
           bead that small still shows up against the hose. */}
       <FlowTrail
         activeRef={tankOpenRef}
-        waypointCount={3}
+        waypointCount={FILL_TRAIL_POINTS}
         updateWaypoints={tankFlowWaypoints}
         color="#cfeeff"
         emissive="#9fe3ff"
@@ -3095,12 +3316,11 @@ function Rig({
         computePosition={() => [moduleXCenter - 8, bulkBinY0 + 12, bulkBinZCenter]}
         facingDir={BULK_BIN_FACING}
       />
-      <TEGSleeve openRef={tegOpenRef} onSelectPart={onSelectPart} />
+      {/* the TEG sleeve and lead ride with the exhaust stack (ExhaustStack) */}
       <TEGUnit openRef={tegOpenRef} onSelectPart={onSelectPart} />
-      <TEGLead />
       <FlowTrail
         activeRef={tegOpenRef}
-        waypointCount={3}
+        waypointCount={2}
         updateWaypoints={tegFlowWaypoints}
         color="#ffcf9e"
         emissive="#ff9d5c"
@@ -4088,7 +4308,17 @@ export default function Scene3D() {
   const tankOpenRef = useRef(0);
   const binOpenRef = useRef(0);
   const tegOpenRef = useRef(0);
+  const stackOpacityRef = useRef(1);
   const step = TOUR_STEPS[stepIndex];
+
+  // Render resolution. Touch devices start at 1.5x instead of R3F's default
+  // 2x (a 2x iPad is ~5.6M shaded pixels a frame under soft shadows), and
+  // every device drops to 1x if the frame rate sags, climbing back when it
+  // recovers (PerformanceMonitor, inside the Canvas).
+  const [dprCap] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.5 : 2,
+  );
+  const [dpr, setDpr] = useState(dprCap);
 
   // which part (if any) the viewer has clicked on — see PART_FACTS/FactsCard.
   // Toggling the same part off again, clicking empty space (Canvas's
@@ -4143,7 +4373,7 @@ export default function Scene3D() {
     // cursor. Clearing it here lets the glow ease out; the next pointer move
     // hovers whatever is really under the cursor now.
     hoverState.id = null;
-    document.body.style.cursor = 'auto';
+    setPartCursor(false);
   }, [stepIndex]);
 
   useEffect(() => {
@@ -4172,11 +4402,18 @@ export default function Scene3D() {
     <div className="h-full w-full" style={{ position: 'relative' }}>
       <Canvas
         shadows
+        dpr={[1, dpr]}
         camera={{ position: OVERVIEW_POS, fov: 48, near: 0.4, far: 400 }}
         // clicking empty space (nothing under the ray) clears whatever part
         // is selected — the scene's own equivalent of clicking outside a popover
         onPointerMissed={clearSelectedPart}
       >
+        <PerformanceMonitor
+          onDecline={() => setDpr(1)}
+          onIncline={() => setDpr(dprCap)}
+          flipflops={3}
+          onFallback={() => setDpr(1)}
+        />
         <color attach="background" args={['#dce9f2']} />
         <Rig
           step={step}
@@ -4187,7 +4424,9 @@ export default function Scene3D() {
           tankOpenRef={tankOpenRef}
           binOpenRef={binOpenRef}
           tegOpenRef={tegOpenRef}
+          stackOpacityRef={stackOpacityRef}
           onSelectPart={handleSelectPart}
+          onBackgroundClick={clearSelectedPart}
           onArrive={setDisplayedStepId}
         />
       </Canvas>
