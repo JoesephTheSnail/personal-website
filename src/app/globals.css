@@ -641,6 +641,10 @@ body {
   *, *::before, *::after { cursor: none !important; }
 }
 
+/* Full-bleed 3D previews opt out of the custom cursor (CustomCursor.tsx) —
+   restore the native one there, grab/grabbing included, for WebGL drag-orbit */
+.native-cursor, .native-cursor * { cursor: auto !important; }
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -724,3 +728,158 @@ html.light .mobile-topbar {
   border-bottom-color: var(--border) !important;
 }
 html.light .mobile-topbar span { color: #0D0D0D !important; }
+
+/* ── Carbon-capture demo: facts card content transitions ── */
+@keyframes cc-facts-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Carbon-capture demo: "rotate your device" gate icon ── */
+@keyframes cc-rotate-hint {
+  0%, 12%   { transform: rotate(0deg); }
+  42%, 58%  { transform: rotate(-90deg); }
+  88%, 100% { transform: rotate(0deg); }
+}
+
+/* carbon-capture tutorial: looping gesture demos + spotlight ring + guide ping */
+@keyframes cc-tut-drag { from { transform: translateX(-17px); } to { transform: translateX(17px); } }
+@keyframes cc-tut-pinch-l { from { transform: translateX(-3px); } to { transform: translateX(-17px); } }
+@keyframes cc-tut-pinch-r { from { transform: translateX(3px); } to { transform: translateX(17px); } }
+@keyframes cc-tut-tap { 0% { transform: scale(0.35); opacity: 0.95; } 75%, 100% { transform: scale(1.35); opacity: 0; } }
+@keyframes cc-tut-wheel { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(8px); opacity: 0.2; } }
+@keyframes cc-tut-nudge { 0%, 100% { transform: translateX(-3px); } 50% { transform: translateX(4px); } }
+@keyframes cc-tut-draw { to { stroke-dashoffset: 0; } }
+@keyframes cc-tut-swap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes cc-tut-ring { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes cc-guide-ping {
+  0% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 0 0 color-mix(in srgb, var(--cc-accent, #e2883f) 60%, transparent); }
+  100% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 0 16px color-mix(in srgb, var(--cc-accent, #e2883f) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cc-anim] { animation: none !important; }
+}
+
+/* ── Truck button (project pages with a 3D demo) ──────────────────────── */
+.truck-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  margin: 12px 0 22px;
+  text-decoration: none;
+  filter: drop-shadow(0 8px 22px rgba(255, 178, 0, 0.3));
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.truck-cta__rig {
+  display: inline-flex;
+  align-items: stretch;
+}
+.truck-cta__trailer {
+  display: inline-flex;
+  align-items: center;
+  padding: 15px 24px 15px 20px;
+  border-radius: 10px 4px 4px 10px;
+  background: linear-gradient(180deg, #ffd84d 0%, #ffb81f 100%);
+  box-shadow: inset 0 -3px 0 rgba(160, 90, 0, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.45);
+  color: #1c1305;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+}
+.truck-cta__cab {
+  width: 60px;
+  height: 46px;
+  margin-left: -2px;
+  align-self: flex-end;
+  overflow: visible;
+}
+.truck-cta__wheel {
+  position: absolute;
+  bottom: -10px;
+  width: 22px;
+  height: 22px;
+}
+.truck-cta__wheel--a { left: 18px; }
+.truck-cta__wheel--b { left: 52px; }
+.truck-cta__wheel--c { right: 12px; }
+.truck-cta__hub {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.truck-cta__puff {
+  position: absolute;
+  right: 49px;
+  top: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fg) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.truck-cta__road {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  bottom: -14px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--fg) 38%, transparent) 0 9px, transparent 9px 20px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.truck-cta:hover,
+.truck-cta:focus-visible {
+  transform: translateX(5px);
+  filter: drop-shadow(0 10px 28px rgba(255, 178, 0, 0.48));
+}
+.truck-cta:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 8px;
+  border-radius: 8px;
+}
+.truck-cta:hover .truck-cta__rig,
+.truck-cta:focus-visible .truck-cta__rig,
+.truck-cta:active .truck-cta__rig {
+  animation: truck-cta-bounce 0.5s ease-in-out infinite;
+}
+.truck-cta:hover .truck-cta__hub,
+.truck-cta:focus-visible .truck-cta__hub,
+.truck-cta:active .truck-cta__hub {
+  animation: truck-cta-spin 0.55s linear infinite;
+}
+.truck-cta:hover .truck-cta__puff,
+.truck-cta:focus-visible .truck-cta__puff,
+.truck-cta:active .truck-cta__puff {
+  animation: truck-cta-puff 1.5s ease-out infinite;
+}
+.truck-cta__puff--2 { animation-delay: 0.5s !important; }
+.truck-cta__puff--3 { animation-delay: 1s !important; }
+.truck-cta:hover .truck-cta__road,
+.truck-cta:focus-visible .truck-cta__road,
+.truck-cta:active .truck-cta__road {
+  opacity: 1;
+  animation: truck-cta-road 0.45s linear infinite;
+}
+.truck-cta:active { transform: translateX(8px) scale(0.985); }
+
+@keyframes truck-cta-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+@keyframes truck-cta-spin { to { transform: rotate(360deg); } }
+@keyframes truck-cta-puff {
+  0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  15% { opacity: 0.75; }
+  100% { transform: translate(-16px, -26px) scale(1.7); opacity: 0; }
+}
+@keyframes truck-cta-road { to { background-position: -20px 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .truck-cta,
+  .truck-cta * { animation: none !important; transition: none !important; }
+  .truck-cta:hover { transform: none; }
+}

@@ -3,6 +3,7 @@ import { CATEGORIES, getCategoryBySlug, getCategoryByLabel } from '@/lib/categor
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import TruckButton from '@/components/TruckButton';
 import { FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import CategoryIndexList from '@/components/CategoryIndexList';
 import ThemedIcon from '@/components/ThemedIcon';
@@ -238,7 +239,7 @@ export default async function ProjectPage({ params }: Props) {
   const project = getAllProjects().find((p) => p.slug === slug);
   if (!project) notFound();
 
-  const { title, date, description, links, category: categoryLabel, artifactType, tools } = project.frontmatter;
+  const { title, date, description, links, category: categoryLabel, artifactType, tools, demoHref, demoLabel, demoNote } = project.frontmatter;
   // Falls back to the project's own category page (not the full grid) when
   // there's no in-site history to go back to — a shared/direct link to a
   // Robotics writeup should land back on Engineering, not the top grid.
@@ -257,6 +258,18 @@ export default async function ProjectPage({ params }: Props) {
         {date}{artifactType ? ` · ${artifactType}` : ''}
       </p>
       <p className="text-base mb-8 leading-relaxed" style={{ color: 'var(--fg-60)' }}>{description}</p>
+
+      {/* Interactive demo: the one thing on the page worth a primary button */}
+      {demoHref && (
+        <div className="mb-10">
+          <TruckButton href={demoHref}>{demoLabel ?? 'Open the demo'}</TruckButton>
+          {demoNote && (
+            <p className="mt-2.5 text-xs" style={{ color: 'var(--fg-dim)' }}>
+              {demoNote}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Media: embeddable links (YouTube, Google Drive, Figma) first, then button links */}
       {links && links.length > 0 && (

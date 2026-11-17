@@ -18,6 +18,11 @@ export interface ProjectFrontmatter {
   artifactType?: string;
   /** Concrete tools named in the write-up — never inferred, only what's explicitly stated. */
   tools?: string[];
+  /** An in-site interactive page for this project. Shown as a prominent button above the write-up. */
+  demoHref?: string;
+  demoLabel?: string;
+  /** One short line under the demo button, e.g. what device it works best on. */
+  demoNote?: string;
 }
 
 export interface Project {
