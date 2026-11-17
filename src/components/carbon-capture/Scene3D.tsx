@@ -407,7 +407,8 @@ const STACK_SHIELD_Y1 = STACK_SHIELD_Y0 + 24; // in — shield top; the bend sta
 const STACK_SHIELD_R = 4.75; // in — about twice the pipe's diameter, as on a real stack
 const STACK_ELBOW_Y = STACK_SHIELD_Y1; // the pipe bends just above the shield
 const TAILPIPE_Z = 34; // in — each tailpipe's offset from the truck's centreline (cab is 96in wide)
-const STACK_CROSS_Y = 118; // in — height of the crossover pipe: above the TEG sleeve (98-113), below the roof
+const STACK_CROSS_Y = 64; // in — height of the crossover: low, where exhaust comes up from the engine, tee'd into the middle pipe (just above the dark feet)
+const STACK_COLLECTOR_TOP = 118; // in — top of the middle pipe: above the TEG sleeve (98-113) and the duct tap (~100), below the roof
 const STACK_CHROME = '#cfd4db';
 const STACK_DARK_CHROME = '#8d939b';
 
@@ -500,11 +501,11 @@ function ExhaustStackParts() {
     <group position={[IN(stackX), 0, 0]}>
       {/* the original stack, now the collector in the middle: it carries the TEG
           sleeve and the duct tap, and the crossover feeds it from both tailpipes */}
-      <mesh position={[0, IN((TRUCK.frameHeight + STACK_CROSS_Y) / 2), IN(stackZ)]} castShadow>
-        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_CROSS_Y - TRUCK.frameHeight), 20]} />
+      <mesh position={[0, IN((TRUCK.frameHeight + STACK_COLLECTOR_TOP) / 2), IN(stackZ)]} castShadow>
+        <cylinderGeometry args={[IN(STACK_R), IN(STACK_R), IN(STACK_COLLECTOR_TOP - TRUCK.frameHeight), 20]} />
         <meshStandardMaterial {...chrome} />
       </mesh>
-      {/* crossover pipe joining the two tailpipes, tee'd into the collector */}
+      {/* crossover pipe joining the two tailpipes, low down, tee'd into the middle pipe that rises to the TEG sleeve and the duct tap */}
       <mesh position={[0, IN(STACK_CROSS_Y), 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[IN(STACK_R * 0.9), IN(STACK_R * 0.9), IN(TAILPIPE_Z * 2), 20]} />
         <meshStandardMaterial {...darkChrome} />
