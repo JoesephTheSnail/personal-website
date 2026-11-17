@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 const TRAIL = 6;
 
@@ -43,6 +44,7 @@ const EDITABLE_SELECTOR =
   ':not([type=submit]):not([type=reset]):not([type=file]):not([type=color]):not([type=image])';
 
 export default function CustomCursor() {
+  const pathname = usePathname();
   const svgRef         = useRef<SVGSVGElement>(null);
   const pathFgRef      = useRef<SVGPathElement>(null);   // var(--fg) layer
   const pathIndigoRef  = useRef<SVGPathElement>(null);   // var(--indigo) layer
@@ -205,7 +207,11 @@ export default function CustomCursor() {
     };
   }, [isFine]);
 
-  if (!isFine) return null;
+  // The trailing-dot animation reads as laggy/"bugged" against a WebGL
+  // canvas being drag-orbited — the native cursor's grab/grabbing feedback
+  // is what that interaction actually needs, so full-bleed 3D previews opt
+  // out the same way they already opt out of the sidebar nav.
+  if (!isFine || pathname?.startsWith('/dev-preview') || /^\/projects\/[^/]+\/demo\/?$/.test(pathname ?? '')) return null;
 
   return (
     <>

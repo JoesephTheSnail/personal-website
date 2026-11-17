@@ -1,0 +1,29 @@
+---
+title: "Truck Exhaust Carbon Capture"
+description: "How a truck could catch CO₂ from its own exhaust. A Grade 9 idea, worked through properly, with a 3D model you can explore."
+date: "2026-11"
+status: "published"
+category: "Engineering"
+order: 3
+tools: ["React Three Fiber"]
+demoHref: "/projects/truck-exhaust-carbon-capture/demo"
+demoLabel: "Explore the 3D model"
+demoNote: "Full screen and interactive. Works with touch, or a mouse and keyboard. On a phone, hold it sideways."
+---
+
+In Grade 9 I drew a carbon capture unit that bolts onto the back of a truck and pulls the CO₂ out of the exhaust before it leaves the tailpipe. I thought it was clever. I never worked out whether it would actually help.
+
+That question is what this project is. I went back to the idea and worked through it properly, starting with the chemistry. Cooled exhaust passes through a liquid called amine, which soaks up the CO₂. Heat the amine to around 90 to 100°C and it lets the CO₂ go again, so the same amine can be used over and over. The heat comes from the exhaust itself, stored so the system doesn't need a burner of its own. The CO₂ goes into tanks on the truck, and a small bin of spare amine tops up what wears out.
+
+The thing I had to be honest about is energy. The system uses power to run, so how much CO₂ it captures isn't the real number. What counts is what's left after you subtract that. It's why there's also a unit that turns some of the exhaust heat back into electricity, and why I took out an early statistic I couldn't trace to a real study.
+
+A drawing doesn't show how all of this fits together, so I built the truck in 3D with React Three Fiber. You can spin it, zoom in, tap any part to see what it does, and step through the system from the outside in.
+
+---
+
+**Outcome:** Took a Grade 9 idea for capturing CO₂ from truck exhaust, worked through the engineering, and built an interactive 3D model that explains how each part works.
+
+**What I took from it:**
+- The number that makes a capture system sound good is how much CO₂ it catches. The number that matters is how much is left after the system's own energy use, and the two are a long way apart.
+- Going back to an old idea means finding out where you were wrong. Most of what I fixed was assumptions, not the drawing.
+- If you can't explain something, build it. The 3D model showed me parts of my own layout that didn't fit together.
