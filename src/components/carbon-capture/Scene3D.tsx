@@ -1027,6 +1027,8 @@ function Label({
   color = '#ffffff',
   hoverId,
   facingDir,
+  anchor,
+  callout,
 }: {
   activeRef: MutableRefObject<number>;
   // inches; recomputed every frame from the current activeRef value, so a
@@ -1047,6 +1049,14 @@ function Label({
   // nothing packed against it, unlike the module interior's own chambers —
   // the one place scale caused real trouble.
   hoverId?: string;
+  // a point (inches) ON the part this label names. When set, a thin arrow in
+  // the label's colour runs from the label's edge to it, so the name is tied
+  // to the thing it describes instead of just floating near it. Recomputed
+  // each frame like computePosition, so it tracks parts that move.
+  anchor?: (active: number) => [number, number, number];
+  // which side of the anchor the label sits on (default 'right'); with an
+  // anchor the label is placed in screen space, so computePosition is unused
+  callout?: 'right' | 'left' | 'up' | 'down';
   // the world-space direction this label is actually meant to be READ
   // from — normally just that step's own arrival camera direction (see the
   // *_FACING constants below Rig). Depth testing is off (see onSync), on
@@ -1070,7 +1080,48 @@ function Label({
   const hoverAmt = useRef(0);
   const visAmt = useRef(1);
   const matsRef = useRef<THREE.Material[]>([]);
-  const { camera } = useThree();
+  // the small "explored" check that appears beside the label once its part
+  // has been clicked (see exploredParts)
+  const badgeRef = useRef<THREE.Mesh>(null);
+  const badgeMatRef = useRef<THREE.MeshBasicMaterial>(null);
+  const badgeAmt = useRef(0);
+  // this label's own distance from the camera when it last settled (see labelFraming)
+  const refDist = useRef(0);
+  const lastEpoch = useRef(-1);
+  const lastPx = useRef(12); // this label's on-screen text size last frame (callout layout needs it a frame early)
+  // leader line + dot (see writeRibbon): outlined shaft, then halo, outlined
+  // dot; all rewritten in place each frame
+  const arrowGroupRef = useRef<THREE.Group>(null);
+  const leader = useMemo(
+    () => ({
+      shaftDark: makeRibbonGeometry(),
+      shaftFill: makeRibbonGeometry(),
+      halo: makeDiscGeometry(),
+      dotDark: makeDiscGeometry(),
+      dotFill: makeDiscGeometry(),
+      hit: makeDiscGeometry(), // invisible click target (see below)
+    }),
+    [],
+  );
+  // Clicking the label's text or its dot selects the part, same as clicking the part
+  // itself. labelSelect is wired up by Rig (labels sit outside the part components).
+  const labelHandlers = useMemo(
+    () => (hoverId ? clickable(hoverId, (id) => labelSelect.fn?.(id)) : undefined),
+    [hoverId],
+  );
+  const matShaftDark = useRef<THREE.MeshBasicMaterial>(null);
+  const matShaftFill = useRef<THREE.MeshBasicMaterial>(null);
+  const matHalo = useRef<THREE.MeshBasicMaterial>(null);
+  const matDotDark = useRef<THREE.MeshBasicMaterial>(null);
+  const matDotFill = useRef<THREE.MeshBasicMaterial>(null);
+  const leaderDraw = useRef(0); // 0..1: how much of the line is drawn
+  const leaderS = useRef(new THREE.Vector3()); // last label-end of the line
+  const leaderA = useRef(new THREE.Vector3()); // last part-end of the line
+  const baseColor = useMemo(() => new THREE.Color(color), [color]);
+  const textHalfWidth = useRef(IN(LABEL_CANON) * text.length * 0.3);
+  const { camera, size } = useThree();
+  const slot = useRef<LabelSlot>({ sx: 0, sy: 0, wPx: 0, px: 12, nudge: 0, target: 0 }).current;
+  useEffect(() => () => void labelSlots.delete(slot), [slot]);
   const facingVec = useMemo(
     () => (facingDir ? new THREE.Vector3(...facingDir).normalize() : null),
     [facingDir]
@@ -1081,36 +1132,191 @@ function Label({
     const group = groupRef.current;
     if (!group) return;
     group.visible = active > activeThreshold;
-    if (!group.visible) return;
-    const [x, y, z] = computePosition(active);
-    group.position.set(IN(x), IN(y), IN(z));
-    const target = hoverId && hoverState.id === hoverId ? 1 : 0;
+    if (!group.visible) {
+      labelSlots.delete(slot);
+      // the leader arrow lives outside the label's own group, so hiding the
+      // label doesn't hide it — without this it stayed on screen from an earlier stop
+      if (arrowGroupRef.current) arrowGroupRef.current.visible = false;
+      return;
+    }
+    if (anchor) {
+      // Callout layout: the label sits a fixed number of SCREEN pixels to one
+      // side of the point it names (default: to the right), so every arrow is
+      // a clean, similar-length leader whatever the zoom or the part's size.
+      // (computePosition is only used for labels with no anchor.)
+      const [ax0, ay0, az0] = anchor(active);
+      arrowA.set(IN(ax0), IN(ay0), IN(az0));
+      const wpp0 =
+        (2 * camera.position.distanceTo(arrowA) * Math.tan(THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov) / 2)) /
+        size.height;
+      arrowRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+      arrowUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+      const halfWPx = (textHalfWidth.current * lastPx.current) / IN(LABEL_CANON);
+      const side = callout ?? 'right';
+      const offX = side === 'right' ? CALLOUT_GAP_PX + halfWPx : side === 'left' ? -(CALLOUT_GAP_PX + halfWPx) : 0;
+      const offY = side === 'up' ? CALLOUT_GAP_V_PX : side === 'down' ? -CALLOUT_GAP_V_PX : 0;
+      group.position.copy(arrowA).addScaledVector(arrowRight, offX * wpp0).addScaledVector(arrowUp, offY * wpp0);
+    } else {
+      const [x, y, z] = computePosition(active);
+      group.position.set(IN(x), IN(y), IN(z));
+    }
+    const target = glowTarget(hoverId);
     hoverAmt.current = stepHover(hoverAmt.current, target);
-    group.scale.setScalar(1 + hoverAmt.current * 0.18);
+    // Depth-aware size (see labelSize): this label's on-screen height in px,
+    // then turned back into a world scale (world height of one pixel at this
+    // distance, times px, over the em size the text was built at).
+    // `fontSize` above 2.5 only nudges a hero label up, by at most 15%.
+    const camDist = camera.position.distanceTo(group.position);
+    const worldPerPx = (2 * camDist * Math.tan(THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov) / 2)) / size.height;
+    if (refDist.current === 0 || lastEpoch.current !== labelFraming.epoch) {
+      refDist.current = camDist;
+      lastEpoch.current = labelFraming.epoch;
+    }
+    const px = labelSize(size.height, camDist, refDist.current, THREE.MathUtils.clamp(fontSize / LABEL_CANON, 1, 1.15));
+    lastPx.current = px;
+    group.scale.setScalar((1 + hoverAmt.current * 0.18) * ((px * worldPerPx) / IN(LABEL_CANON)));
 
-    let visTarget = 1;
+    // anti-overlap: report where this label's un-nudged anchor sits on screen,
+    // then slide down by whatever LabelLayout last asked for
+    labelScratch.copy(group.position).project(camera);
+    slot.sx = ((labelScratch.x + 1) / 2) * size.width;
+    slot.sy = ((1 - labelScratch.y) / 2) * size.height;
+    slot.px = px;
+    slot.wPx = (2 * textHalfWidth.current * px) / IN(LABEL_CANON) + px * 1.8;
+    labelSlots.add(slot);
+    slot.nudge += (slot.target - slot.nudge) * (1 - Math.exp(-8 * hoverDelta));
+    if (slot.nudge > 0.01) {
+      labelUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+      group.position.addScaledVector(labelUp, -slot.nudge * worldPerPx);
+    }
+
+    // far zoom-out: names only add clutter once the model is a small object,
+    // so they fade away between 2x and 3x the stop's own viewing distance
+    let visTarget = labelFarFade(camDist, refDist.current);
     if (facingVec) {
       const toCamera = labelScratch.copy(camera.position).sub(group.position).normalize();
       const dot = toCamera.dot(facingVec);
-      visTarget = THREE.MathUtils.smoothstep(dot, -0.25, 0.15);
+      visTarget *= THREE.MathUtils.smoothstep(dot, -0.25, 0.15);
     }
     visAmt.current += (visTarget - visAmt.current) * (1 - Math.exp(-9 * hoverDelta));
     matsRef.current.forEach((m) => {
       (m as THREE.Material & { opacity: number }).opacity = visAmt.current;
     });
+
+    // explored check: eases in (a little pop) once the part has been clicked,
+    // and follows the label's own viewing-angle fade
+    const explored = !!hoverId && exploredParts.has(hoverId);
+    badgeAmt.current += ((explored ? 1 : 0) - badgeAmt.current) * (1 - Math.exp(-10 * hoverDelta));
+    if (badgeAmt.current < 0.003 && !explored) badgeAmt.current = 0;
+    const badge = badgeRef.current;
+    if (badge) {
+      const amt = badgeAmt.current;
+      badge.visible = amt > 0;
+      const pop = amt * (1 + 0.3 * Math.sin(Math.PI * Math.min(1, amt)));
+      badge.scale.setScalar(IN(LABEL_CANON) * 1.3 * pop);
+      badge.position.x = -(textHalfWidth.current + IN(LABEL_CANON) * 1.05);
+      if (badgeMatRef.current) badgeMatRef.current.opacity = visAmt.current * Math.min(1, amt);
+    }
+
+    // leader arrow: from where the straight line to the anchor leaves this
+    // label's box, to the anchor itself. Hidden if the anchor is inside the
+    // box or too close for an arrow to read.
+    const arrowGroup = arrowGroupRef.current;
+    if (arrowGroup) {
+      let show = false;
+      if (anchor && visAmt.current > 0.02) {
+        const [ax, ay, az] = anchor(active);
+        arrowA.set(IN(ax), IN(ay), IN(az));
+        arrowRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+        arrowUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+        arrowV.copy(arrowA).sub(group.position);
+        const dx = arrowV.dot(arrowRight);
+        const dy = arrowV.dot(arrowUp);
+        const sc = group.scale.x;
+        const hw = (textHalfWidth.current + IN(LABEL_CANON) * (badgeAmt.current > 0.05 ? 2.2 : 0.6)) * sc;
+        const hh = IN(LABEL_CANON) * 0.75 * sc;
+        const t = Math.min(
+          Math.abs(dx) > 1e-6 ? hw / Math.abs(dx) : Infinity,
+          Math.abs(dy) > 1e-6 ? hh / Math.abs(dy) : Infinity,
+        );
+        // leave a small gap between the label box and the line's start
+        const gapT = Math.min(0.9, t + (3 * worldPerPx) / (Math.hypot(dx, dy) || 1));
+        if (t < 1 && Math.hypot(dx, dy) * (1 - gapT) > 14 * worldPerPx) {
+          leaderS.current.copy(group.position).addScaledVector(arrowRight, dx * gapT).addScaledVector(arrowUp, dy * gapT);
+          leaderA.current.copy(arrowA);
+          show = true;
+        }
+      }
+      // the line draws itself in (and quickly retracts); stored endpoints let
+      // it retract cleanly even after its label has moved on
+      leaderDraw.current += ((show ? 1 : 0) - leaderDraw.current) * (1 - Math.exp(-(show ? 7 : 12) * hoverDelta));
+      const draw = leaderDraw.current;
+      if (draw < 0.01) {
+        arrowGroup.visible = false;
+      } else {
+        arrowGroup.visible = true;
+        arrowRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+        arrowUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+        const S = leaderS.current;
+        const A = leaderA.current;
+        // gentle sideways bend of the curve, in proportion to its length
+        arrowV.copy(A).sub(S);
+        const vx = arrowV.dot(arrowRight);
+        const vy = arrowV.dot(arrowUp);
+        const vl = Math.hypot(vx, vy) || 1;
+        const bend = Math.min(vl * 0.1, 12 * worldPerPx);
+        arrowC.copy(S).add(A).multiplyScalar(0.5).addScaledVector(arrowRight, (-vy / vl) * bend).addScaledVector(arrowUp, (vx / vl) * bend);
+        const sh = 0.5 * worldPerPx;
+        writeRibbon(leader.shaftDark, S, A, arrowC, arrowRight, arrowUp, sh + 0.75 * worldPerPx, draw);
+        writeRibbon(leader.shaftFill, S, A, arrowC, arrowRight, arrowUp, sh, draw);
+        // the dot rides the end of the line and pops in as it arrives
+        arrowS.copy(arrowQ);
+        const dotScale = THREE.MathUtils.smoothstep(draw, 0.7, 1) * (1 + 0.35 * hoverAmt.current);
+        const cueBoost = cueState.id === hoverId ? (0.3 * cueState.breath) / CUE_PEAK : 0;        writeDisc(leader.halo, arrowS, arrowRight, arrowUp, 15 * worldPerPx * dotScale);
+        writeDisc(leader.dotDark, arrowS, arrowRight, arrowUp, 7.6 * worldPerPx * dotScale);
+        writeDisc(leader.dotFill, arrowS, arrowRight, arrowUp, 5.4 * worldPerPx * dotScale);
+        // Click target: an invisible disc that looks exactly like a 26px circle
+        // around the dot from the camera, but sits 90% of the way to it — so it
+        // is always the nearest thing under the pointer. (The dot lies INSIDE its
+        // part; without this the part's own surface, or a housing around it,
+        // would swallow the click, and small parts like the TEG's were hard to hit.)
+        arrowV.copy(camera.position).sub(arrowS).multiplyScalar(0.9).add(arrowS);
+        writeDisc(leader.hit, arrowV, arrowRight, arrowUp, (draw > 0.9 ? 13 : 0) * worldPerPx * 0.1);
+        leader.hit.computeBoundingSphere();
+        // the dot turns green once the part has been explored
+        leaderColor.copy(baseColor).lerp(LEADER_GREEN, Math.min(1, badgeAmt.current));
+        if (matDotFill.current) {
+          matDotFill.current.color.copy(leaderColor);
+          matDotFill.current.opacity = visAmt.current * dotScale;
+        }
+        if (matHalo.current) {
+          matHalo.current.color.copy(leaderColor);
+          matHalo.current.opacity = visAmt.current * (0.2 + cueBoost) * dotScale;
+        }
+        if (matDotDark.current) matDotDark.current.opacity = visAmt.current * 0.95 * dotScale;
+        if (matShaftDark.current) matShaftDark.current.opacity = visAmt.current * 0.85;
+        if (matShaftFill.current) matShaftFill.current.opacity = visAmt.current;
+      }
+    }
   });
 
   return (
+    <>
     <group ref={groupRef} visible={false}>
       <Billboard>
         <Text
-          fontSize={IN(fontSize)}
+          {...labelHandlers}
+          font={LABEL_FONT_URL}
+          fontSize={IN(LABEL_CANON)}
           color={color}
-          outlineWidth={IN(fontSize) * 0.09}
+          outlineWidth={IN(LABEL_CANON) * 0.055}
+          letterSpacing={0.02}
           outlineColor="#000000"
           anchorX="center"
           anchorY="middle"
-          renderOrder={11}
+          // above the see-through cab glass (renderOrder 50 while tinted), which
+          // otherwise draws over a label that sits behind it and tints it red
+          renderOrder={60}
           // the label sits just outside its part's edge, but Billboard can
           // still tip it to face the camera through the part's own volume,
           // other chambers, or the translucent shell at some angles — the
@@ -1134,19 +1340,274 @@ function Label({
             mats.forEach((m) => {
               m.depthTest = false;
               m.transparent = true;
+              // The scene tone-maps (ACES), which dulled the label's white
+              // fill to a grey that barely separated from its dark outline.
+              // Labels are UI text laid over the scene, so they skip it.
+              m.toneMapped = false;
             });
             matsRef.current = mats;
+            // where the text actually ends, so the check sits just left of it
+            const b = (mesh as unknown as { textRenderInfo?: { blockBounds?: number[] } }).textRenderInfo?.blockBounds;
+            if (b) textHalfWidth.current = (b[2] - b[0]) / 2;
           }}
         >
           {text}
         </Text>
+        {hoverId && (
+          <mesh ref={badgeRef} visible={false} renderOrder={61} raycast={() => null}>
+            <planeGeometry args={[1, 1]} />
+            <meshBasicMaterial
+              ref={badgeMatRef}
+              map={getCheckTexture()}
+              transparent
+              depthTest={false}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        )}
       </Billboard>
     </group>
+    {anchor && (
+      // world-space (not inside the label's scaled group); geometry is rewritten each frame
+      <group ref={arrowGroupRef} visible={false}>
+        {(
+          [
+            ['halo', matHalo, 54, color],
+            ['shaftDark', matShaftDark, 55, '#0b1d12'],
+            ['shaftFill', matShaftFill, 56, color],
+            ['dotDark', matDotDark, 57, '#0b1d12'],
+            ['dotFill', matDotFill, 58, color],
+          ] as const
+        ).map(([key, matRef, order, col]) => (
+          <mesh key={key} geometry={leader[key]} renderOrder={order} frustumCulled={false} raycast={() => null}>
+            <meshBasicMaterial
+              ref={matRef}
+              color={col}
+              transparent
+              depthTest={false}
+              depthWrite={false}
+              toneMapped={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
+        <mesh geometry={leader.hit} renderOrder={1} frustumCulled={false} {...labelHandlers}>
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} depthTest={false} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+    )}
+    </>
   );
 }
 
 // reused every frame by each Label, instead of cloning a vector per label per frame
 const labelScratch = new THREE.Vector3();
+
+// Label size. Pure world-size labels were ~6px tall on the "inside the module"
+// shot (and shrank to nothing when zoomed out); pure fixed-pixel labels were
+// legible but lost every depth cue and crowded when the model was small. This
+// is the middle path, how map and CAD annotations behave:
+//  - at each stop's own framing a label is `labelPx` tall (a size chosen for
+//    legibility, scaled a little with window height);
+//  - moving in grows it, pulling out shrinks it, but only at 0.6 power of the
+//    distance change, not 1:1, so it keeps reading as part of the scene
+//    without becoming a speck or a billboard;
+//  - hard floor and ceiling (0.8x / 1.8x) keep it legible and sane;
+//  - beyond ~2x the stop's distance it fades out (labelFarFade): at that
+//    range the names are clutter, not information.
+// The em size is fixed (LABEL_CANON, in inches); the group scale does the rest.
+const LABEL_CANON = 2.5;
+// callout layout: how far (screen px) a label's near edge sits from its anchor
+const CALLOUT_GAP_PX = 58;
+const CALLOUT_GAP_V_PX = 40;
+// Bumped by Rig each time the camera finishes flying to a stop. Every Label
+// then records ITS OWN distance from the camera at that moment (`refDist`)
+// and sizes itself relative to that. So at a stop's default framing every
+// label on every stop is exactly the same size (no stop's labels come out
+// bigger than another's), and a label that is mid-fade while the camera flies
+// between stops keeps its own reference, so it can't balloon or vanish.
+const labelFraming = { epoch: 0 };
+// set by Rig so a click on a label's text or dot can select its part
+const labelSelect: { fn: SelectPartFn | null } = { fn: null };
+function labelSize(viewportHeight: number, camDist: number, refDist: number, boost: number) {
+  const base = labelPx(viewportHeight) * boost;
+  const closer = refDist / camDist; // >1 = nearer than when the camera settled
+  return THREE.MathUtils.clamp(base * Math.pow(closer, 0.5), Math.max(9.5, base * 0.85), base * 1.25);
+}
+function labelFarFade(camDist: number, refDist: number) {
+  return 1 - THREE.MathUtils.smoothstep(camDist / refDist, 2, 3);
+}
+
+// Anti-overlap. With constant-size labels, parts that are close together on
+// screen (the exploded module's chambers on a small viewport) would print
+// their names on top of each other. Every visible label reports where its
+// anchor lands on screen; LabelLayout (below, once per frame) walks them top
+// to bottom and works out how far each must slide DOWN to clear the ones
+// above it; the label then eases to that offset. Capped so a name never
+// strays far from its part.
+type LabelSlot = { sx: number; sy: number; wPx: number; px: number; nudge: number; target: number };
+const labelSlots = new Set<LabelSlot>();
+const labelUp = new THREE.Vector3();
+function LabelLayout() {
+  useFrame(() => {
+    const slots = [...labelSlots].sort((a, b) => a.sy - b.sy);
+    const placed: { sx: number; wPx: number; y: number }[] = [];
+    for (const s of slots) {
+      const gap = s.px * 1.3;
+      let y = s.sy;
+      for (let pass = 0; pass < 4; pass++) {
+        let moved = false;
+        for (const p of placed) {
+          if (Math.abs(p.sx - s.sx) < (p.wPx + s.wPx) / 2 && Math.abs(y - p.y) < gap) {
+            y = p.y + gap;
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+      s.target = Math.min(y - s.sy, s.px * 4);
+      placed.push({ sx: s.sx, wPx: s.wPx, y });
+    }
+    // NOTE: default priority on purpose. R3F switches off its own automatic
+    // render the moment any useFrame has a positive priority, which blanks the
+    // scene. Running ahead of the labels (it mounts before them) just means
+    // it uses last frame's positions, which is fine for an eased offset.
+  });
+  return null;
+}
+const labelPx = (viewportHeight: number) => THREE.MathUtils.clamp(viewportHeight * 0.022, 11.5, 15);
+
+// Leader lines. Each label with an anchor draws a slim, gently curved leader
+// from its edge to a soft dot on the part: the line draws itself in when the
+// label appears, tapers toward the dot, and the dot turns green once the part
+// has been explored. Everything is rewritten in place each frame (no
+// allocation) and lies in the camera's view plane, like the labels.
+const arrowA = new THREE.Vector3(); // the point on the part
+const arrowS = new THREE.Vector3(); // where the leader leaves the label's box
+const arrowRight = new THREE.Vector3();
+const arrowUp = new THREE.Vector3();
+const arrowV = new THREE.Vector3();
+const arrowC = new THREE.Vector3(); // curve control point
+const arrowQ = new THREE.Vector3(); // a point on the curve
+const LEADER_SEGMENTS = 14;
+const DISC_SEGMENTS = 28;
+const LEADER_GREEN = new THREE.Color('#3aa35f');
+const leaderColor = new THREE.Color();
+
+function makeRibbonGeometry() {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((LEADER_SEGMENTS + 1) * 2 * 3), 3));
+  const idx: number[] = [];
+  for (let i = 0; i < LEADER_SEGMENTS; i++) {
+    const a = i * 2;
+    idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+  }
+  g.setIndex(idx);
+  return g;
+}
+function makeDiscGeometry() {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array((DISC_SEGMENTS + 1) * 3), 3));
+  const idx: number[] = [];
+  for (let i = 0; i < DISC_SEGMENTS; i++) idx.push(0, 1 + i, 1 + ((i + 1) % DISC_SEGMENTS));
+  g.setIndex(idx);
+  return g;
+}
+/** Quadratic curve S -> A bent sideways by `bend` (world units), drawn only
+ *  up to `draw` (0..1) of its length, as a ribbon `half` wide at the label end
+ *  tapering to `half * 1.25` at the dot. Leaves the point it ended on in arrowQ. */
+function writeRibbon(
+  geo: THREE.BufferGeometry,
+  S: THREE.Vector3,
+  A: THREE.Vector3,
+  C: THREE.Vector3,
+  right: THREE.Vector3,
+  up: THREE.Vector3,
+  half: number,
+  draw: number,
+) {
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i <= LEADER_SEGMENTS; i++) {
+    const t = (i / LEADER_SEGMENTS) * draw;
+    const u = 1 - t;
+    // point
+    arrowQ.set(
+      u * u * S.x + 2 * u * t * C.x + t * t * A.x,
+      u * u * S.y + 2 * u * t * C.y + t * t * A.y,
+      u * u * S.z + 2 * u * t * C.z + t * t * A.z,
+    );
+    // tangent, flattened into the view plane, then its perpendicular
+    arrowV.set(
+      2 * u * (C.x - S.x) + 2 * t * (A.x - C.x),
+      2 * u * (C.y - S.y) + 2 * t * (A.y - C.y),
+      2 * u * (C.z - S.z) + 2 * t * (A.z - C.z),
+    );
+    const tx = arrowV.dot(right);
+    const ty = arrowV.dot(up);
+    const tl = Math.hypot(tx, ty) || 1;
+    const px = -ty / tl;
+    const py = tx / tl;
+    const w = half * (0.8 + 0.45 * (i / LEADER_SEGMENTS));
+    const ox = (right.x * px + up.x * py) * w;
+    const oy = (right.y * px + up.y * py) * w;
+    const oz = (right.z * px + up.z * py) * w;
+    pos.setXYZ(i * 2, arrowQ.x + ox, arrowQ.y + oy, arrowQ.z + oz);
+    pos.setXYZ(i * 2 + 1, arrowQ.x - ox, arrowQ.y - oy, arrowQ.z - oz);
+  }
+  pos.needsUpdate = true;
+}
+function writeDisc(geo: THREE.BufferGeometry, center: THREE.Vector3, right: THREE.Vector3, up: THREE.Vector3, radius: number) {
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  pos.setXYZ(0, center.x, center.y, center.z);
+  for (let i = 0; i < DISC_SEGMENTS; i++) {
+    const a = (i / DISC_SEGMENTS) * Math.PI * 2;
+    const c = Math.cos(a) * radius;
+    const s = Math.sin(a) * radius;
+    pos.setXYZ(1 + i, center.x + right.x * c + up.x * s, center.y + right.y * c + up.y * s, center.z + right.z * c + up.z * s);
+  }
+  pos.needsUpdate = true;
+}
+// Label typeface: Inter SemiBold, the same family as the rest of the UI, served
+// from /public so it needs no network round trip to a font CDN. (3D text can't
+// use the site's .woff2 — troika reads .woff/.ttf/.otf — so this is a separate
+// Latin-subset .woff, 31 KB, OFL-licensed; see public/fonts/OFL-Inter.txt.)
+// Chosen over troika's default (thin Roboto, fetched at runtime) and Atkinson
+// Hyperlegible Next after rendering all three in the scene: Inter's letters
+// stayed open under the outline at ~13px; Atkinson's counters filled in.
+const LABEL_FONT_URL = '/fonts/inter-600.woff';
+
+// The "explored" check: a small green disc with a white tick, drawn once to a
+// canvas (no font or image file to load) and shared by every label. Kept
+// deliberately flat and round so it sits quietly next to the label's own
+// black-outlined text instead of reading as a UI sticker on the 3D scene.
+let checkTexture: THREE.CanvasTexture | null = null;
+function getCheckTexture() {
+  if (checkTexture) return checkTexture;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext('2d')!;
+  g.beginPath();
+  g.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
+  g.fillStyle = '#3aa35f';
+  g.fill();
+  g.lineWidth = 7;
+  g.strokeStyle = '#0b1d12'; // the same near-black outline the labels use
+  g.stroke();
+  g.beginPath();
+  g.moveTo(size * 0.29, size * 0.53);
+  g.lineTo(size * 0.44, size * 0.67);
+  g.lineTo(size * 0.72, size * 0.36);
+  g.lineWidth = 13;
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  g.strokeStyle = '#ffffff';
+  g.stroke();
+  checkTexture = new THREE.CanvasTexture(canvas);
+  checkTexture.colorSpace = THREE.SRGBColorSpace;
+  return checkTexture;
+}
 
 type SelectPartFn = (id: string) => void;
 
@@ -1174,6 +1635,28 @@ function setPartCursor(on: boolean) {
 // already lives in this one file. Read each frame by applyHoverGlow and by
 // Label (see below); written only by clickable()'s own pointer handlers.
 const hoverState: { id: string | null } = { id: null };
+
+// ---- "click me" cue + explored tracking -----------------------------------
+// Which part currently "breathes" (a very soft, slow emissive swell that says
+// "try me"): the first not-yet-explored part of the step the camera is on —
+// one at a time, so two cues never compete. `breath` (0..CUE_PEAK) is
+// recomputed once per frame in HoverClock, and read by glowTarget() below,
+// so the cue rides the exact same emissive path as hover (applyHoverGlow and
+// the parts that fold hover into their own glow) and can never fight another
+// writer. Module scope like hoverState: one scene is mounted at a time.
+const CUE_PEAK = 0.65; // fraction of a full hover glow at the top of a breath
+const CUE_PERIOD_S = 3.4;
+const cueState: { id: string | null; breath: number; reduced: boolean } = { id: null, breath: 0, reduced: false };
+// parts the viewer has clicked at least once (read by Label to draw its check)
+const exploredParts = new Set<string>();
+
+/** 0..1 — how lit a part should be right now: fully while hovered, otherwise
+ *  the soft breath if it is the part being suggested, otherwise off. */
+function glowTarget(id: string | undefined) {
+  if (!id) return 0;
+  if (hoverState.id === id) return 1;
+  return cueState.id === id ? cueState.breath : 0;
+}
 
 /** Spread onto any mesh/group to make it a clickable "what does this do"
  *  target — stopPropagation keeps a click from also selecting whatever sits
@@ -1250,6 +1733,11 @@ function HoverClock() {
   // hover amount this frame sees the same, current delta
   useFrame((_, delta) => {
     hoverDelta = Math.min(delta, 0.05);
+    // the cue's breath: a slow raised-cosine, 0 -> CUE_PEAK -> 0. With
+    // reduced motion it holds one steady, faint glow instead of swelling.
+    cueState.breath = cueState.reduced
+      ? CUE_PEAK * 0.6
+      : CUE_PEAK * (0.5 - 0.5 * Math.cos((performance.now() / 1000) * ((Math.PI * 2) / CUE_PERIOD_S)));
   }, -1000);
   return null;
 }
@@ -1271,7 +1759,7 @@ function applyHoverGlow(
   amountRef: MutableRefObject<number>,
   boost = HOVER_GLOW_BOOST,
 ) {
-  const target = hoverState.id === id ? 1 : 0;
+  const target = glowTarget(id);
   amountRef.current = stepHover(amountRef.current, target);
   const a = amountRef.current < 0.003 ? 0 : amountRef.current;
   root.traverse((obj) => {
@@ -1318,7 +1806,7 @@ function applyHoverGlow(
 function useHoverAmount(id: string | undefined) {
   const amountRef = useRef(0);
   useFrame(() => {
-    const target = id && hoverState.id === id ? 1 : 0;
+    const target = glowTarget(id);
     amountRef.current = stepHover(amountRef.current, target);
     if (amountRef.current < 0.003) amountRef.current = 0;
   });
@@ -1555,7 +2043,7 @@ function ModuleInternals({
 
     const glow = e * glowPulse() * 1.1;
     chamberGlowRefs.forEach(([ref, id], i) => {
-      const target = hoverState.id === id ? 1 : 0;
+      const target = glowTarget(id);
       chamberHoverAmts.current[i] = stepHover(chamberHoverAmts.current[i], target);
       if (ref.current) ref.current.emissiveIntensity = Math.min(EMISSIVE_CLAMP, glow + chamberHoverAmts.current[i] * 0.12);
     });
@@ -1712,7 +2200,7 @@ function Tank({
     // pass — this is the one material pair that's already walked every
     // frame for opacity, so a second independent walk would just be two
     // writers landing on the same two materials
-    const hoverTarget = hoverState.id === 'tanks' ? 1 : 0;
+    const hoverTarget = glowTarget('tanks');
     shellHoverAmt.current = stepHover(shellHoverAmt.current, hoverTarget);
     const hoverGlow = shellHoverAmt.current < 0.003 ? 0 : shellHoverAmt.current;
     [bodyMatRef.current, domeMatRef.current].forEach((m) => {
@@ -2036,7 +2524,7 @@ function TEGSleeve({
   const hoverAmt = useRef(0);
 
   useFrame(() => {
-    const hoverTarget = hoverState.id === 'tegSleeve' ? 1 : 0;
+    const hoverTarget = glowTarget('tegSleeve');
     hoverAmt.current = stepHover(hoverAmt.current, hoverTarget);
     if (sleeveMatRef.current) {
       // glowPulse() swings 0.4..1.0, so the old `open * pulse * 0.8` took the
@@ -2112,7 +2600,7 @@ function TEGUnit({
     // gradient between the 3 adjacent module boxes disappeared with it,
     // reading as an unfinished/untextured panel rather than a glow.
     const glow = open * glowPulse() * 0.85;
-    const modulesHoverTarget = hoverState.id === 'tegModules' ? 1 : 0;
+    const modulesHoverTarget = glowTarget('tegModules');
     modulesHoverAmt.current = stepHover(modulesHoverAmt.current, modulesHoverTarget);
     moduleMatRefs.current.forEach((mat) => {
       if (mat) mat.emissiveIntensity = Math.min(EMISSIVE_CLAMP, glow + modulesHoverAmt.current * 0.12);
@@ -2128,7 +2616,7 @@ function TEGUnit({
     // this step is about" element in the scene already does, rather than
     // depending on color/contrast alone to stand out.
     const finsGlow = open * glowPulse() * 0.5;
-    const finsHoverTarget = hoverState.id === 'tegFins' ? 1 : 0;
+    const finsHoverTarget = glowTarget('tegFins');
     finsHoverAmt.current = stepHover(finsHoverAmt.current, finsHoverTarget);
     finsMatRefs.current.forEach((mat) => {
       if (mat) mat.emissiveIntensity = Math.min(EMISSIVE_CLAMP, finsGlow + finsHoverAmt.current * 0.12);
@@ -3102,8 +3590,21 @@ function Rig({
   // and clutter close shots of totally unrelated equipment (most visibly on
   // "teg", whose camera happens to sit near the module).
   const exhaustVisibleRef = useRef(1);
+  // names for the exhaust stack and the module itself, both on the capture
+  // module stop only (the overview is deliberately free of labels and click
+  // goals). The inlet's own label keeps exhaustVisibleRef.
+  useEffect(() => {
+    labelSelect.fn = onSelectPart;
+    return () => {
+      labelSelect.fn = null;
+    };
+  }, [onSelectPart]);
+  const stackLabelNearRef = useRef(0);
+  const moduleLabelRef = useRef(0);
   useFrame(() => {
     exhaustVisibleRef.current = explodeRef.current < 0.5 && EXHAUST_VISIBLE_STEP_IDS.has(step.id) ? 1 : 0;
+    stackLabelNearRef.current = step.id === 'module-exterior' ? 1 : 0;
+    moduleLabelRef.current = step.id === 'module-exterior' ? 1 : 0;
   });
   // Shared between TourController and HologramAutoRotate so the latter can
   // tell a real idle pause apart from "still mid-flight to this step" — see
@@ -3124,7 +3625,11 @@ function Rig({
         tegOpenRef={tegOpenRef}
         stackOpacityRef={stackOpacityRef}
         transitioningRef={transitioningRef}
-        onArrive={onArrive}
+        onArrive={(id) => {
+          // the camera has settled: labels re-measure their own distance (see labelFraming)
+          labelFraming.epoch++;
+          onArrive(id);
+        }}
       />
       <HologramAutoRotate stepId={step.id} transitioningRef={transitioningRef} />
       {/* PCFShadowMap (the default now that PCFSoftShadowMap is gone from
@@ -3151,6 +3656,7 @@ function Rig({
           equipment rests on this, so it stays visible even once the truck
           itself fades */}
       <HoverClock />
+      <LabelLayout />
       <GroundAndRail />
       <TruckContext opacityRef={truckOpacityRef} cabTintRef={cabTintRef} onBackgroundClick={onBackgroundClick} />
       <ExhaustStack opacityRef={stackOpacityRef} tegOpenRef={tegOpenRef} onSelectPart={onSelectPart} />
@@ -3167,7 +3673,7 @@ function Rig({
         loopSeconds={4}
       />
       <Label
-        activeRef={exhaustVisibleRef}
+        activeRef={moduleLabelRef}
         text="Exhaust inlet"
         fontSize={1.8}
         // left at the default white rather than PART_FACTS.exhaustFeed's
@@ -3181,7 +3687,28 @@ function Rig({
         // face — the midpoint-of-the-duct position this used to sit at put
         // it back behind the (now translucent) cab, where two stacked layers
         // of tinted glass washed white text out almost completely
-        computePosition={() => [moduleXCenter, EXHAUST_FEED_Y + 10, moduleZ1 + 6]}
+        computePosition={() => [moduleXCenter, EXHAUST_FEED_Y + 22, moduleZ1 + 14]}
+        anchor={() => [moduleXCenter, EXHAUST_FEED_Y, moduleZ1 + 2]}
+        facingDir={MODULE_EXTERIOR_FACING}
+      />
+      <Label
+        activeRef={stackLabelNearRef}
+        text="Exhaust stack"
+        fontSize={2.2}
+        hoverId="exhaustStack"
+        computePosition={() => [stackX, STACK_COLLECTOR_TOP + 18, stackZ]}
+        anchor={() => [stackX, STACK_COLLECTOR_TOP - 2, stackZ]}
+        callout="left"
+        facingDir={MODULE_EXTERIOR_FACING}
+      />
+      <Label
+        activeRef={moduleLabelRef}
+        text="Capture module"
+        fontSize={2.4}
+        hoverId="module"
+        computePosition={() => [moduleXCenter, assemblyTop + 8, moduleZ1 + 8]}
+        anchor={() => [moduleXCenter, bodyY1 - 14, moduleZ1]}
+        callout="up"
         facingDir={MODULE_EXTERIOR_FACING}
       />
       <FlowTrail
@@ -3213,7 +3740,8 @@ function Rig({
         fontSize={3}
         color={PART_FACTS.reservoir.accent}
         hoverId="reservoir"
-        computePosition={() => [intX1 + 10, (reservoirY0 + reservoirY1) / 2, (intZ0 + intZ1) / 2]}
+        computePosition={() => [intX1 + 26, (reservoirY0 + reservoirY1) / 2, (intZ0 + intZ1) / 2]}
+        anchor={() => [(intX0 + intX1) / 2, (reservoirY0 + reservoirY1) / 2, (intZ0 + intZ1) / 2]}
         facingDir={MODULE_INTERIOR_FACING}
       />
       <Label
@@ -3222,7 +3750,8 @@ function Rig({
         fontSize={3}
         color={PART_FACTS.pcm.accent}
         hoverId="pcm"
-        computePosition={(e) => [intX1 + 12, (reservoirY1 + detoxY0) / 2 + e * EXPLODE.heatingLift + 3, (pcmZ0 + pcmZ1) / 2]}
+        computePosition={(e) => [intX1 + 30, (reservoirY1 + detoxY0) / 2 + e * EXPLODE.heatingLift + 9, (pcmZ0 + pcmZ1) / 2]}
+        anchor={(e) => [(intX0 + intX1) / 2, (reservoirY1 + detoxY0) / 2 + e * EXPLODE.heatingLift, (pcmZ0 + pcmZ1) / 2]}
         facingDir={MODULE_INTERIOR_FACING}
       />
       <Label
@@ -3231,7 +3760,8 @@ function Rig({
         fontSize={3}
         color={PART_FACTS.pool.accent}
         hoverId="pool"
-        computePosition={(e) => [intX1 + 6, (reservoirY1 + detoxY0) / 2 + e * EXPLODE.heatingLift - 3, (poolZ0 + poolZ1) / 2]}
+        computePosition={(e) => [intX1 + 24, (reservoirY1 + detoxY0) / 2 + e * EXPLODE.heatingLift - 9, (poolZ0 + poolZ1) / 2]}
+        anchor={(e) => [(intX0 + intX1) / 2, (reservoirY1 + detoxY0) / 2 + e * EXPLODE.heatingLift, (poolZ0 + poolZ1) / 2]}
         facingDir={MODULE_INTERIOR_FACING}
       />
       <Label
@@ -3240,15 +3770,20 @@ function Rig({
         fontSize={3}
         color={PART_FACTS.detox.accent}
         hoverId="detox"
-        computePosition={(e) => [intX1 + 16, (detoxY0 + detoxY1) / 2 + e * EXPLODE.detoxLift, (intZ0 + intZ1) / 2]}
+        computePosition={(e) => [intX1 + 34, (detoxY0 + detoxY1) / 2 + e * EXPLODE.detoxLift, (intZ0 + intZ1) / 2]}
+        anchor={(e) => [(intX0 + intX1) / 2, (detoxY0 + detoxY1) / 2 + e * EXPLODE.detoxLift, (intZ0 + intZ1) / 2]}
         facingDir={MODULE_INTERIOR_FACING}
       />
       <Label
         activeRef={explodeRef}
         text="Demister pad"
         fontSize={3}
+        // a distinct violet: the default white label (and its white dot) was
+        // lost against the pale, translucent pad
+        color="#b79cff"
         hoverId="demister"
-        computePosition={(e) => [intX1 + 20, (demisterY0 + demisterY1) / 2 + e * EXPLODE.demisterLift, (intZ0 + intZ1) / 2]}
+        computePosition={(e) => [intX1 + 38, (demisterY0 + demisterY1) / 2 + e * EXPLODE.demisterLift, (intZ0 + intZ1) / 2]}
+        anchor={(e) => [(intX0 + intX1) / 2, (demisterY0 + demisterY1) / 2 + e * EXPLODE.demisterLift, (intZ0 + intZ1) / 2]}
         facingDir={MODULE_INTERIOR_FACING}
       />
       <StackedTanks openRef={tankOpenRef} onSelectPart={onSelectPart} />
@@ -3276,6 +3811,8 @@ function Rig({
         fontSize={1.8}
         hoverId="tanks"
         computePosition={() => [tankXCenterTop + 7, 108, tankZCenter]}
+        anchor={() => [tankXCenterTop, 100, tankZCenter]}
+        callout="up"
         facingDir={TANKS_FACING}
       />
       <Label
@@ -3283,7 +3820,9 @@ function Rig({
         text="Fill line (from module)"
         fontSize={1.4}
         hoverId="fillLine"
-        computePosition={() => [moduleXCenter + 2, bodyY1 + 2, (moduleZ0 + tankZ1) / 2]}
+        computePosition={() => [moduleXCenter + 2, bodyY1 + 14, (moduleZ0 + tankZ1) / 2]}
+        anchor={() => [moduleXCenter + 2, bodyY1 + 2, (moduleZ0 + tankZ1) / 2]}
+        callout="up"
         facingDir={TANKS_FACING}
       />
       <BulkBin openRef={binOpenRef} onSelectPart={onSelectPart} />
@@ -3305,7 +3844,8 @@ function Rig({
         // above the bin + inlet nub entirely, rather than tucked against its
         // side (only ~2in of clearance past the box's own half-width) where
         // it was reading as clipped by the box edge from an angled camera
-        computePosition={() => [bulkBinXCenter, bulkBinY1 + 7, bulkBinZCenter]}
+        computePosition={() => [bulkBinXCenter, bulkBinY1 + 18, bulkBinZCenter]}
+        anchor={() => [bulkBinXCenter, (bulkBinY0 + bulkBinY1) / 2 + 4, bulkBinZCenter]}
         facingDir={BULK_BIN_FACING}
       />
       <Label
@@ -3313,7 +3853,9 @@ function Rig({
         text="Auger screw"
         fontSize={1.4}
         hoverId="auger"
-        computePosition={() => [moduleXCenter - 8, bulkBinY0 + 12, bulkBinZCenter]}
+        computePosition={() => [moduleXCenter - 22, bulkBinY0 + 12, bulkBinZCenter]}
+        anchor={() => [moduleXCenter, bulkBinY1 + 10, bulkBinZCenter]}
+        callout="left"
         facingDir={BULK_BIN_FACING}
       />
       {/* the TEG sleeve and lead ride with the exhaust stack (ExhaustStack) */}
@@ -3331,7 +3873,11 @@ function Rig({
         text="TEG modules (hot side)"
         fontSize={1.4}
         hoverId="tegModules"
-        computePosition={() => [tegUnitX0 - 3, tegUnitYCenter + 4, tegUnitZCenter]}
+        computePosition={() => [tegUnitX0 - 18, tegUnitYCenter + 4, tegUnitZCenter]}
+        // on the outermost of the three hot-side blocks, high on the wall, so
+        // this dot sits well apart from the fins' and the controller's
+        anchor={() => [tegUnitX0 + 1, tegUnitYCenter + 1.5, tegUnitZCenter + 2.5]}
+        callout="left"
         facingDir={TEG_FACING}
       />
       <Label
@@ -3339,7 +3885,11 @@ function Rig({
         text="Heat-exchanger fins"
         fontSize={1.4}
         hoverId="tegFins"
-        computePosition={() => [tegUnitX1 + 3, tegUnitYCenter + 2, tegUnitZCenter]}
+        computePosition={() => [tegUnitX1 + 18, tegUnitYCenter + 2, tegUnitZCenter]}
+        // top edge, far side of the fin plate: apart from the modules' dot
+        // (other side) and the controller's (bottom centre)
+        anchor={() => [tegUnitX1 - 1.2, tegUnitYCenter + 2.8, tegUnitZCenter - 2]}
+        callout="right"
         facingDir={TEG_FACING}
       />
       <Label
@@ -3347,7 +3897,9 @@ function Rig({
         text="Controller"
         fontSize={1.4}
         hoverId="tegController"
-        computePosition={() => [tegUnitXCenter, tegUnitY0 - 2, tegUnitZCenter]}
+        computePosition={() => [tegUnitXCenter, tegUnitY0 - 14, tegUnitZCenter]}
+        anchor={() => [tegUnitXCenter, tegUnitY0 + 1.3, tegUnitZCenter + 0.5]}
+        callout="down"
         facingDir={TEG_FACING}
       />
       <OrbitControls
@@ -3901,6 +4453,21 @@ const STEP_FACTS: Record<string, StepFacts> = {
   },
 };
 
+// The parts each stop asks you to explore, in the order they get suggested
+// (the first unexplored one breathes). Every part here has a floating label —
+// that's where its "explored" check appears. Other parts stay clickable; they
+// just aren't part of the count. Stops with no list (the closing shot) have
+// no counter. Clicking a part marks it explored on every stop it appears in.
+const STEP_PARTS: Record<string, string[]> = {
+  overview: [], // just a look at the truck: no labels, counter or "click this" cue
+  'module-exterior': ['exhaustStack', 'exhaustFeed', 'module'],
+  'module-interior': ['reservoir', 'pcm', 'pool', 'detox', 'demister'],
+  tanks: ['tanks', 'fillLine'],
+  'bulk-bin': ['bulkBin', 'auger'],
+  teg: ['tegModules', 'tegFins', 'tegController'],
+  'full-system': [],
+};
+
 // One short, fact-grounded line per clickable part — this is the "click to
 // understand what it does" content. Condensed from the same research that
 // backed the old per-step bullets (see memory), just scoped to one part at
@@ -4090,11 +4657,19 @@ function FactsCard({
   selectedPart,
   onClear,
   deviceClass,
+  hasCue,
+  exploredCount,
+  partTotal,
 }: {
   stepId: string;
   selectedPart: string | null;
   onClear: () => void;
   deviceClass: DeviceClass;
+  // a part is currently breathing, so the hint can point at it
+  hasCue: boolean;
+  // "2/3 explored" for the stop on screen (partTotal 0 = no counter)
+  exploredCount: number;
+  partTotal: number;
 }) {
   const step = STEP_FACTS[stepId];
   const part = selectedPart ? PART_FACTS[selectedPart] : null;
@@ -4148,17 +4723,39 @@ function FactsCard({
       >
         {/* accent edge as a background, not a border: forced dark mode dims coloured borders */}
         <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderRadius: '10px 0 0 10px', background: accent }} />
-        <span
-          style={{
-            fontSize: compact ? 9.5 : 10.5,
-            fontWeight: 700,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color: accentText,
-          }}
-        >
-          Guide
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <span
+            style={{
+              fontSize: compact ? 9.5 : 10.5,
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: accentText,
+            }}
+          >
+            Guide
+          </span>
+          {partTotal > 0 && (
+            // how many of this stop's parts you've clicked. Solid backgrounds
+            // only (no borders), so forced dark mode leaves it alone.
+            <span
+              aria-live="polite"
+              style={{
+                fontSize: compact ? 10.5 : 11.5,
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                padding: compact ? '1px 8px' : '2px 9px',
+                borderRadius: 999,
+                color: '#fff',
+                background: exploredCount >= partTotal ? '#2f6b3f' : '#3d434b',
+                transition: 'background-color 0.3s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {exploredCount}/{partTotal} explored{exploredCount >= partTotal ? ' ✓' : ''}
+            </span>
+          )}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 8 : 10 }}>
           {part ? (
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: accent, flex: 'none' }} />
@@ -4171,9 +4768,11 @@ function FactsCard({
           </span>
           {part && <span style={{ opacity: 0.55, fontSize: 11, flex: 'none' }}>✕</span>}
         </div>
-        {!part && deviceClass !== 'phone' && (
+        {!part && stepId !== 'overview' && (hasCue || deviceClass !== 'phone') && (
           <span style={{ fontSize: compact ? 10.5 : 11.5, lineHeight: 1.4, color: 'rgba(255,255,255,0.65)' }}>
-            Click or tap any part to see what it does.
+            {hasCue
+              ? 'Click or tap the softly glowing part to see what it does.'
+              : 'Click or tap any part to see what it does.'}
           </span>
         )}
       </div>
@@ -4181,8 +4780,12 @@ function FactsCard({
   );
 }
 
-function navButtonStyle(disabled: boolean, compact: boolean): CSSProperties {
+function navButtonStyle(disabled: boolean, compact: boolean, nudge = false): CSSProperties {
   return {
+    // "you're done here, move on": a static accent ring (the pulse around it
+    // is the cc-next-nudge animation, which reduced motion switches off).
+    // A box-shadow, not a border: forced dark mode recolours coloured borders.
+    ...(nudge ? { boxShadow: '0 0 0 2px #e2883f' } : null),
     padding: compact ? '7px 13px' : '9px 18px',
     borderRadius: 999,
     border: '1px solid rgba(255,255,255,0.14)',
@@ -4209,6 +4812,8 @@ function TourNav({
   stepIndex,
   displayedLabel,
   deviceClass,
+  nudgeNext,
+  isStepDone,
   onPrev,
   onNext,
   onJump,
@@ -4221,11 +4826,15 @@ function TourNav({
   // feels immediate
   displayedLabel: string;
   deviceClass: DeviceClass;
+  // everything on this stop has been explored: point at Next
+  nudgeNext: boolean;
+  isStepDone: (i: number) => boolean;
   onPrev: () => void;
   onNext: () => void;
   onJump: (i: number) => void;
 }) {
   const compact = deviceClass !== 'desktop';
+  const isLast = stepIndex === steps.length - 1;
   return (
     <div
       data-tour="nav"
@@ -4269,7 +4878,9 @@ function TourNav({
                 border: 'none',
                 padding: 0,
                 cursor: 'pointer',
-                background: i === stepIndex ? '#e2883f' : '#7d838b', // solid grey: reads on a light or dark ground, and forced dark leaves it alone
+                // current = orange, fully explored = green, otherwise solid
+                // grey (reads on a light or dark ground; forced dark leaves it alone)
+                background: i === stepIndex ? '#e2883f' : isStepDone(i) ? '#4fa06b' : '#7d838b',
                 transition: 'background-color 0.15s ease',
               }}
             />
@@ -4277,10 +4888,12 @@ function TourNav({
         </div>
         <button
           onClick={onNext}
-          disabled={stepIndex === steps.length - 1}
-          style={navButtonStyle(stepIndex === steps.length - 1, compact)}
+          disabled={isLast}
+          className={nudgeNext ? 'cc-next-nudge' : undefined}
+          data-cc-anim={nudgeNext ? '' : undefined}
+          style={navButtonStyle(isLast, compact, nudgeNext)}
         >
-          Next →
+          Next <span className="cc-next-arrow" data-cc-anim>→</span>
         </button>
       </div>
     </div>
@@ -4326,15 +4939,56 @@ export default function Scene3D() {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const selectedRef = useRef<string | null>(null);
   selectedRef.current = selectedPart;
+  // Parts clicked so far live in the module-scope `exploredParts` set (Label
+  // reads it every frame to draw its check); this counter just re-renders the
+  // counter, the dots and the Next nudge when the set changes.
+  const [, setExploredVersion] = useState(0);
   const handleSelectPart = (id: string) => {
     if (selectedRef.current === id) sfx.deselect();
-    else sfx.select();
+    else {
+      sfx.select();
+      if (!exploredParts.has(id)) {
+        exploredParts.add(id);
+        setExploredVersion((v) => v + 1);
+      }
+    }
     setSelectedPart((prev) => (prev === id ? null : id));
   };
   const clearSelectedPart = () => {
     if (selectedRef.current) sfx.deselect();
     setSelectedPart(null);
   };
+
+  // ---- explored counter + "click me" cue ----
+  // Only once the camera has actually arrived at the stop on screen does it
+  // count and cue (displayedStepId lags stepIndex during the fly-over).
+  const arrived = step.id === displayedStepId;
+  const stopParts = STEP_PARTS[displayedStepId] ?? [];
+  const exploredCount = stopParts.filter((p) => exploredParts.has(p)).length;
+  const cueTarget = arrived ? stopParts.find((p) => !exploredParts.has(p)) ?? null : null;
+  // point at Next once every part on the stop has been explored
+  const nudgeNext = arrived && stopParts.length > 0 && exploredCount === stopParts.length;
+  const isStepDone = (i: number) => {
+    const ps = STEP_PARTS[TOUR_STEPS[i].id] ?? [];
+    return ps.length > 0 && ps.every((p) => exploredParts.has(p));
+  };
+  useEffect(() => {
+    cueState.id = cueTarget;
+  }, [cueTarget]);
+  useEffect(() => {
+    // reduced motion: the cue becomes a steady faint glow instead of a breath
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const apply = () => {
+      cueState.reduced = !!mq?.matches;
+    };
+    apply();
+    mq?.addEventListener?.('change', apply);
+    return () => {
+      mq?.removeEventListener?.('change', apply);
+      cueState.id = null;
+      exploredParts.clear();
+    };
+  }, []);
 
   // sound: arm the first-gesture unlock (browsers, Safari most of all, only
   // allow audio after a tap)
@@ -4436,12 +5090,17 @@ export default function Scene3D() {
         selectedPart={selectedPart}
         onClear={clearSelectedPart}
         deviceClass={deviceClass}
+        hasCue={cueTarget !== null}
+        exploredCount={exploredCount}
+        partTotal={stopParts.length}
       />
       <TourNav
         steps={TOUR_STEPS}
         stepIndex={stepIndex}
         displayedLabel={TOUR_STEPS.find((s) => s.id === displayedStepId)?.label ?? step.label}
         deviceClass={deviceClass}
+        nudgeNext={nudgeNext}
+        isStepDone={isStepDone}
         onPrev={goPrev}
         onNext={goNext}
         onJump={setStepIndex}

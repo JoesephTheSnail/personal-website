@@ -770,6 +770,27 @@ html.light .mobile-topbar span { color: #0D0D0D !important; }
   0% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 0 0 color-mix(in srgb, var(--cc-accent, #e2883f) 60%, transparent); }
   100% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 0 16px color-mix(in srgb, var(--cc-accent, #e2883f) 0%, transparent); }
 }
+/* "this stop is fully explored, go on": the Next arrow nudges three times,
+   rests, and repeats a few rounds (then stops, leaving only the static ring
+   set inline on the button). Hover/press stops it at once. */
+@keyframes cc-next-bob {
+  0%, 36%, 100% { transform: translateX(0); }
+  6%  { transform: translateX(4px); }
+  12% { transform: translateX(0); }
+  18% { transform: translateX(4px); }
+  24% { transform: translateX(0); }
+  30% { transform: translateX(4px); }
+}
+@keyframes cc-next-ring {
+  0%   { box-shadow: 0 0 0 2px #e2883f, 0 0 0 2px rgba(226, 136, 63, 0.55); }
+  30%, 100% { box-shadow: 0 0 0 2px #e2883f, 0 0 0 14px rgba(226, 136, 63, 0); }
+}
+.cc-next-nudge { animation: cc-next-ring 3.2s ease-out 4; }
+.cc-next-nudge .cc-next-arrow { display: inline-block; animation: cc-next-bob 3.2s ease-in-out 4; }
+.cc-next-nudge:hover,
+.cc-next-nudge:active,
+.cc-next-nudge:hover .cc-next-arrow,
+.cc-next-nudge:active .cc-next-arrow { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   [data-cc-anim] { animation: none !important; }
 }
