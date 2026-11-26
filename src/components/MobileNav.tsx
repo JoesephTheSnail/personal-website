@@ -4,20 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  FaHome, FaFolder, FaBook,
-  FaNewspaper, FaHeartbeat, FaBars, FaTimes,
-} from 'react-icons/fa';
-import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
-import { playPop } from '@/lib/sound';
-
-const nav = [
-  { href: '/',                               label: 'Home',       icon: FaHome,      external: false },
-  { href: '/projects',                       label: 'Projects',   icon: FaFolder,    external: false },
-  { href: '/books',                          label: 'Books',      icon: FaBook,      external: false },
-  { href: '/health',                         label: 'Health',     icon: FaHeartbeat, external: false },
-  { href: 'https://arnav01.substack.com/',   label: 'Newsletter', icon: FaNewspaper, external: true  },
-];
+import { FaBars, FaTimes } from 'react-icons/fa';
+import { playPop, playTick } from '@/lib/sound';
+import { useAccessibilityPrefs } from '@/lib/useAccessibilityPrefs';
+import { NAV_ITEMS, isNavActive } from '@/lib/navItems';
 
 interface Props { onContactClick: () => void; }
 
@@ -28,6 +18,7 @@ export default function MobileNav({ onContactClick }: Props) {
   const [openKey, setOpenKey]     = useState(0);
   const [mounted, setMounted]     = useState(false);
   const pathname   = usePathname();
+  const { reduceMotion, reduceTransparency, toggleMotion, toggleTransparency } = useAccessibilityPrefs();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -59,82 +50,137 @@ export default function MobileNav({ onContactClick }: Props) {
     if (menuState !== 'open') return;
     const handler = (e: MouseEvent) => {
       const menu = document.getElementById('mobile-menu-panel');
-      if (menu && !menu.contains(e.target as Node)) close();
+      const target = e.target as Element | null;
+      // The menu button closes the menu itself on click. Closing on its mousedown
+      // too left the click to see a "closing" menu and reopen it.
+      if (target?.closest?.('button[aria-controls="mobile-menu-panel"]')) return;
+      if (menu && !menu.contains(target as Node)) close();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        close();
+        document.querySelector<HTMLElement>('button[aria-controls="mobile-menu-panel"]')?.focus();
+      }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [menuState]);
-
-  const isActive = (href: string, external: boolean) =>
-    !external && (pathname === href || (href !== '/' && pathname.startsWith(href)));
 
   const open    = menuState === 'open';
   const visible = menuState !== 'closed';
 
+  // Close uses ease-out like open: an ease-in exit starts slowly, which is the
+  // exact moment the visitor is watching. Items arrive on a 25ms stagger.
   const animStyle = open
-    ? { animation: 'bubble-in 0.34s cubic-bezier(0.34, 1.08, 0.64, 1) forwards' }
-    : { animation: 'bubble-out 0.18s ease-in forwards' };
+    ? { animation: 'sheet-in 0.26s var(--ease-out) forwards' }
+    : { animation: 'sheet-out 0.16s var(--ease-out) forwards' };
 
+  // A flat sheet that drops from under the bar: same plain type as the
+  // desktop sidebar, no card, no icons.
   const panel = visible ? (
     <div
       key={openKey}
       id="mobile-menu-panel"
+      data-state={open ? 'open' : 'closing'}
       style={{
-        position:        'fixed',
-        top:             '5rem',
-        left:            '50%',
-        width:           'calc(100% - 2.5rem)',
-        maxWidth:        '340px',
-        zIndex:          50,
-        background:      'var(--sidebar-bg)',
-        border:          '1px solid var(--border-med)',
-        borderRadius:    '20px',
-        boxShadow:       '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)',
-        padding:         '8px',
-        transformOrigin: 'top center',
+        position:   'fixed',
+        top:        '3.5rem',
+        left:       0,
+        right:      0,
+        zIndex:     50,
+        background: 'var(--bg)',
+        borderBottom: '1px solid var(--border-med)',
+        padding:    '12px 20px 24px',
+        // A phone held sideways is ~390px tall: without a cap the sheet runs
+        // off the bottom and its last link cannot be reached.
+        maxHeight:  'calc(100dvh - 3.5rem)',
+        overflowY:  'auto',
+        overscrollBehavior: 'contain',
         ...animStyle,
       }}
     >
-      {nav.map(({ href, label, icon: Icon, external }, i) => {
-        const active = isActive(href, external);
-        return (
-          <Link
-            key={href}
-            href={href}
-            target={external ? '_blank' : undefined}
-            rel={external ? 'noopener noreferrer' : undefined}
-            onClick={() => close()}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-            style={{
-              color:      active ? 'var(--fg)' : 'var(--fg-50)',
-              background: active ? 'var(--hover-bg)' : 'transparent',
-              // items start transparent and fade in; during close they stay visible (panel handles exit)
-              opacity:    open ? 0 : 1,
-              animation:  open ? `item-in 0.28s ease forwards ${80 + i * 40}ms` : 'none',
-            }}
-          >
-            <Icon size={13} style={{ color: active ? 'var(--indigo)' : 'var(--fg-35)' }} />
-            {label}
-            {external && <FaArrowUpRightFromSquare size={10} className="ml-auto" style={{ color: 'var(--fg-35)' }} />}
-          </Link>
-        );
-      })}
+      <ul>
+        {NAV_ITEMS.map((item, i) => {
+          const active = isNavActive(pathname, item);
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                target={item.external ? '_blank' : undefined}
+                rel={item.external ? 'noopener noreferrer' : undefined}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => close()}
+                className="flex items-baseline gap-4 py-2.5 text-[1.75rem] tracking-[-0.03em]"
+                style={{
+                  color:     active ? 'var(--accent)' : 'var(--fg)',
+                  // items start transparent and fade in; during close they stay visible (panel handles exit)
+                  opacity:   open ? 0 : 1,
+                  animation: open ? `item-in 0.22s var(--ease-out) forwards ${40 + i * 25}ms` : 'none',
+                }}
+              >
+                <span className="w-6 text-[11px] tabular-nums" style={{ color: active ? 'var(--accent)' : 'var(--fg-45)' }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                {item.label}
+                {item.external && <span aria-hidden="true" className="text-[0.6em]">↗</span>}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
 
-      <div className="my-2 mx-1" style={{ height: '1px', background: 'var(--border)' }} />
+      <div className="mt-4 border-t pt-5" style={{ borderColor: 'var(--border-med)' }}>
+        <button
+          type="button"
+          onClick={() => { close(); onContactClick(); }}
+          className="tap-44 proud-link pb-1 text-[1rem]"
+          style={{
+            color:     'var(--fg)',
+            opacity:   open ? 0 : 1,
+            animation: open ? `item-in 0.22s var(--ease-out) forwards ${40 + NAV_ITEMS.length * 25}ms` : 'none',
+          }}
+        >
+          Get in touch <span aria-hidden="true">→</span>
+        </button>
+      </div>
 
-      <button
-        onClick={() => { close(); onContactClick(); }}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium"
+      {/* Below 1024px the floating accessibility button is hidden (it sat on
+          top of the text), so the same two settings live here. */}
+      <div
+        role="group"
+        aria-label="Accessibility options"
+        className="mt-5 border-t pt-5"
         style={{
-          background: 'var(--indigo-bg)',
-          border:     '1px solid var(--indigo-border)',
-          color:      'var(--indigo)',
-          opacity:    open ? 0 : 1,
-          animation:  open ? `item-in 0.28s ease forwards ${80 + nav.length * 40}ms` : 'none',
+          borderColor: 'var(--border-med)',
+          opacity:   open ? 0 : 1,
+          animation: open ? `item-in 0.22s var(--ease-out) forwards ${40 + (NAV_ITEMS.length + 1) * 25}ms` : 'none',
         }}
       >
-        Contact
-      </button>
+        <p className="text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+          Accessibility
+        </p>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+          {[
+            { label: 'Reduce motion', on: reduceMotion, toggle: toggleMotion },
+            { label: 'Reduce transparency', on: reduceTransparency, toggle: toggleTransparency },
+          ].map(({ label, on, toggle }) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={on}
+              onClick={() => { playTick(); toggle(); }}
+              className={`tap-44 ledger-filter pb-1 text-[0.9375rem] ${on ? 'proud-link' : ''}`}
+              style={{ color: on ? 'var(--fg)' : 'var(--fg-60)' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   ) : null;
 
@@ -145,21 +191,27 @@ export default function MobileNav({ onContactClick }: Props) {
           previously sitting in only a 26x26px hit area, easy to miss with
           a thumb even though it's trivial to hit with a mouse pointer. The
           matching -m-[9px] pulls the extra padding back out of the flex
-          row's layout so the pill's width and the gap to ThemeToggle don't
-          change — only the invisible hit area grows, not anything visual. */}
+          row's layout — only the invisible hit area grows, not anything visual. */}
       <button
         onClick={() => {
           if (menuState === 'open') close();
           else openMenu();
         }}
-        className="p-[13px] -m-[9px] transition-all duration-200"
+        className="menu-toggle p-[13px] -m-[9px] transition-[transform,color] duration-200"
         style={{
           color:     'var(--fg-50)',
           transform: open ? 'rotate(90deg) scale(0.9)' : 'rotate(0deg) scale(1)',
         }}
-        aria-label="Open menu"
+        aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-expanded={open}
+        aria-controls="mobile-menu-panel"
       >
-        {open ? <FaTimes size={16} /> : <FaBars size={18} />}
+        {/* Both icons stay mounted and crossfade; swapping them outright popped
+            in the middle of the button's quarter turn. */}
+        <span className="relative block h-[18px] w-[18px]" aria-hidden="true">
+          <FaBars size={18} className="absolute inset-0 transition-opacity duration-150" style={{ opacity: open ? 0 : 1 }} />
+          <FaTimes size={16} className="absolute left-px top-px transition-opacity duration-150" style={{ opacity: open ? 1 : 0 }} />
+        </span>
       </button>
 
       {mounted && createPortal(panel, document.body)}

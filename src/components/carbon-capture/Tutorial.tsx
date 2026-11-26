@@ -466,7 +466,7 @@ export default function Tutorial({
           backdropFilter: 'blur(10px)',
           boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
           color: '#fff',
-          fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+          fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
           animation: 'cc-facts-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}
       >
@@ -569,7 +569,7 @@ export function TutorialHelpButton({ onClick }: { onClick: () => void }) {
         cursor: 'pointer',
         padding: 0,
         touchAction: 'manipulation',
-        fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+        fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
         fontSize: 17,
         fontWeight: 700,
       }}

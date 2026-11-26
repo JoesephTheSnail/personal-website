@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# UX audit artifacts: the screenshots (33MB) and raw results (3MB) are large and reproducible;
+# the reports, patches and scripts in docs/ux-audit/ are small and stay trackable.
+/docs/ux-audit/screenshots/
+/docs/ux-audit/results/

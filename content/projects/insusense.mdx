@@ -1,8 +1,9 @@
 ---
 title: "InsuSense"
-description: "A non-invasive insulin delivery prototype that integrates with continuous glucose monitors to automate dosing."
+description: "A non-invasive insulin delivery prototype that uses a glucose monitor to automate dosing."
 date: "2024-05"
 status: "published"
+featured: true
 category: "Research"
 order: 8
 links:
@@ -12,21 +13,29 @@ links:
     url: "https://docs.google.com/presentation/d/1gYJb8RkL0DqGZkcITqu3WG3QrOj08B1B3W3zi0u2-kQ/edit?usp=sharing"
 ---
 
-Insulin-dependent diabetes is a disease of constant management. Every meal, every workout, every stressful day requires a manual decision: how much insulin, when, delivered how. Mistakes have serious consequences. The cognitive and physical burden on patients is enormous.
+## The problem
 
-InsuSense started with a simple question: what if the system could close the loop?
+Insulin-dependent diabetes means constant management. Every meal, workout, and stressful day needs a manual decision: how much insulin, when, and how. Mistakes have serious consequences, and the load on patients is huge.
 
-The prototype integrates with continuous glucose monitors (CGMs) to read real-time glucose data and trigger insulin delivery automatically, a step toward a closed-loop artificial pancreas system. The core engineering challenge was building a delivery mechanism that's reliable, miniaturized, and safe enough to trust with medication.
+InsuSense started with one question: what if the system could close the loop?
 
-This project required going deep on both the biology and the engineering simultaneously. I had to understand how glucose-insulin dynamics actually work: lag times, correction factors, carb ratios, before I could design a system that wouldn't over- or under-dose.
+## The prototype
 
-The research phase alone was one of the most intensive I've done. The clinical constraints on any device that touches medication delivery are strict for good reason. This project gave me enormous respect for the people who build medical devices professionally.
+It connects to continuous glucose monitors (CGMs), reads real-time glucose data, and triggers insulin delivery automatically. That's a step toward a closed-loop artificial pancreas.
+
+The hardest engineering challenge was building a delivery mechanism that's reliable, miniaturized, and safe enough to trust with medication.
+
+## What it took
+
+I had to learn the biology and the engineering at the same time. Before I could design anything that wouldn't over- or under-dose, I had to understand how glucose and insulin behave: lag times, correction factors, and carb ratios.
+
+The research was one of the most intensive I've done. The rules for any device that delivers medication are strict for good reason. It gave me a lot of respect for the people who build medical devices professionally.
 
 ---
 
 **Outcome:** Designed a non-invasive insulin delivery prototype that reads real-time glucose data from a CGM and automates dosing, a step toward a closed-loop artificial pancreas.
 
 **What I took from it:**
-- Closed-loop medical systems require understanding the biology and the engineering simultaneously. You can't hand off one to someone else: the lag times, correction factors, and dosing logic are all connected.
-- Clinical constraints on medication delivery devices exist for good reason. Designing around them early isn't a limitation. It's what separates a concept that could actually ship from one that can't.
-- This was the most intensive research I've done. It also gave me the most respect for healthcare engineering as a discipline: the stakes make every design decision heavier.
+- Closed-loop medical systems need the biology and the engineering together. Lag times, correction factors, and dosing logic are all connected.
+- Clinical rules exist for good reason. Designing around them early separates a concept that could ship from one that can't.
+- This was my most intensive research, and it gave me the most respect for healthcare engineering. The stakes make every design decision heavier.

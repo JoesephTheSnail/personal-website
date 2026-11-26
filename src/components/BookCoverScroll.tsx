@@ -27,10 +27,21 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
 
   const startScroll = useCallback(() => {
     if (rafRef.current !== null) return;
-    const step = () => {
+    // Speed is pixels per 60Hz frame, scaled by the real time between frames so
+    // the strip moves at the same pace on 60, 90 and 120Hz screens and when a
+    // frame is dropped. `carry` keeps the fraction that scrollLeft rounds away,
+    // otherwise very slow speeds near the edge of the zone would stall.
+    let last = 0;
+    let carry = 0;
+    const step = (now: number) => {
       const el = trackRef.current;
+      const dt = last ? Math.min(now - last, 50) : 1000 / 60;
+      last = now;
       if (el && speedRef.current !== 0) {
-        el.scrollLeft += speedRef.current;
+        const delta = speedRef.current * (dt / (1000 / 60)) + carry;
+        const whole = Math.trunc(delta);
+        carry = delta - whole;
+        if (whole !== 0) el.scrollLeft += whole;
         setScrolled(el.scrollLeft > 4);
       }
       rafRef.current = requestAnimationFrame(step);
@@ -70,8 +81,7 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
       // The track's scrollbar is fully hidden (see .cover-track), so this
       // margin is the only gap under the covers — no hidden padding stacking
       // on top of it the way pb-6 used to.
-      className="relative mb-3 select-none overflow-hidden"
-      data-hide-cursor
+      className="relative select-none overflow-hidden"
       onMouseMove={handleMouseMove}
       onMouseLeave={stopScroll}
     >
@@ -89,14 +99,14 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
       <div
         className="absolute inset-y-0 left-0 w-24 z-20 pointer-events-none transition-opacity duration-100"
         style={{
-          background: 'radial-gradient(ellipse at left center, rgba(255,255,255,0.07) 0%, transparent 75%)',
+          background: 'radial-gradient(ellipse at left center, rgba(91,163,194,0.14) 0%, transparent 75%)',
           opacity: hoverZone === 'left' ? 1 : 0,
         }}
       />
       <div
         className="absolute inset-y-0 right-0 w-24 z-20 pointer-events-none transition-opacity duration-100"
         style={{
-          background: 'radial-gradient(ellipse at right center, rgba(255,255,255,0.07) 0%, transparent 75%)',
+          background: 'radial-gradient(ellipse at right center, rgba(91,163,194,0.14) 0%, transparent 75%)',
           opacity: hoverZone === 'right' ? 1 : 0,
         }}
       />
@@ -106,13 +116,13 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
         className="absolute inset-y-0 left-0 w-16 z-20 flex items-center justify-center pointer-events-none transition-opacity duration-200"
         style={{ opacity: scrolled ? (hoverZone === 'left' ? 0.6 : 0.2) : 0 }}
       >
-        <span className="text-white text-lg">‹</span>
+        <span className="text-lg" style={{ color: 'var(--fg)' }}>‹</span>
       </div>
       <div
         className="absolute inset-y-0 right-0 w-16 z-20 flex items-center justify-center pointer-events-none transition-opacity duration-200"
         style={{ opacity: hoverZone === 'right' ? 0.6 : 0.2 }}
       >
-        <span className="text-white text-lg">›</span>
+        <span className="text-lg" style={{ color: 'var(--fg)' }}>›</span>
       </div>
 
       {/* Scrollable track — min-width:0 prevents iOS Safari from inflating parent
@@ -130,7 +140,7 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
           no second layer for a seam to leak through. */}
       <div
         ref={trackRef}
-        className="cover-track relative z-0 flex gap-3 overflow-x-auto pb-1"
+        className="cover-track relative z-0 flex gap-4 overflow-x-auto pb-2 pt-2"
         style={{
           minWidth: 0,
           maskImage: `linear-gradient(to right, ${scrolled ? 'transparent, black 64px,' : 'black,'} black calc(100% - 64px), transparent)`,
@@ -150,12 +160,12 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
             }}
           >
             <div
-              className="rounded overflow-hidden transition-all duration-200 group-hover:brightness-110"
+              className="cover-item overflow-hidden"
               style={{
-                width: 76,
-                height: 114,
+                width: 92,
+                height: 138,
                 position: 'relative',
-                border: '1px solid var(--border-8)',
+                border: '1px solid var(--border-med)',
                 flexShrink: 0,
               }}
             >
@@ -164,12 +174,8 @@ export default function BookCoverScroll({ books }: { books: CoverItem[] }) {
                 alt={`Cover of ${book.title}`}
                 fill
                 className="object-cover"
-                sizes="76px"
+                sizes="92px"
                 draggable={false}
-              />
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded"
-                style={{ boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.6)' }}
               />
             </div>
           </a>

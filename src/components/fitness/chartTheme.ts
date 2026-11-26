@@ -1,8 +1,7 @@
 // Shared recharts tooltip styling for the Fitness dashboard (the only
 // chart left on Overview is the Time by Sport donut — its colors come
 // straight from each sport's data, not from constants here). Every
-// value is a CSS custom property (fitness.css, both the dark default
-// and the html.light override) so it follows the site's theme toggle.
+// value is a CSS custom property (fitness.css).
 
 export const tooltipStyle = {
   background: 'var(--fx-tooltip-bg)',

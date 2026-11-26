@@ -1,86 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaArrowUpRightFromSquare, FaArrowRight } from 'react-icons/fa6';
-import { FaHome, FaFolder, FaBook, FaHeartbeat, FaNewspaper, FaEnvelope } from 'react-icons/fa';
-import ThemeToggle from './ThemeToggle';
 import MobileNav from './MobileNav';
+import { NAV_ITEMS, isNavActive } from '@/lib/navItems';
 import { playTick, playSuccess } from '@/lib/sound';
-
-const nav = [
-  { href: '/',                             label: 'Home',       icon: FaHome,      external: false },
-  { href: '/projects',                     label: 'Projects',   icon: FaFolder,    external: false },
-  { href: '/books',                        label: 'Books',      icon: FaBook,      external: false },
-  { href: '/health',                       label: 'Health',     icon: FaHeartbeat, external: false },
-  { href: 'https://arnav01.substack.com/', label: 'Newsletter', icon: FaNewspaper, external: true  },
-];
-
-const SPRING = '0.3s cubic-bezier(0.34, 1.06, 0.64, 1)';
+import { LINKS } from '@/lib/links';
 
 interface Props { onContactClick: () => void; }
 
 export default function TopNav({ onContactClick }: Props) {
-  const pathname     = usePathname();
-  const navRef       = useRef<HTMLDivElement>(null);
-  const indicatorRef = useRef<HTMLDivElement>(null);
-  const [email, setEmail]   = useState('');
-  const [sent,  setSent]    = useState(false);
-
-  // Spring indicator — vertical axis
-  useEffect(() => {
-    const nav = navRef.current;
-    const ind = indicatorRef.current;
-    if (!nav || !ind) return;
-
-    const active = nav.querySelector('.topnav-link--active') as HTMLElement | null;
-    if (!active) { ind.style.opacity = '0'; return; }
-
-    const navRect = nav.getBoundingClientRect();
-    const elRect  = active.getBoundingClientRect();
-
-    ind.style.transition = 'none';
-    ind.style.top        = `${elRect.top - navRect.top}px`;
-    ind.style.height     = `${elRect.height}px`;
-    ind.style.opacity    = '1';
-
-    requestAnimationFrame(() => {
-      ind.style.transition = `top ${SPRING}`;
-    });
-  }, [pathname]);
-
-  const onLinkEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const nav = navRef.current;
-    const ind = indicatorRef.current;
-    if (!nav || !ind) return;
-    const navRect = nav.getBoundingClientRect();
-    const elRect  = e.currentTarget.getBoundingClientRect();
-    ind.style.opacity = '1';
-    ind.style.top     = `${elRect.top - navRect.top}px`;
-    ind.style.height  = `${elRect.height}px`;
-  };
-
-  const onNavLeave = () => {
-    const nav = navRef.current;
-    const ind = indicatorRef.current;
-    if (!nav || !ind) return;
-    const active = nav.querySelector('.topnav-link--active') as HTMLElement | null;
-    if (!active) { ind.style.opacity = '0'; return; }
-    const navRect = nav.getBoundingClientRect();
-    const elRect  = active.getBoundingClientRect();
-    ind.style.top    = `${elRect.top - navRect.top}px`;
-    ind.style.height = `${elRect.height}px`;
-  };
-
-  const isActive = (href: string, external: boolean) =>
-    !external && (pathname === href || (href !== '/' && pathname.startsWith(href)));
+  const pathname = usePathname();
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     window.open(
-      `https://arnav01.substack.com/subscribe?email=${encodeURIComponent(email.trim())}`,
+      `${LINKS.substackSubscribe}?email=${encodeURIComponent(email.trim())}`,
       '_blank',
       'noopener,noreferrer',
     );
@@ -92,154 +31,96 @@ export default function TopNav({ onContactClick }: Props) {
 
   return (
     <>
-      {/* ── Desktop vertical sidebar ── */}
-      <div
-        className="fixed left-4 top-4 bottom-4 z-40 hidden md:flex flex-col"
-        style={{
-          width: '260px',
-          background: 'var(--sidebar-bg)',
-          border: '1px solid var(--border-med)',
-          borderRadius: '20px',
-          boxShadow: '0 4px 32px rgba(0,0,0,0.5), 0 1px 6px rgba(0,0,0,0.4)',
-          padding: '20px 16px 16px',
-        }}
+      {/* ── Desktop sidebar: a flush column with one hairline edge, set in the
+          same plain type as the pages. No card, no icons, no moving pill. ── */}
+      <aside
+        data-site-chrome
+        className="fixed inset-y-0 left-0 z-40 hidden w-[270px] flex-col overflow-y-auto border-r px-8 pb-8 pt-10 lg:flex"
+        style={{ background: 'var(--bg)', borderColor: 'var(--border-med)' }}
       >
-        {/* Wordmark row */}
-        <div className="flex items-center justify-between mb-10 px-1">
-          <Link
-            href="/"
-            className="font-poppins font-bold text-lg tracking-tight leading-tight"
+        <Link href="/" className="tap-44 text-[1.375rem] font-medium leading-tight tracking-[-0.03em]" style={{ color: 'var(--fg)' }}>
+          Arnav Chandra
+        </Link>
+        <p className="mt-2 text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+          Toronto, Ontario
+        </p>
+
+        <nav aria-label="Main" className="mt-14">
+          <ul>
+            {NAV_ITEMS.map((item, i) => {
+              const active = isNavActive(pathname, item);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    target={item.external ? '_blank' : undefined}
+                    rel={item.external ? 'noopener noreferrer' : undefined}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={() => !active && playTick()}
+                    className="tap-44 rail-link flex items-baseline gap-3 py-2 text-[1.125rem] tracking-[-0.015em]"
+                    style={{ color: active ? 'var(--accent)' : 'var(--fg-70)' }}
+                  >
+                    <span className="w-5 text-[10.5px] tabular-nums" style={{ color: active ? 'var(--accent)' : 'var(--fg-45)' }}>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    {item.label}
+                    {item.external && <span aria-hidden="true" className="text-[0.8em]">↗</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="mt-auto">
+          <button
+            type="button"
+            onClick={onContactClick}
+            className="tap-44 proud-link pb-1 text-[0.9375rem]"
             style={{ color: 'var(--fg)' }}
           >
-            Arnav Chandra
-          </Link>
-          <ThemeToggle />
-        </div>
+            Get in touch <span aria-hidden="true">→</span>
+          </button>
 
-        {/* Nav links with spring indicator */}
-        <div
-          ref={navRef}
-          className="relative flex flex-col gap-0.5"
-          onMouseLeave={onNavLeave}
-        >
-          <div
-            ref={indicatorRef}
-            className="absolute left-0 w-full pointer-events-none rounded-xl"
-            style={{
-              background: 'var(--hover-bg)',
-              opacity: 0,
-              top: 0,
-              height: 0,
-              transition: `top ${SPRING}`,
-            }}
-          />
-          {nav.map(({ href, label, icon: Icon, external }) => {
-            const active = isActive(href, external);
-            return (
-              <Link
-                key={href}
-                href={href}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                onMouseEnter={onLinkEnter}
-                onClick={() => !active && playTick()}
-                className={`topnav-link relative z-10 flex items-center gap-3 px-3 py-[11px] rounded-xl text-[0.9063rem] transition-colors duration-150${active ? ' topnav-link--active' : ''}`}
-                style={{ color: active ? 'var(--fg)' : 'var(--fg-dim)', letterSpacing: '-0.008em' }}
-              >
-                {/* Accent bar on the active item: the moving pill alone
-                    reads as hover state, so the current page needs a mark
-                    that hovering can't imitate. */}
-                {active && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-0 rounded-r"
-                    style={{ top: '50%', transform: 'translateY(-50%)', width: 2.5, height: 17, background: 'var(--indigo)' }}
-                  />
-                )}
-                <Icon size={16} className="topnav-icon" style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }} />
-                <span className={active ? 'font-medium' : ''}>{label}</span>
-                {external && <FaArrowUpRightFromSquare size={10} className="ml-auto" style={{ color: 'var(--indigo)', opacity: 0.75 }} />}
-              </Link>
-            );
-          })}
-        </div>
+          <div className="mt-8 border-t pt-5" style={{ borderColor: 'var(--border-med)' }}>
+            <label htmlFor="sidebar-email" className="text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+              {sent ? 'Opening Substack…' : 'Monthly newsletter'}
+            </label>
+            <form onSubmit={handleSubscribe} className="sidebar-form mt-3 flex items-baseline gap-3 border-b pb-2" style={{ borderColor: 'var(--border-med)' }}>
+              <input
+                id="sidebar-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Your email"
+                className="sidebar-input min-w-0 flex-1 bg-transparent text-[0.875rem] outline-none"
+                style={{ color: 'var(--fg)' }}
+              />
+              <button type="submit" aria-label="Subscribe" className="tap-44 rail-link text-[0.875rem]" style={{ color: 'var(--fg-70)' }}>
+                Join <span aria-hidden="true">→</span>
+              </button>
+            </form>
+          </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Contact — the primary ask, so it leads; the newsletter signup
-            (a lower-stakes commitment for a visitor who hasn't decided
-            they're interested yet) trails it rather than asking first. */}
-        <button
-          onClick={onContactClick}
-          className="contact-glow-btn w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium mb-3"
-          style={{ color: 'var(--fg-dim)' }}
-        >
-          <FaEnvelope size={13} style={{ opacity: 0.6 }} />
-          Contact
-        </button>
-
-        {/* Separator */}
-        <div className="mx-1 mb-3" style={{ height: '1px', background: 'var(--border)' }} />
-
-        {/* Newsletter subscribe */}
-        <div className="px-1">
-          <p className="text-[11px] font-semibold mb-2.5" style={{ color: 'var(--fg-dim)' }}>
-            {sent ? 'Opening Substack…' : 'Follow for Monthly Updates'}
+          <p className="mt-6 text-[10px]" style={{ color: 'var(--fg-45)' }}>
+            © {new Date().getFullYear()} Arnav Chandra
           </p>
-          <form onSubmit={handleSubscribe} className="flex gap-1.5">
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Your email"
-              className="sidebar-input flex-1 min-w-0 text-xs px-2.5 py-2 rounded-lg outline-none"
-              style={{
-                background: 'var(--input-bg, rgba(255,255,255,0.06))',
-                border: '1px solid var(--border)',
-                color: 'var(--fg)',
-              }}
-            />
-            <button
-              type="submit"
-              aria-label="Subscribe"
-              className="sidebar-send flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
-              style={{
-                background: 'var(--hover-bg)',
-                border: '1px solid var(--border-med)',
-                color: 'var(--fg)',
-              }}
-            >
-              <FaArrowRight size={12} />
-            </button>
-          </form>
         </div>
+      </aside>
 
-        <p className="mt-4 px-1 text-[10px]" style={{ color: 'var(--fg-dimmer)' }}>
-          © {new Date().getFullYear()} Arnav Chandra
-        </p>
-      </div>
-
-      {/* ── Mobile top pill ── */}
+      {/* ── Mobile bar: solid and full width, so page text never shows through it ── */}
       <div
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-40 md:hidden flex items-center h-11 px-4 gap-3"
-        style={{
-          background: 'var(--sidebar-bg)',
-          border: '1px solid var(--border-med)',
-          borderRadius: '9999px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)',
-          width: 'calc(100% - 2.5rem)',
-          maxWidth: '340px',
-        }}
+        data-site-chrome
+        className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b px-5 lg:hidden"
+        style={{ background: 'var(--bg)', borderColor: 'var(--border-med)' }}
       >
         <Link
           href="/"
-          className="font-poppins font-semibold text-sm tracking-tight flex-1 whitespace-nowrap"
+          className="tap-44 flex-1 whitespace-nowrap text-[1.0625rem] font-medium tracking-[-0.02em]"
           style={{ color: 'var(--fg)' }}
         >
           Arnav Chandra
         </Link>
-        <ThemeToggle />
         <MobileNav onContactClick={onContactClick} />
       </div>
     </>

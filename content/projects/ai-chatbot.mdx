@@ -1,6 +1,6 @@
 ---
 title: "AI Mental Health Chatbot"
-description: "A conversational AI built with the Gemini API to provide accessible mental health support and psychoeducation."
+description: "A chatbot built with the Gemini API for accessible mental health support."
 date: "2024-08"
 status: "published"
 category: "Product"
@@ -8,21 +8,32 @@ order: 7
 tools: ["Gemini API"]
 ---
 
-The premise was simple: what if someone who couldn't access therapy, whether due to cost, availability, or stigma, could still get real psychoeducation and evidence-based coping tools through a conversation?
+## The idea
 
-This wasn't about replacing therapists. It was about filling the gap for the majority of people who will never see one.
+What if someone who can't get therapy, because of cost, availability, or stigma, could still get real psychoeducation and evidence-based coping tools through a conversation?
 
-Built using the Gemini API, the chatbot is designed around psychoeducation rather than diagnosis or treatment. It can walk users through grounding techniques, explain cognitive distortions in plain language, help someone identify stress triggers through guided conversation, and point toward appropriate resources when the situation warrants it.
+The goal is to fill the gap for the majority of people who will never see a therapist, not to replace therapists.
 
-The hardest design challenge was safety. Any AI operating in a mental health context has to be extremely careful about what it says and what it doesn't say. I spent significant time building guardrails and thinking through edge cases, particularly around crisis scenarios, before the core functionality.
+## What it does
 
-The project deepened my interest in the intersection of AI and healthcare, and directly informed the MindSet app design work that followed.
+Built with the Gemini API, the chatbot focuses on psychoeducation, not diagnosis or treatment. It can:
+
+- Walk users through grounding techniques
+- Explain cognitive distortions in plain language
+- Help someone find their stress triggers through guided conversation
+- Point toward appropriate resources when the situation calls for it
+
+## The hardest part: safety
+
+Any AI in a mental health setting has to be careful about what it says and what it doesn't. I spent a lot of time on guardrails and edge cases, especially crisis scenarios, before the core features.
+
+The project deepened my interest in AI and healthcare, and directly shaped the MindSet app design that followed.
 
 ---
 
 **Outcome:** Built a working AI mental health chatbot using the Gemini API. It's designed for psychoeducation and evidence-based coping tools, with safety guardrails for crisis scenarios.
 
 **What I took from it:**
-- In sensitive domains, safety design isn't a feature you add at the end. It's the foundation everything else is built on: I spent more time on guardrails than on core functionality.
-- The mental health gap isn't about quality of care. It's about access. Most people who need support will never see a therapist, and that's the problem worth solving.
-- Building this made me realise how much the framing matters: psychoeducation feels different to the user than diagnosis, even when the underlying information is the same.
+- In sensitive areas, safety is the foundation, not a feature added at the end. I spent more time on guardrails than on core features.
+- The mental health gap is about access more than quality of care. Most people who need support will never see a therapist, and that's the problem worth solving.
+- Framing matters. Psychoeducation feels different to a user than diagnosis, even when the information is the same.

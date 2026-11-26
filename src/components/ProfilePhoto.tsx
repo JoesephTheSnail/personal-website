@@ -3,58 +3,56 @@
 import { useRef } from 'react';
 import Image from 'next/image';
 
+// Square, sharp-cornered portrait with a flat accent block offset behind it (close and slightly
+// faded so it supports the photo instead of competing with it).
+// The block is the only graphic on the page header — one shape, one colour —
+// and it reads as a plinth the portrait stands on.
 export default function ProfilePhoto() {
   const photoRef = useRef<HTMLDivElement>(null);
 
-  const bubblePhoto = () => {
-    const el = photoRef.current;
-    if (!el) return;
-    el.style.transition = 'transform 0.12s ease-out';
-    el.style.transform  = 'perspective(400px) scale(1.09)';
-    setTimeout(() => {
-      el.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.06, 0.64, 1)';
-      el.style.transform  = 'perspective(400px) scale(1)';
-    }, 120);
-  };
+  // Touch taps emit emulated mouse events and never a mouseleave, which could
+  // leave the portrait tilted; pointer events tell us what is really moving.
+  // The tilt is movement, so both reduced-motion settings switch it off.
+  const motionOff = () =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    document.documentElement.classList.contains('reduce-motion');
 
-  const handlePhotoMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = photoRef.current;
-    if (!el) return;
+    if (!el || e.pointerType !== 'mouse' || motionOff()) return;
     const rect = el.getBoundingClientRect();
-    const x = (e.clientX - rect.left)  / rect.width  - 0.5;
-    const y = (e.clientY - rect.top)   / rect.height - 0.5;
-    el.style.transition = 'transform 0.05s ease-out';
-    el.style.transform  = `perspective(400px) rotateX(${(-y * 20).toFixed(1)}deg) rotateY(${(x * 20).toFixed(1)}deg) scale(1.07)`;
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.transition = 'transform 0.08s ease-out';
+    el.style.transform = `perspective(700px) rotateX(${(-y * 7).toFixed(2)}deg) rotateY(${(x * 7).toFixed(2)}deg)`;
   };
 
-  const handlePhotoLeave = () => {
+  const handleLeave = () => {
     const el = photoRef.current;
     if (!el) return;
-    el.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.06, 0.64, 1)';
-    el.style.transform  = 'perspective(400px) rotateX(0deg) rotateY(0deg) scale(1)';
+    el.style.transition = 'transform 0.5s var(--ease-out)';
+    el.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg)';
   };
 
   return (
     <div
       ref={photoRef}
-      className="flex-shrink-0 cursor-pointer"
-      style={{ width: 96, height: 96, flexShrink: 0 }}
-      onClick={bubblePhoto}
-      onMouseMove={handlePhotoMove}
-      onMouseLeave={handlePhotoLeave}
+      className="relative flex-shrink-0 w-[148px] h-[148px] sm:w-[216px] sm:h-[216px]"
+      onPointerMove={handleMove}
+      onPointerLeave={handleLeave}
     >
-      <div
-        className="w-full h-full rounded-full overflow-hidden"
-        style={{
-          border: '2px solid var(--border-med)',
-          boxShadow: '0 0 0 4px var(--indigo-bg)',
-        }}
-      >
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 translate-x-2 translate-y-2 sm:translate-x-2.5 sm:translate-y-2.5"
+        style={{ background: 'var(--accent)', opacity: 0.7 }}
+      />
+      <div className="relative w-full h-full overflow-hidden" style={{ background: 'var(--card-bg)' }}>
         <Image
-          src="/profile.jpg"
+          src="/arnav-chandra.jpg"
           alt="Arnav Chandra"
-          width={96}
-          height={96}
+          width={432}
+          height={432}
+          sizes="(min-width: 640px) 216px, 148px"
           className="w-full h-full object-cover"
           priority
         />
