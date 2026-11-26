@@ -14,7 +14,7 @@ export default function TruckButton({ href, children }: { href: string; children
   return (
     <Link href={href} className="truck-cta">
       <span className="truck-cta__rig">
-        <span className="truck-cta__trailer font-poppins">
+        <span className="truck-cta__trailer ">
           <span className="truck-cta__panel" aria-hidden="true" />
           <span className="truck-cta__label">{children}</span>
         </span>

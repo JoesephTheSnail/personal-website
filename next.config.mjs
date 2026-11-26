@@ -24,6 +24,12 @@ const nextConfig = {
         destination: '/projects/carbon-capture-model/demo',
         permanent: true,
       },
+      // The portrait was renamed from profile.jpg; older share cards and search results still point at it.
+      {
+        source: '/profile.jpg',
+        destination: '/arnav-chandra.jpg',
+        permanent: true,
+      },
     ];
   },
   images: {

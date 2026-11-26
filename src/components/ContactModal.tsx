@@ -1,17 +1,38 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FaLinkedin, FaMedium, FaEnvelope, FaCalendarAlt, FaTimes } from 'react-icons/fa';
-import { FaTiktok } from 'react-icons/fa6';
-import { SiSubstack } from 'react-icons/si';
 import { playPop } from '@/lib/sound';
+import { LINKS } from '@/lib/links';
+
+const EMAIL = LINKS.email;
+
+// Easter egg: copy the email again and again and a quiet line starts keeping count, like a game announcer
+// with good manners. The first copy is plain. The streak resets after a short pause or when the card closes.
+// From the tenth copy the card's edge turns blue and the row shakes.
+const STREAK_LINES = [
+  'Double copy',
+  'Triple copy',
+  'Dominating',
+  'Rampage',
+  'Mega copy',
+  'Unstoppable',
+  'Wicked sick',
+  'Monster copy',
+  'Godlike',
+  'Beyond godlike',
+  'Your clipboard has filed a complaint',
+  'It is the same email. It has always been the same email.',
+  'Okay, you clearly like it. Now send one.',
+];
+const STREAK_RESET_MS = 3000;
+const GODLIKE_AT = 10;
 
 const links = [
-  { label: 'LinkedIn',  href: 'https://www.linkedin.com/in/arnav-chandra-b33660293/', icon: FaLinkedin  },
-  { label: 'Substack',  href: 'https://arnav01.substack.com/',                         icon: SiSubstack  },
-  { label: 'Medium',    href: 'https://medium.com/@arnav0',                             icon: FaMedium    },
-  { label: 'TikTok',   href: 'https://www.tiktok.com/@arnav.gym',                      icon: FaTiktok    },
-  { label: 'Calendly', href: 'https://calendly.com/arnav01/meeting',                   icon: FaCalendarAlt },
+  { label: 'Book a call', note: 'Calendly',  href: LINKS.calendly },
+  { label: 'LinkedIn',    note: 'Profile',   href: LINKS.linkedin },
+  { label: 'Substack',    note: 'Newsletter', href: LINKS.substack },
+  { label: 'Medium',      note: 'Writing',   href: LINKS.medium },
+  { label: 'TikTok',      note: 'Fitness',   href: LINKS.tiktok },
 ];
 
 interface Props { isOpen: boolean; onClose: () => void; }
@@ -19,6 +40,10 @@ interface Props { isOpen: boolean; onClose: () => void; }
 export default function ContactModal({ isOpen, onClose }: Props) {
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [tick, setTick] = useState(0); // changes on every copy so the callout replays its pop
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
@@ -38,17 +63,68 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   // it while open, and hand focus back to whatever opened it on close —
   // without this, keyboard focus stays on (or drifts behind) the trigger,
   // and Tab can walk straight out into the dimmed page underneath.
+  // Safari does not focus a button when it is clicked, so document.activeElement
+  // is <body> at open time there. Remember what was last pressed instead.
+  const lastPressedRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      lastPressedRef.current = (e.target as HTMLElement | null)?.closest<HTMLElement>('button, a, [role="button"]') ?? null;
+    };
+    // A key press means the dialog was opened from the keyboard, where
+    // document.activeElement is already the right button.
+    const onKey = () => { lastPressedRef.current = null; };
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, []);
+
+  const wasOpenRef = useRef(false);
   useEffect(() => {
     if (isOpen) {
-      triggerRef.current = document.activeElement as HTMLElement | null;
-      requestAnimationFrame(() => {
-        panelRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
-      });
-    } else {
-      triggerRef.current?.focus();
+      wasOpenRef.current = true;
+      // Safari focuses the nearest focusable ancestor (here <main>) when a
+      // button is clicked, so a pressed button wins over activeElement.
+      const pressed = lastPressedRef.current;
+      const active = document.activeElement as HTMLElement | null;
+      triggerRef.current = pressed && pressed.isConnected ? pressed : active && active !== document.body ? active : null;
+    } else if (wasOpenRef.current) {
+      // Only on a real close. On first render the dialog has never been open,
+      // and moving focus then would put a ring on the menu button at page load.
+      wasOpenRef.current = false;
+      const trigger = triggerRef.current;
+      // The mobile menu's "Get in touch" button is gone by now, so hand focus
+      // to the menu button instead of dropping it on <body>.
+      if (trigger && trigger.isConnected) trigger.focus();
+      else document.querySelector<HTMLElement>('button[aria-controls="mobile-menu-panel"]')?.focus();
       triggerRef.current = null;
     }
   }, [isOpen]);
+
+  // Focus moves in only once the panel exists. It is rendered a commit after
+  // `isOpen` flips, so focusing from the effect above found no panel on
+  // Chromium and left focus on the trigger behind the dialog.
+  useEffect(() => {
+    if (isOpen && mounted) {
+      panelRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
+    }
+  }, [isOpen, mounted]);
+
+  // Everything behind the dialog is made inert while it is open: Tab, screen
+  // reader browsing and clicks cannot reach the page underneath. The Tab
+  // wrap below then only has to handle the dialog's own first and last stops.
+  useEffect(() => {
+    if (!isOpen || !mounted) return;
+    const inerted: Element[] = [];
+    for (const el of Array.from(document.body.children)) {
+      if (el.hasAttribute('data-contact-modal') || el.tagName === 'SCRIPT' || el.hasAttribute('inert')) continue;
+      el.setAttribute('inert', '');
+      inerted.push(el);
+    }
+    return () => inerted.forEach((el) => el.removeAttribute('inert'));
+  }, [isOpen, mounted]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -78,11 +154,14 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   };
 
   useEffect(() => {
+    // Only while open: without this guard every Escape press anywhere on the
+    // site played the close sound and called onClose.
+    if (!isOpen) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -99,16 +178,50 @@ export default function ContactModal({ isOpen, onClose }: Props) {
     };
   }, [isOpen]);
 
+  // The streak does not survive closing the card, and the timer must not outlive the component.
+  useEffect(() => {
+    if (!isOpen) setStreak(0);
+  }, [isOpen]);
+  // Replays the shake on every copy from GODLIKE up, without remounting the button (that would drop keyboard focus).
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row || streak < GODLIKE_AT) return;
+    row.classList.remove('copy-shake');
+    void row.offsetWidth;
+    row.classList.add('copy-shake');
+  }, [tick, streak]);
+  useEffect(() => () => { if (resetTimer.current) clearTimeout(resetTimer.current); }, []);
+
   if (!mounted) return null;
+
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL);
+      setStreak((n) => n + 1);
+      setTick((t) => t + 1);
+      playPop(true);
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setStreak(0), STREAK_RESET_MS);
+    } catch { /* clipboard blocked: the mailto link still works */ }
+  };
+
+  const godlike = streak >= GODLIKE_AT;
+  // Nothing extra on the first copy; the line starts with the second.
+  const line = streak > 1 ? STREAK_LINES[Math.min(streak - 2, STREAK_LINES.length - 1)] : '';
 
   return (
     <div
+      data-contact-modal
       className="contact-modal-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{
-        background: `rgba(0,0,0,${visible ? '0.75' : '0'})`,
-        backdropFilter: `blur(${visible ? 4 : 0}px)`,
-        WebkitBackdropFilter: `blur(${visible ? 4 : 0}px)`,
-        transition: 'background 0.22s ease, backdrop-filter 0.18s ease, -webkit-backdrop-filter 0.18s ease',
+        // The blur stays at a constant 6px and only opacity animates:
+        // changing a backdrop-filter radius every frame repaints the whole
+        // viewport (slowest in Safari and on phones), opacity does not.
+        background: 'rgba(10,10,9,0.82)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.22s var(--ease-out)',
       }}
       onClick={handleClose}
     >
@@ -117,80 +230,95 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="contact-modal-heading"
-        className="relative w-full max-w-sm rounded-2xl p-8"
+        className="relative max-h-[92vh] w-full max-w-xl overflow-y-auto p-7 sm:p-12"
         style={{
-          background: '#141414',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--bg)',
+          border: `1px solid ${godlike ? 'var(--accent)' : 'var(--border-med)'}`,
+          boxShadow: godlike ? '0 0 0 1px rgba(91, 163, 194, 0.3), 0 0 44px rgba(91, 163, 194, 0.16)' : 'none',
           opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.97)',
-          transition: 'opacity 0.25s ease, transform 0.25s ease',
+          transform: visible ? 'translateY(0)' : 'translateY(14px)',
+          transition: 'opacity 0.25s ease, transform 0.3s var(--ease-out), border-color 0.3s ease, box-shadow 0.3s ease',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close */}
-        <button
-          onClick={handleClose}
-          data-modal-initial-focus
-          className="absolute top-4 right-4 hover:text-white transition-colors"
-          style={{ color: 'rgba(255,255,255,0.3)' }}
-          aria-label="Close"
+        <div className="flex items-baseline justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-eyebrow)' }}>
+            Get in touch
+          </p>
+          <button
+            type="button"
+            onClick={handleClose}
+            data-modal-initial-focus
+            className="tap-44 rail-link text-[10.5px] uppercase tracking-[0.14em]"
+            style={{ color: 'var(--fg-60)' }}
+          >
+            Close
+          </button>
+        </div>
+
+        <h2
+          id="contact-modal-heading"
+          className="mt-6 text-[clamp(2.25rem,6vw,3.25rem)] font-medium leading-[0.98] tracking-[-0.04em]"
+          style={{ color: 'var(--fg)' }}
         >
-          <FaTimes size={15} />
-        </button>
-
-        {/* Heading */}
-        <h2 id="contact-modal-heading" className="font-poppins font-semibold text-2xl mb-6 tracking-tight" style={{ color: '#ffffff' }}>
-          Get in touch
+          Let&apos;s talk.
         </h2>
-
-        {/* Email as text — this card is always dark regardless of site
-            theme, so colors are inline rather than Tailwind's text-white
-            utilities: a sitewide `html.light .text-white` rule flips those
-            to near-black for the rest of the site's light mode, which
-            turned this text invisible against the still-dark #141414 card. */}
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-widest mb-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Email</p>
-          <div className="flex items-center gap-2">
-            <FaEnvelope size={13} style={{ color: 'rgba(255,255,255,0.3)' }} />
-            <a
-              href="mailto:chandraarnav09@gmail.com"
-              className="text-sm hover:text-white transition-colors"
-              style={{ color: '#ffffff' }}
-            >
-              chandraarnav09@gmail.com
-            </a>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="mb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }} />
-
-        {/* Social icons — centered */}
-        <p className="text-xs uppercase tracking-widest mb-4 text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Find me on
+        <p className="mt-4 max-w-sm text-[0.9375rem] leading-relaxed" style={{ color: 'var(--fg-70)' }}>
+          Health, technology, ideas, or a project you think I&apos;d like. Email is best.
         </p>
-        <div className="flex gap-3 justify-center flex-wrap">
-          {links.map(({ label, href, icon: Icon }) => (
-            <a
-              key={label}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={label}
-              className="contact-social-link group flex flex-col items-center gap-1.5"
-            >
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:border-white/50 group-hover:bg-white/5"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}
-              >
-                <Icon size={18} className="contact-social-icon" />
-              </div>
-              <span className="contact-social-label text-[0.65rem]">
-                {label}
-              </span>
-            </a>
-          ))}
+
+        {/* The email is the primary action, so it's the biggest thing here. */}
+        <div ref={rowRef} className="mt-9">
+          <a
+            href={`mailto:${EMAIL}`}
+            className="tap-44 proud-link inline-block pb-1 text-[clamp(1.1rem,3.4vw,1.5rem)] tracking-[-0.02em] [overflow-wrap:anywhere]"
+            style={{ color: 'var(--fg)' }}
+          >
+            {EMAIL}
+          </a>
+          <button
+            type="button"
+            onClick={copyEmail}
+            className="tap-44 rail-link ml-5 text-[10.5px] uppercase tracking-[0.14em]"
+            style={{ color: streak > 0 ? 'var(--accent)' : 'var(--fg-60)' }}
+          >
+            {streak === 0 ? 'Copy' : streak === 1 ? 'Copied' : `Copied ×${streak}`}
+          </button>
+          {/* The announcer. Always in the layout so the card does not jump. */}
+          {/* The live region itself stays mounted (screen readers only announce changes to a region that
+              already exists); the key on the inner span replays the pop on every copy. */}
+          <p
+            role="status"
+            aria-live="polite"
+            className="copy-callout"
+            style={{ color: godlike ? 'var(--accent)' : 'var(--fg-70)' }}
+          >
+            <span key={tick} className={line ? 'copy-callout-text is-on' : undefined} style={{ display: 'inline-block' }}>
+              {line}
+            </span>
+          </p>
         </div>
+
+        <ul className="mt-10 border-t" style={{ borderColor: 'var(--border-med)' }}>
+          {links.map(({ label, note, href }) => (
+            <li key={label} style={{ borderBottom: '1px solid var(--border-med)' }}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="index-row flex items-baseline gap-4 py-3.5"
+              >
+                <span className="index-label text-[1.25rem] tracking-[-0.02em]" style={{ color: 'var(--fg)' }}>
+                  {label}
+                </span>
+                <span className="index-leader min-w-6 flex-1 -translate-y-[0.3rem]" aria-hidden="true" />
+                <span className="text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+                  {note} <span aria-hidden="true">↗</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

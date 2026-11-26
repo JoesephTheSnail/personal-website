@@ -6,7 +6,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function OGImage() {
-  const photoPath = path.join(process.cwd(), 'public', 'profile.jpg');
+  const photoPath = path.join(process.cwd(), 'public', 'arnav-chandra.jpg');
   const photoData = fs.readFileSync(photoPath);
   const photoSrc = `data:image/jpeg;base64,${photoData.toString('base64')}`;
 
@@ -14,7 +14,7 @@ export default async function OGImage() {
     (
       <div
         style={{
-          background: '#0D0D0D',
+          background: '#121211',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -34,7 +34,7 @@ export default async function OGImage() {
             height: 200,
             borderRadius: '50%',
             objectFit: 'cover',
-            border: '2px solid rgba(255,255,255,0.12)',
+            border: '2px solid rgba(238,233,223,0.14)',
             flexShrink: 0,
           }}
         />
@@ -43,7 +43,7 @@ export default async function OGImage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', flex: 1 }}>
           <div
             style={{
-              color: 'rgba(255,255,255,0.35)',
+              color: '#5BA3C2',
               fontSize: '20px',
               letterSpacing: '0.08em',
               marginBottom: '20px',
@@ -53,7 +53,7 @@ export default async function OGImage() {
           </div>
           <div
             style={{
-              color: '#ffffff',
+              color: '#EEE9DF',
               fontSize: '76px',
               fontWeight: '700',
               letterSpacing: '-0.02em',
@@ -65,7 +65,7 @@ export default async function OGImage() {
           </div>
           <div
             style={{
-              color: 'rgba(255,255,255,0.45)',
+              color: 'rgba(238,233,223,0.55)',
               fontSize: '26px',
               fontWeight: '400',
               letterSpacing: '0.01em',

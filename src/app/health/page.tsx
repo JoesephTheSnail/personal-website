@@ -1,145 +1,66 @@
 import Link from 'next/link';
-import { FaDumbbell, FaAppleAlt, FaBed, FaBrain, FaCapsules } from 'react-icons/fa';
+import { pageMetadata } from '@/lib/seo';
+import { eyebrow } from '@/components/typeClasses';
+import HealthSections from '@/components/HealthSections';
+import { SECTIONS } from './data';
 
-export const metadata = {
-  title: 'Health',
-  description:
-    'How Arnav Chandra approaches health: training, nutrition, sleep, and the habits behind long-term performance.',
-  alternates: { canonical: 'https://arnavchandra.com/health' },
-};
-
-function Section({
-  icon: Icon,
-  color,
-  bg,
-  title,
-  children,
-}: {
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      className="mb-4 rounded-2xl p-6"
-      style={{ background: 'var(--card-bg)', border: '1px solid var(--border)' }}
-    >
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
-          <Icon size={16} style={{ color }} />
-        </div>
-        <h2 className="font-poppins font-semibold text-base tracking-tight" style={{ color: 'var(--fg)' }}>
-          {title}
-        </h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Pill({ text }: { text: string }) {
-  return (
-    <span
-      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-      style={{ background: 'var(--hover-bg)', color: 'var(--fg-muted)', border: '1px solid var(--border)' }}
-    >
-      {text}
-    </span>
-  );
-}
+export const metadata = pageMetadata('/health', 'Health', 'How Arnav Chandra approaches health right now: a 6 am start, gym training, an evening wind down, nutrition and journaling.');
 
 export default function HealthPage() {
   return (
-    <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto">
-      <h1 className="font-poppins font-semibold text-4xl mb-2 tracking-tight" style={{ color: 'var(--fg)' }}>
-        Health
-      </h1>
-      <p className="text-sm mb-2" style={{ color: 'var(--fg-dim)' }}>
-        My personal health protocol: what I do, why I do it, and what I&apos;ve learned.
-      </p>
-      <p className="text-sm mb-8" style={{ color: 'var(--fg-eyebrow)' }}>
-        This is also the lived research behind{' '}
-        <Link href="/projects/mindset-app" className="hover:underline underline-offset-2" style={{ color: 'inherit' }}>
-          MindSet
-        </Link>{' '}
-        and{' '}
-        <Link href="/projects/screens-and-sleep-report" className="hover:underline underline-offset-2" style={{ color: 'inherit' }}>
-          Pre-Sleep Screen Restriction
-        </Link>.
-      </p>
+    <div className="max-w-5xl mx-auto">
+      <header className="mb-12 sm:mb-16">
+        <p className={`rise ${eyebrow}`} style={{ color: 'var(--accent)' }}>
+          My protocol
+        </p>
+        <h1
+          className="rise mt-3 text-[clamp(2.25rem,5.2vw,3.75rem)] font-medium leading-[0.95] tracking-[-0.04em]"
+          style={{ ['--d' as string]: '80ms', color: 'var(--fg)' } as React.CSSProperties}
+        >
+          Health
+        </h1>
+        <p
+          className="rise mt-4 text-[clamp(1.05rem,1.8vw,1.25rem)] tracking-tight"
+          style={{ ['--d' as string]: '160ms', color: 'var(--fg-60)' } as React.CSSProperties}
+        >
+          What I follow right now, why I do it, and what I&apos;ve learned.
+        </p>
+        <blockquote
+          className="rise mt-8 max-w-xl border-l-2 pl-5"
+          style={{ ['--d' as string]: '200ms', borderColor: 'var(--accent)' } as React.CSSProperties}
+        >
+          <p className="text-[clamp(1.1rem,1.8vw,1.3rem)] leading-snug tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
+            &ldquo;What is to give light must endure burning.&rdquo;
+          </p>
+          <footer className="mt-2 text-[0.875rem]" style={{ color: 'var(--fg-60)' }}>Viktor E. Frankl</footer>
+        </blockquote>
+        <p
+          className="rise mt-6 max-w-xl text-[0.9375rem] leading-relaxed"
+          style={{ ['--d' as string]: '230ms', color: 'var(--fg-60)' } as React.CSSProperties}
+        >
+          This is also the lived research behind{' '}
+          <Link href="/projects/mindset-app" className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2" style={{ color: 'var(--fg)' }}>
+            MindSet
+          </Link>{' '}
+          and{' '}
+          <Link href="/projects/screens-and-sleep-report" className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2" style={{ color: 'var(--fg)' }}>
+            Pre-Sleep Screen Restriction
+          </Link>
+          .
+        </p>
+      </header>
 
-      <Section icon={FaDumbbell} color="#60a5fa" bg="rgba(96,165,250,0.12)" title="Training">
-        <div className="space-y-4 text-[0.9rem] leading-relaxed" style={{ color: 'var(--fg-muted)' }}>
-          <p>
-            In the summer I run a Push/Pull/Legs split 3 times a week, alternating with 3 runs. In winter I shift to 5 days of weights plus one run, running a PPL + Upper/Lower structure.
-          </p>
-          <p>
-            I film myself lifting when I can. Watching form on video catches things you can&apos;t feel in the moment. I also spend time researching training methodology and adjusting my program based on what I find.
-          </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {['Push / Pull / Legs', 'Upper / Lower', 'Running 3×/week', 'Form review on video'].map(t => <Pill key={t} text={t} />)}
-          </div>
-        </div>
-      </Section>
+      <HealthSections sections={SECTIONS} />
 
-      <Section icon={FaAppleAlt} color="#34d399" bg="rgba(52,211,153,0.12)" title="Nutrition">
-        <div className="space-y-4 text-[0.9rem] leading-relaxed" style={{ color: 'var(--fg-muted)' }}>
-          <p>
-            I aim for around 120g of protein a day at about 2,500 calories total. I prioritize clean, unprocessed food and don&apos;t track obsessively, but I stay mindful.
-          </p>
-          <p>
-            Breakfast is usually 3 eggs, bread, and fruit, sometimes with oats. I track intake occasionally using Bevel to stay calibrated without making it a daily ritual.
-          </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {['~120g protein / day', '~2500 kcal', 'Clean / unprocessed', '3 eggs + bread + fruit', 'Bevel for tracking'].map(t => <Pill key={t} text={t} />)}
-          </div>
-        </div>
-      </Section>
-
-      <Section icon={FaBed} color="#a78bfa" bg="rgba(167,139,250,0.12)" title="Sleep">
-        <div className="space-y-4 text-[0.9rem] leading-relaxed" style={{ color: 'var(--fg-muted)' }}>
-          <p>
-            I target 7–9 hours. I stop eating 2–4 hours before bed and take magnesium bisglycinate 1–2 hours before sleep. On heavy training days I add casein protein before bed. Screens go off 1–2 hours before sleep, and I stay off them for the first hour after waking up.
-          </p>
-          <p>
-            I sleep in a dark room and read before bed. Planning the next day the night before reduces the mental noise that makes it hard to wind down. Mornings start with sunlight and green tea before 11am.
-          </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {['7–9 hrs', 'No screens 1–2hr before/after', 'Dark room', 'Reading before bed', 'Morning sunlight', 'Green tea before 11am'].map(t => <Pill key={t} text={t} />)}
-          </div>
-        </div>
-      </Section>
-
-      <Section icon={FaBrain} color="#f472b6" bg="rgba(244,114,182,0.12)" title="Mental Health">
-        <div className="space-y-4 text-[0.9rem] leading-relaxed" style={{ color: 'var(--fg-muted)' }}>
-          <p>
-            Writing my newsletter is genuinely one of the best things I do for my mental state. Organizing thoughts into something coherent creates accountability that journaling alone doesn&apos;t.
-          </p>
-          <p>
-            Planning my days the night before reduces morning decision fatigue. Consistency in training helps more than almost anything else. When the physical side is dialed in, the mental side tends to follow.
-          </p>
-        </div>
-      </Section>
-
-      <Section icon={FaCapsules} color="#fbbf24" bg="rgba(251,191,36,0.12)" title="Supplements">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {[
-            { name: 'Omega-3', note: 'Daily' },
-            { name: 'Vitamin D3 + K2', note: 'Daily' },
-            { name: 'Creatine', note: '5g daily' },
-            { name: 'Protein Powder', note: 'Post-training' },
-            { name: 'Magnesium Bisglycinate', note: '1–2hr before bed' },
-            { name: 'Casein Powder', note: 'Heavy training days' },
-          ].map(({ name, note }) => (
-            <div key={name} className="rounded-xl p-3.5" style={{ background: 'var(--hover-bg)', border: '1px solid var(--border)' }}>
-              <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--fg)' }}>{name}</p>
-              <p className="text-xs" style={{ color: 'var(--fg-dim)' }}>{note}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
+      <section className="mt-6 max-w-2xl border-t pt-5 pb-10" style={{ borderColor: 'var(--border-med)' }}>
+        <p className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>Archive</p>
+        <p className="mt-3 text-[0.9375rem] leading-relaxed" style={{ color: 'var(--fg-70)' }}>
+          Until October 2026 I followed a different routine: a Push / Pull / Legs split, supplements and a longer sleep plan.
+        </p>
+        <Link href="/health/archive" className="tap-44 proud-link mt-3 inline-block pb-1 text-[1.0625rem]" style={{ color: 'var(--fg)' }}>
+          See the archive <span aria-hidden="true">→</span>
+        </Link>
+      </section>
     </div>
   );
 }

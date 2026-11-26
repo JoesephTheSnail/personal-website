@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllProjects } from '@/lib/projects';
+import { CATEGORIES } from '@/lib/categoryMeta';
 
 const BASE_URL = 'https://arnavchandra.com';
 
@@ -9,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/projects`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/books`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/health`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/health/archive`, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   const projectRoutes: MetadataRoute.Sitemap = getAllProjects().map((project) => ({
@@ -17,5 +19,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...projectRoutes];
+  // The discipline pages (/projects/creative etc.) are real, indexable pages,
+  // but a discipline with no published project 404s (see [slug]/page.tsx),
+  // so only list the ones that exist.
+  const publishedCategories = new Set(
+    getAllProjects().filter((p) => p.frontmatter.status === 'published').map((p) => p.frontmatter.category),
+  );
+  const categoryRoutes: MetadataRoute.Sitemap = CATEGORIES.filter((c) => publishedCategories.has(c.label)).map((c) => ({
+    url: `${BASE_URL}/projects/${c.slug}`,
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  }));
+
+  return [...staticRoutes, ...categoryRoutes, ...projectRoutes];
 }

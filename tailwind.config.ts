@@ -9,21 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#0D0D0D',
-        yellow: '#FFFFFF',
+        // Dark-mode "white" is bone, so every text-white/NN, bg-white/NN and
+        // border-white/NN in the app picks up the warm neutral automatically.
+        white: '#EEE9DF',
       },
       fontFamily: {
-        poppins: ['var(--font-poppins)', 'sans-serif'],
-        sans: ['var(--font-inter)', 'sans-serif'],
-      },
-      keyframes: {
-        marquee: {
-          '0%': { transform: 'translateX(0%)' },
-          '100%': { transform: 'translateX(-50%)' },
-        },
-      },
-      animation: {
-        marquee: 'marquee 28s linear infinite',
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

@@ -53,7 +53,7 @@ export default function EmbedFrame({ src, title, allow, allowFullScreen, classNa
             {showFallback ? (
               <div className="text-center px-4">
                 <p className="text-xs mb-2" style={{ color: 'var(--fg-dim)' }}>
-                  {errored ? "This preview couldn't load." : 'Still loading — it may not display here.'}
+                  {errored ? "This preview couldn't load." : 'Still loading. It may not display here.'}
                 </p>
                 <a
                   href={fallbackHref}

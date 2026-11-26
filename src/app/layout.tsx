@@ -1,23 +1,25 @@
-import type { Metadata } from 'next';
-import { Inter, Poppins } from 'next/font/google';
-import Script from 'next/script';
+import type { Metadata, Viewport } from 'next';
+import { Instrument_Sans } from 'next/font/google';
 import './globals.css';
 import SiteWrapper from '@/components/SiteWrapper';
+import { LINKS } from '@/lib/links';
 import CustomCursor from '@/components/CustomCursor';
 import AccessibilityMenu from '@/components/AccessibilityMenu';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-const inter = Inter({
+// The site's single typeface. Hierarchy comes from size, weight and tracking
+// rather than from pairing two families.
+const sans = Instrument_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-sans',
 });
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-poppins',
-});
+// Colours the phone's browser bar to match the page and tells browsers the site is dark.
+export const viewport: Viewport = {
+  themeColor: '#121211',
+  colorScheme: 'dark',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://arnavchandra.com'),
@@ -25,16 +27,17 @@ export const metadata: Metadata = {
     default: 'Arnav Chandra | Writer, Student & Builder in Toronto',
     template: '%s | Arnav Chandra',
   },
-  description: 'Arnav Chandra is a Toronto-based writer, student, and builder working at the intersection of health and technology.',
+  description: 'Arnav Chandra is a Toronto-based writer, student, and builder working on health and technology.',
   alternates: {
     canonical: 'https://arnavchandra.com',
+    types: { 'application/rss+xml': [{ url: '/feed.xml', title: 'Arnav Chandra: projects' }] },
   },
   verification: {
     google: 'ocP8iI0FKeqb7YIA9l5V4VuVT7XtnyL6_zW6So3njV0',
   },
   openGraph: {
     title: 'Arnav Chandra | Writer, Student & Builder in Toronto',
-    description: 'Writer, student, and builder working at the intersection of health and technology.',
+    description: 'Writer, student, and builder working on health and technology.',
     siteName: 'Arnav Chandra',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Arnav Chandra' }],
     locale: 'en_US',
@@ -43,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Arnav Chandra | Writer, Student & Builder in Toronto',
-    description: 'Writer, student, and builder working at the intersection of health and technology.',
+    description: 'Writer, student, and builder working on health and technology.',
     images: ['/opengraph-image'],
   },
 };
@@ -53,7 +56,7 @@ const personJsonLd = {
   '@type': 'Person',
   name: 'Arnav Chandra',
   url: 'https://arnavchandra.com',
-  image: 'https://arnavchandra.com/profile.jpg',
+  image: 'https://arnavchandra.com/arnav-chandra.jpg',
   jobTitle: 'Writer, student, and builder',
   description: 'Writer, student, and builder based in Toronto.',
   address: {
@@ -63,42 +66,32 @@ const personJsonLd = {
     addressCountry: 'CA',
   },
   sameAs: [
-    'https://arnav01.substack.com/',
-    'https://medium.com/@arnav0',
-    'https://www.tiktok.com/@arnav.gym',
-    'https://www.linkedin.com/in/arnav-chandra-b33660293/',
+    LINKS.substack,
+    LINKS.medium,
+    LINKS.linkedin,
+    LINKS.tiktok,
   ],
 };
 
-// Runs before hydration paint so the page never flashes the wrong theme.
-// Defaults to the OS/browser preference — dark or light is never assumed —
-// and only overrides that once the visitor has actually used the toggle.
-const themeInitScript = `(function(){
-  try {
-    var saved = localStorage.getItem('theme');
-    var light = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
-    if (light) document.documentElement.classList.add('light');
-  } catch (e) {}
-})();`;
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Arnav Chandra',
+  url: 'https://arnavchandra.com',
+  inLanguage: 'en',
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
-      <body className="bg-[#0D0D0D] text-white font-sans" suppressHydrationWarning>
-        {/* next/script + beforeInteractive, not a plain <script> tag: a raw
-            <script> is a one-shot DOM node React only installs from the
-            initial SSR HTML. Any subsequent render that "encounters" it
-            again (e.g. App Router's root-layout re-render on client
-            navigation) logs a "scripts are never executed on the client"
-            warning, even though this one only ever needs to run once,
-            pre-hydration. beforeInteractive is Next's dedicated mechanism
-            for exactly that — injected into the initial HTML and tracked
-            outside React's normal re-render bookkeeping, so it never
-            re-triggers the warning. */}
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+    <html lang="en" className={`${sans.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="bg-[var(--bg)] text-[var(--fg)] font-sans" suppressHydrationWarning>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
         <CustomCursor />
         {/* After SiteWrapper, not before — the skip-link inside it must be
