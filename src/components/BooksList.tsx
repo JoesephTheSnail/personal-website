@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { FaChevronDown, FaCheck } from 'react-icons/fa6';
+import { eyebrow, smallCaps } from '@/components/typeClasses';
 
 // Each book's takeaway is MDX, which only renders on the server — so the
 // page renders it there and hands the finished node down as a prop. This
@@ -28,11 +28,21 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'title',  label: 'Title A–Z' },
 ];
 
+// Broad groups instead of every individual genre tag, so the filter fits on
+// one line. A book belongs to a group if any of its own genres is listed here;
+// the individual genres still show on each book.
+const GENRE_GROUPS: { label: string; genres: string[] }[] = [
+  { label: 'Mind',     genres: ['Psychology', 'Mindset', 'Philosophy', 'Science', 'Memoir'] },
+  { label: 'Growth',   genres: ['Self-Help', 'Habits', 'Productivity'] },
+  { label: 'Business', genres: ['Business', 'Strategy', 'Economics'] },
+];
+
+
 function StarRating({ rating }: { rating: number }) {
   const stars = rating / 2; // convert /10 → /5
   return (
-    <div
-      className="flex items-center gap-0.5"
+    <span
+      className="inline-flex items-center gap-0.5"
       role="img"
       aria-label={`Rated ${stars % 1 === 0 ? stars : stars.toFixed(1)} out of 5 stars`}
     >
@@ -40,35 +50,52 @@ function StarRating({ rating }: { rating: number }) {
         const full = stars >= n;
         const half = !full && stars >= n - 0.5;
         return (
-          <span key={n} aria-hidden="true" className="relative inline-block" style={{ fontSize: '0.8rem', lineHeight: 1 }}>
-            <span style={{ color: 'var(--fg)', opacity: 0.2 }}>★</span>
+          <span key={n} aria-hidden="true" className="relative inline-block" style={{ fontSize: '0.85rem', lineHeight: 1 }}>
+            <span style={{ color: 'var(--fg-30)' }}>★</span>
             {(full || half) && (
-              <span className="absolute inset-0 overflow-hidden" style={{ width: full ? '100%' : '50%', color: 'var(--fg)' }}>
+              <span className="absolute inset-0 overflow-hidden" style={{ width: full ? '100%' : '50%', color: 'var(--accent)' }}>
                 ★
               </span>
             )}
           </span>
         );
       })}
-    </div>
+    </span>
   );
 }
 
-function GenreTags({ genres }: { genres: string[] }) {
+/** A row of plain-text toggles: the active one gets the petrol underline. */
+function Toggles<T extends string | null>({
+  label, options, value, onChange,
+}: {
+  label: string;
+  options: { key: T; label: string; count?: number }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
   return (
-    <div className="flex flex-wrap gap-1.5 mt-1.5">
-      {genres.map((g) => (
-        <span
-          key={g}
-          style={{
-            fontSize: '0.6rem', padding: '2px 7px', borderRadius: '9999px',
-            border: '1px solid var(--border-med)', color: 'var(--fg-35)',
-            letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap',
-          }}
-        >
-          {g}
-        </span>
-      ))}
+    <div className="grid items-baseline gap-x-6 gap-y-2 sm:grid-cols-[7rem_1fr]">
+      <span className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>{label}</span>
+      <div role="group" aria-label={label} className="flex flex-wrap gap-x-6 gap-y-2">
+        {options.map((o) => {
+          const on = value === o.key;
+          return (
+            <button
+              key={String(o.key)}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(o.key)}
+              className={`tap-44 ledger-filter pb-1 text-[0.9375rem] ${on ? 'proud-link' : ''}`}
+              style={{ color: on ? 'var(--fg)' : 'var(--fg-60)' }}
+            >
+              {o.label}
+              {o.count !== undefined && (
+                <span className="ml-1.5 text-[10.5px] tabular-nums" style={{ color: 'var(--fg-45)' }}>{o.count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -76,34 +103,18 @@ function GenreTags({ genres }: { genres: string[] }) {
 export default function BooksList({ items }: { items: BookListItem[] }) {
   const [sort, setSort] = useState<SortKey>('recent');
   const [genre, setGenre] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  // Set on the first sort or genre change; the list then plays a short fade.
+  const [swapped, setSwapped] = useState(false);
 
-  // Close on outside click or Escape — a dropdown that can only be dismissed
-  // by re-clicking its own trigger feels broken.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  const genres = useMemo(() => {
-    const seen = new Map<string, number>();
-    for (const b of items) for (const g of b.genres) seen.set(g, (seen.get(g) ?? 0) + 1);
-    // Most-used first, so the row leads with the genres actually worth filtering by.
-    return [...seen.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([g]) => g);
-  }, [items]);
+  // Only groups that at least one book falls into.
+  const groups = useMemo(
+    () => GENRE_GROUPS.filter((g) => items.some((b) => b.genres.some((x) => g.genres.includes(x)))),
+    [items],
+  );
 
   const shown = useMemo(() => {
-    const filtered = genre ? items.filter((b) => b.genres.includes(genre)) : items;
+    const group = GENRE_GROUPS.find((g) => g.label === genre);
+    const filtered = group ? items.filter((b) => b.genres.some((x) => group.genres.includes(x))) : items;
     const sorted = [...filtered];
     if (sort === 'recent') sorted.sort((a, b) => b.sortDate - a.sortDate);
     // Unrated books (rating 0) sink to the bottom rather than leading a
@@ -114,146 +125,63 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
     return sorted;
   }, [items, sort, genre]);
 
-  const activeSort = SORTS.find((s) => s.key === sort)!;
-
   return (
     <>
-      {/* A single quiet trigger rather than a wall of pills: the current
-          state is legible at a glance, and the options only take up space
-          while you're actually choosing. */}
-      <div className="flex justify-end mb-3">
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            aria-haspopup="menu"
-            className="books-trigger"
-          >
-            <span>{activeSort.label}</span>
-            {genre && <span style={{ color: 'var(--fg-30)' }}>·</span>}
-            {genre && <span>{genre}</span>}
-            <FaChevronDown
-              size={12}
-              aria-hidden="true"
-              style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
-            />
-          </button>
-
-          {open && (
-            <div className="books-menu" role="menu">
-              <p className="books-menu__label">Sort</p>
-              {SORTS.map((s) => (
-                <button
-                  key={s.key}
-                  role="menuitemradio"
-                  aria-checked={sort === s.key}
-                  onClick={() => { setSort(s.key); setOpen(false); }}
-                  className="books-menu__item"
-                >
-                  <span>{s.label}</span>
-                  {sort === s.key && <FaCheck size={12} aria-hidden="true" />}
-                </button>
-              ))}
-
-              {genres.length > 1 && (
-                <>
-                  <div className="books-menu__sep" />
-                  <p className="books-menu__label">Genre</p>
-                  <div className="books-menu__scroll">
-                    <button
-                      role="menuitemradio"
-                      aria-checked={genre === null}
-                      onClick={() => { setGenre(null); setOpen(false); }}
-                      className="books-menu__item"
-                    >
-                      <span>All genres</span>
-                      {genre === null && <FaCheck size={12} aria-hidden="true" />}
-                    </button>
-                    {genres.map((g) => (
-                      <button
-                        key={g}
-                        role="menuitemradio"
-                        aria-checked={genre === g}
-                        onClick={() => { setGenre(g === genre ? null : g); setOpen(false); }}
-                        className="books-menu__item"
-                      >
-                        <span>{g}</span>
-                        {genre === g && <FaCheck size={12} aria-hidden="true" />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+      <div className="space-y-4 border-t pt-5 pb-10" style={{ borderColor: 'var(--border-med)' }}>
+        <Toggles<SortKey> label="Sort" options={SORTS.map((s) => ({ key: s.key, label: s.label }))} value={sort} onChange={(v) => { setSwapped(true); setSort(v); }} />
+        {groups.length > 1 && (
+          <Toggles<string | null>
+            label="Genre"
+            options={[{ key: null, label: 'All' }, ...groups.map((g) => ({ key: g.label as string | null, label: g.label }))]}
+            value={genre}
+            onChange={(v) => { setSwapped(true); setGenre(v); }}
+          />
+        )}
       </div>
 
       {/* Only worth saying when a filter is actually narrowing the list. */}
-      {genre && (
-        <p className="text-xs mb-4" aria-live="polite" style={{ color: 'var(--fg-eyebrow)' }}>
-          {shown.length} {shown.length === 1 ? 'book' : 'books'} in {genre}
-        </p>
-      )}
+      <p className="sr-only" aria-live="polite">
+        {genre ? `${shown.length} ${shown.length === 1 ? 'book' : 'books'} in ${genre}` : ''}
+      </p>
 
-      <div className="space-y-4 sm:space-y-6">
+      <div key={`${sort}|${genre}`} className={swapped ? 'list-swap' : undefined}>
         {shown.map((book) => (
           <article
             key={book.slug}
             id={book.slug}
-            className="scroll-mt-10 rounded-xl border overflow-hidden"
-            style={{ borderColor: 'var(--border-9)', background: 'var(--card-bg)' }}
+            className="grid scroll-mt-28 gap-x-6 gap-y-4 border-t py-8 sm:grid-cols-[7rem_1fr]"
+            style={{ borderColor: 'var(--border-med)' }}
           >
-            <div className="flex gap-3 sm:gap-4 items-start p-3 sm:p-5">
-              <div
-                className="flex-shrink-0 rounded overflow-hidden"
-                style={{ width: 48, height: 72, position: 'relative', border: '1px solid var(--border-med)' }}
-              >
-                <Image src={book.cover} alt={`Cover of ${book.title}`} fill className="object-cover" sizes="48px" />
-              </div>
-
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h2
-                  className="font-poppins font-semibold leading-snug mb-1"
-                  style={{
-                    color: 'var(--fg)',
-                    fontSize: 'clamp(0.875rem, 3.5vw, 1.0625rem)',
-                    overflowWrap: 'break-word', wordBreak: 'break-word',
-                  }}
-                >
-                  {book.title}
-                </h2>
-                <p className="text-xs sm:text-sm leading-snug mb-1.5" style={{ color: 'var(--fg-muted)' }}>
-                  {book.author}
-                </p>
-
-                {book.genres.length > 0 && <GenreTags genres={book.genres} />}
-
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2">
-                  <p className="text-xs" style={{ color: 'var(--fg-eyebrow)' }}>
-                    Read: <span style={{ color: 'var(--fg-muted)' }}>{book.date || 'N/A'}</span>
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs" style={{ color: 'var(--fg-eyebrow)' }}>Rating:</span>
-                    {book.rating > 0
-                      ? <StarRating rating={book.rating} />
-                      : <span className="text-xs" style={{ color: 'var(--fg-dimmer)' }}>N/A</span>}
-                  </div>
-                </div>
-              </div>
+            <div className="relative h-[132px] w-[88px] overflow-hidden" style={{ border: '1px solid var(--border-med)' }}>
+              <Image src={book.cover} alt={`Cover of ${book.title}`} fill className="object-cover" sizes="88px" />
             </div>
 
-            {book.takeaway && (
-              <>
-                <div style={{ borderTop: '1px solid var(--border)' }} />
-                <div
-                  className="px-3 sm:px-5 py-3 sm:py-4 prose"
-                  style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
-                >
+            {/* From large screens the notes sit beside the title block instead of under it, so the row uses its full width. */}
+            <div className="min-w-0 lg:grid lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)] lg:gap-x-10">
+              <div className="min-w-0">
+              <h2
+                className="text-[clamp(1.35rem,2.6vw,1.75rem)] leading-tight tracking-[-0.025em]"
+                style={{ color: 'var(--fg)', overflowWrap: 'break-word' }}
+              >
+                {book.title}
+              </h2>
+              <p className="mt-1.5 text-[0.9375rem]" style={{ color: 'var(--fg-70)' }}>
+                {book.author}
+              </p>
+
+              <div className={`mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${smallCaps}`} style={{ color: 'var(--fg-60)' }}>
+                {book.genres.length > 0 && <span>{book.genres.join(' · ')}</span>}
+                {book.date && <span>Read {book.date}</span>}
+                {book.rating > 0 ? <StarRating rating={book.rating} /> : <span style={{ color: 'var(--fg-45)' }}>Unrated</span>}
+              </div>
+              </div>
+
+              {book.takeaway && (
+                <div className="prose mt-5 max-w-2xl lg:mt-1" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                   {book.takeaway}
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </article>
         ))}
       </div>

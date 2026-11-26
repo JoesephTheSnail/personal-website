@@ -20,7 +20,7 @@ export default function BackLink({ fallbackHref, label }: { fallbackHref: string
           router.push(fallbackHref);
         }
       }}
-      className="inline-flex items-center gap-1.5 text-sm transition-colors mb-8"
+      className="tap-44 inline-flex items-center gap-1.5 text-sm transition-colors mb-8"
       style={{ color: 'var(--fg-eyebrow)' }}
     >
       ← {label}

@@ -13,7 +13,7 @@ export interface BookFrontmatter {
   slug: string;
   order: number;
   genre?: string[];
-  status?: 'reading' | 'read';
+  status?: 'reading' | 'read' | 'want';
 }
 
 export interface Book {

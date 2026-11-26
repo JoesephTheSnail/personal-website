@@ -47,7 +47,7 @@ export default function CustomCursor() {
   const pathname = usePathname();
   const svgRef         = useRef<SVGSVGElement>(null);
   const pathFgRef      = useRef<SVGPathElement>(null);   // var(--fg) layer
-  const pathIndigoRef  = useRef<SVGPathElement>(null);   // var(--indigo) layer
+  const pathIndigoRef  = useRef<SVGPathElement>(null);   // var(--accent) layer
   const ibeamRef       = useRef<SVGSVGElement>(null);
   const dotRefs        = useRef<(HTMLDivElement | null)[]>([]);
   const dotIndigoRefs  = useRef<(HTMLDivElement | null)[]>([]);
@@ -119,22 +119,43 @@ export default function CustomCursor() {
     const onLeave = () => { _visible = false; };
     const onEnter = () => { _visible = true; };
 
+    // Hit-testing (elementFromPoint + caret lookup) forces style/layout, and
+    // a high-polling mouse fires mousemove far faster than the screen can
+    // paint. Doing it per event meant that while a new page was mounting
+    // the handler piled layout work onto an already-busy main thread — and
+    // since the native cursor is hidden, a stalled thread reads as a frozen
+    // mouse. The event now only records the position; the hit test runs at
+    // most once per frame, from `tick`.
+    let _needsHitTest = false;
+
     const onMove = (e: MouseEvent) => {
       mouse.x  = e.clientX;
       mouse.y  = e.clientY;
       _visible = true;
-      const el = document.elementFromPoint(e.clientX, e.clientY);
+      _needsHitTest = true;
+    };
+
+    const hitTest = () => {
+      _needsHitTest = false;
+      const el = document.elementFromPoint(mouse.x, mouse.y);
       _pointer = !!el?.closest(POINTER_SELECTOR);
       _hidden  = !!el?.closest('[data-hide-cursor]') && !_pointer;
 
       // Text mode never applies over something clickable or explicitly
       // hidden — a link made of text still gets the pointer treatment.
       _text = !_pointer && !_hidden && (
-        !!el?.closest(EDITABLE_SELECTOR) || caretDetect(e.clientX, e.clientY)
+        !!el?.closest(EDITABLE_SELECTOR) || caretDetect(mouse.x, mouse.y)
       );
     };
 
     const tick = () => {
+      if (_needsHitTest) hitTest();
+
+      // The pointer itself (triangle / I-beam, below) is pinned to the real
+      // mouse position every frame — any easing on the thing you're aiming
+      // with reads as input lag. Only the trailing dots ease toward it, which
+      // is what keeps the comet-tail feel without delaying the pointer.
+
       cur.x += (mouse.x - cur.x) * 0.42;
       cur.y += (mouse.y - cur.y) * 0.42;
 
@@ -160,7 +181,7 @@ export default function CustomCursor() {
       const totalScale = _hoverScale * _clickScale;
 
       if (svgRef.current && pathFgRef.current && pathIndigoRef.current) {
-        svgRef.current.style.transform = `translate(${cur.x}px, ${cur.y}px) scale(${totalScale.toFixed(3)})`;
+        svgRef.current.style.transform = `translate(${mouse.x}px, ${mouse.y}px) scale(${totalScale.toFixed(3)})`;
         svgRef.current.style.opacity   = vis ? String(+(1 - textT).toFixed(3)) : '0';
 
         // Cross-fade between fg and indigo by blending fillOpacity of each layer
@@ -169,7 +190,7 @@ export default function CustomCursor() {
       }
 
       if (ibeamRef.current) {
-        ibeamRef.current.style.transform = `translate(${cur.x}px, ${cur.y}px)`;
+        ibeamRef.current.style.transform = `translate(${mouse.x}px, ${mouse.y}px)`;
         ibeamRef.current.style.opacity   = vis ? String(+textT.toFixed(3)) : '0';
       }
 
@@ -187,22 +208,51 @@ export default function CustomCursor() {
         el.style.opacity   = vis ? String(+((1 - i / TRAIL) * 0.13 * colorT * (1 - textT)).toFixed(3)) : '0';
       });
 
+      // Everything has eased onto its target (sub-pixel, sub-0.2% opacity): stop
+      // the loop instead of rewriting identical styles 60 times a second while
+      // the pointer is still. Any pointer event wakes it again.
+      const near = (a: number, b: number, eps: number) => Math.abs(a - b) < eps;
+      const settled =
+        !_needsHitTest &&
+        near(mouse.x, cur.x, 0.05) && near(mouse.y, cur.y, 0.05) &&
+        dots.every((d, i) => near(d.x, i === 0 ? cur.x : dots[i - 1].x, 0.05) && near(d.y, i === 0 ? cur.y : dots[i - 1].y, 0.05)) &&
+        near(colorT, colorTarget, 0.002) &&
+        near(textT, _text && vis ? 1 : 0, 0.002) &&
+        near(_hoverScale, _pointer && vis ? 1.12 : 1.0, 0.002) &&
+        near(_clickScale, _clicking ? 0.8 : 1.0, 0.002);
+      if (settled) {
+        running = false;
+        return;
+      }
       rafId = requestAnimationFrame(tick);
     };
 
-    document.addEventListener('mousemove',  onMove);
-    document.addEventListener('mouseleave', onLeave);
-    document.addEventListener('mouseenter', onEnter);
-    document.addEventListener('mousedown',  onDown);
-    document.addEventListener('mouseup',    onUp);
+    let running = true;
+    const wake = () => {
+      if (running) return;
+      running = true;
+      rafId = requestAnimationFrame(tick);
+    };
+    const onMoveWake  = (e: MouseEvent) => { onMove(e); wake(); };
+    const onLeaveWake = () => { onLeave(); wake(); };
+    const onEnterWake = () => { onEnter(); wake(); };
+    const onDownWake  = () => { onDown(); wake(); };
+    const onUpWake    = () => { onUp(); wake(); };
+
+    document.addEventListener('mousemove',  onMoveWake);
+    document.addEventListener('mouseleave', onLeaveWake);
+    document.addEventListener('mouseenter', onEnterWake);
+    document.addEventListener('mousedown',  onDownWake);
+    document.addEventListener('mouseup',    onUpWake);
     rafId = requestAnimationFrame(tick);
 
     return () => {
-      document.removeEventListener('mousemove',  onMove);
-      document.removeEventListener('mouseleave', onLeave);
-      document.removeEventListener('mouseenter', onEnter);
-      document.removeEventListener('mousedown',  onDown);
-      document.removeEventListener('mouseup',    onUp);
+      document.removeEventListener('mousemove',  onMoveWake);
+      document.removeEventListener('mouseleave', onLeaveWake);
+      document.removeEventListener('mouseenter', onEnterWake);
+      document.removeEventListener('mousedown',  onDownWake);
+      document.removeEventListener('mouseup',    onUpWake);
+      running = true; // block a late wake() from restarting a torn-down loop
       cancelAnimationFrame(rafId);
     };
   }, [isFine]);
@@ -236,7 +286,7 @@ export default function CustomCursor() {
             key={`dot-indigo-${i}`}
             ref={(el) => { dotIndigoRefs.current[i] = el; }}
             className="fixed top-0 left-0 pointer-events-none z-[9997]"
-            style={{ width: size, height: size, marginLeft: -(size / 2), marginTop: -(size / 2), borderRadius: '50%', background: 'var(--indigo)', opacity: 0, willChange: 'transform, opacity' }}
+            style={{ width: size, height: size, marginLeft: -(size / 2), marginTop: -(size / 2), borderRadius: '50%', background: 'var(--accent)', opacity: 0, willChange: 'transform, opacity' }}
           />
         );
       })}
@@ -244,13 +294,13 @@ export default function CustomCursor() {
       <svg
         ref={svgRef}
         className="fixed top-0 left-0 pointer-events-none z-[9999]"
-        style={{ opacity: 0, willChange: 'transform, opacity', width: 22, height: 22, marginLeft: -11, marginTop: -11, overflow: 'visible' }}
+        style={{ opacity: 0, willChange: 'transform, opacity', width: 22, height: 22, marginLeft: -11, marginTop: -11, overflow: 'visible', filter: 'drop-shadow(0 0 1.5px rgba(0,0,0,0.9))' }}
         viewBox="-11 -11 22 22"
       >
         {/* fg layer */}
         <path ref={pathFgRef}     d={TRI_PATH} fill="var(--fg)"     fillOpacity={1} stroke="none" />
         {/* indigo layer fades in on hover */}
-        <path ref={pathIndigoRef} d={TRI_PATH} fill="var(--indigo)" fillOpacity={0} stroke="none" />
+        <path ref={pathIndigoRef} d={TRI_PATH} fill="var(--accent)" fillOpacity={0} stroke="none" />
       </svg>
 
       {/* Text-insertion cursor — cross-fades with the triangle above rather
@@ -259,7 +309,7 @@ export default function CustomCursor() {
       <svg
         ref={ibeamRef}
         className="fixed top-0 left-0 pointer-events-none z-[9999]"
-        style={{ opacity: 0, willChange: 'transform, opacity', width: 12, height: 22, marginLeft: -6, marginTop: -11, overflow: 'visible' }}
+        style={{ opacity: 0, willChange: 'transform, opacity', width: 12, height: 22, marginLeft: -6, marginTop: -11, overflow: 'visible', filter: 'drop-shadow(0 0 1.5px rgba(0,0,0,0.9))' }}
         viewBox="-6 -11 12 22"
       >
         <path d={IBEAM_PATH} fill="var(--fg)" fillOpacity={0.85} stroke="none" />

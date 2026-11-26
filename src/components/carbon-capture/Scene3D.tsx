@@ -1105,10 +1105,30 @@ function Label({
   );
   // Clicking the label's text or its dot selects the part, same as clicking the part
   // itself. labelSelect is wired up by Rig (labels sit outside the part components).
-  const labelHandlers = useMemo(
-    () => (hoverId ? clickable(hoverId, (id) => labelSelect.fn?.(id)) : undefined),
-    [hoverId],
-  );
+  // A label that has faded out (viewed from behind, or zoomed far out) is still
+  // in the scene's raycast list, so without a guard its invisible text would
+  // swallow hover and clicks meant for whatever sits behind it. Events are only
+  // taken while the label is actually readable; otherwise they fall through.
+  const labelHandlers = useMemo(() => {
+    if (!hoverId) return undefined;
+    const base = clickable(hoverId, (id) => labelSelect.fn?.(id));
+    let over = false; // pointer-out is only forwarded for an over we took
+    return {
+      onClick: (e: ThreeEvent<MouseEvent>) => {
+        if (visAmt.current > 0.3) base.onClick(e);
+      },
+      onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+        if (visAmt.current <= 0.3) return;
+        over = true;
+        base.onPointerOver(e);
+      },
+      onPointerOut: () => {
+        if (!over) return;
+        over = false;
+        base.onPointerOut();
+      },
+    };
+  }, [hoverId]);
   const matShaftDark = useRef<THREE.MeshBasicMaterial>(null);
   const matShaftFill = useRef<THREE.MeshBasicMaterial>(null);
   const matHalo = useRef<THREE.MeshBasicMaterial>(null);
@@ -1168,6 +1188,7 @@ function Label({
     // `fontSize` above 2.5 only nudges a hero label up, by at most 15%.
     const camDist = camera.position.distanceTo(group.position);
     const worldPerPx = (2 * camDist * Math.tan(THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov) / 2)) / size.height;
+    if (labelFraming.flying) refDist.current = camDist;
     if (refDist.current === 0 || lastEpoch.current !== labelFraming.epoch) {
       refDist.current = camDist;
       lastEpoch.current = labelFraming.epoch;
@@ -1272,7 +1293,9 @@ function Label({
         // the dot rides the end of the line and pops in as it arrives
         arrowS.copy(arrowQ);
         const dotScale = THREE.MathUtils.smoothstep(draw, 0.7, 1) * (1 + 0.35 * hoverAmt.current);
-        const cueBoost = cueState.id === hoverId ? (0.3 * cueState.breath) / CUE_PEAK : 0;        writeDisc(leader.halo, arrowS, arrowRight, arrowUp, 15 * worldPerPx * dotScale);
+        // the halo breathes with the part when this label's part is the one being suggested
+        const cueBoost = cueState.id === hoverId ? (0.3 * cueState.breath) / CUE_PEAK : 0;
+        writeDisc(leader.halo, arrowS, arrowRight, arrowUp, 15 * worldPerPx * dotScale);
         writeDisc(leader.dotDark, arrowS, arrowRight, arrowUp, 7.6 * worldPerPx * dotScale);
         writeDisc(leader.dotFill, arrowS, arrowRight, arrowUp, 5.4 * worldPerPx * dotScale);
         // Click target: an invisible disc that looks exactly like a 26px circle
@@ -1427,7 +1450,11 @@ const CALLOUT_GAP_V_PX = 40;
 // label on every stop is exactly the same size (no stop's labels come out
 // bigger than another's), and a label that is mid-fade while the camera flies
 // between stops keeps its own reference, so it can't balloon or vanish.
-const labelFraming = { epoch: 0 };
+// `flying` is true while the camera is mid-flight between stops. Labels then
+// keep re-referencing their own distance every frame, so their size holds at
+// the settled value instead of drifting up to 25% (as the camera nears) and
+// then snapping back the instant it arrives.
+const labelFraming = { epoch: 0, flying: false };
 // set by Rig so a click on a label's text or dot can select its part
 const labelSelect: { fn: SelectPartFn | null } = { fn: null };
 function labelSize(viewportHeight: number, camDist: number, refDist: number, boost: number) {
@@ -1798,21 +1825,6 @@ function applyHoverGlow(
   });
 }
 
-/** 0..1 — how "hovered" a given part id is right now, eased the same way
- *  applyHoverGlow eases its own amount. Label uses its own copy of this
- *  (rather than sharing a ref with the 3D part) since a label's lifetime
- *  and a part's aren't the same thing — a label can mount/unmount across
- *  tour steps independent of the mesh it names. */
-function useHoverAmount(id: string | undefined) {
-  const amountRef = useRef(0);
-  useFrame(() => {
-    const target = glowTarget(id);
-    amountRef.current = stepHover(amountRef.current, target);
-    if (amountRef.current < 0.003) amountRef.current = 0;
-  });
-  return amountRef;
-}
-
 function CaptureModule({
   explodeRef,
   onSelectPart,
@@ -2014,6 +2026,29 @@ function ModuleInternals({
   const detoxMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const demisterMatRef = useRef<THREE.MeshStandardMaterial>(null);
 
+  // woven wire mesh: a tile of crossing strands on a translucent pale fill
+  const demisterMesh = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    if (g) {
+      g.fillStyle = 'rgba(170,179,236,0.8)';
+      g.fillRect(0, 0, 64, 64);
+      g.strokeStyle = '#3f4bb0';
+      g.lineWidth = 9;
+      for (const p of [16, 48]) {
+        g.beginPath(); g.moveTo(0, p); g.lineTo(64, p); g.stroke();
+        g.beginPath(); g.moveTo(p, 0); g.lineTo(p, 64); g.stroke();
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(6, 2);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }, []);
+
   // hover amount per chamber — folded into the SAME emissiveIntensity write
   // each chamber's glow already gets below, rather than a second useFrame
   // reaching into the same materials (that dual-writer fight, once explode
@@ -2113,7 +2148,20 @@ function ModuleInternals({
       <group ref={demisterRef} {...clickable('demister', onSelectPart)}>
         <mesh position={[IN(intXCenter), IN((demisterY0 + demisterY1) / 2), IN(intZCenter)]}>
           <boxGeometry args={[IN(intX1 - intX0), IN(demisterY1 - demisterY0), IN(intZ1 - intZ0)]} />
-          <meshStandardMaterial ref={demisterMatRef} color={PALETTE.module.light} emissive="#ffffff" emissiveIntensity={0} wireframe />
+          {/* A real demister is a knitted wire-mesh pad. `wireframe` here drew only
+              the box's 12 edges as 1px lines — invisible at any normal distance —
+              so the pad is a translucent slab with a woven mesh texture instead.
+              Still a single material, so the shared glow/hover writes keep working. */}
+          <meshStandardMaterial
+            ref={demisterMatRef}
+            map={demisterMesh}
+            color="#ffffff"
+            emissive={PALETTE.module.body}
+            emissiveIntensity={0}
+            roughness={0.8}
+            transparent
+            side={THREE.DoubleSide}
+          />
         </mesh>
       </group>
 
@@ -2888,7 +2936,6 @@ type TourStep = {
 };
 
 const TRUCK_OPACITY_FULL = 1;
-const TRUCK_OPACITY_FOCUSED = 0.12;
 const TRUCK_OPACITY_HIDDEN = 0;
 const STACK_OPACITY_SHOWN = 1;
 const STACK_OPACITY_HIDDEN = 0;
@@ -3590,9 +3637,10 @@ function Rig({
   // and clutter close shots of totally unrelated equipment (most visibly on
   // "teg", whose camera happens to sit near the module).
   const exhaustVisibleRef = useRef(1);
-  // names for the exhaust stack and the module itself, both on the capture
-  // module stop only (the overview is deliberately free of labels and click
-  // goals). The inlet's own label keeps exhaustVisibleRef.
+  // names for the exhaust stack, the exhaust inlet and the module itself, all
+  // on the capture module stop only (the overview is deliberately free of
+  // labels and click goals). exhaustVisibleRef still drives the duct and its
+  // flow trail on the wider set of stops above.
   useEffect(() => {
     labelSelect.fn = onSelectPart;
     return () => {
@@ -3610,6 +3658,9 @@ function Rig({
   // tell a real idle pause apart from "still mid-flight to this step" — see
   // HologramAutoRotate's own docstring for why that distinction matters.
   const transitioningRef = useRef(true);
+  useFrame(() => {
+    labelFraming.flying = transitioningRef.current;
+  });
   return (
     <>
       <AspectFov />
@@ -4077,7 +4128,7 @@ function RotateDeviceGate({ visible }: { visible: boolean }) {
         gap: 18,
         padding: '32px',
         textAlign: 'center',
-        fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+        fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
       }}
     >
       {/* an iPhone, drawn in portrait: rounded body, Dynamic Island pill at
@@ -4130,7 +4181,7 @@ function Legend({ deviceClass }: { deviceClass: DeviceClass }) {
         background: 'rgba(21,23,26,0.72)',
         border: '1px solid rgba(255,255,255,0.08)',
         backdropFilter: 'blur(6px)',
-        fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+        fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
         fontSize: compact ? 11.5 : 14,
         fontWeight: 500,
         letterSpacing: '0.01em',
@@ -4359,7 +4410,7 @@ function FullscreenControl({ deviceClass, isPortrait }: { deviceClass: DeviceCla
           background: 'rgba(21,23,26,0.86)',
           backdropFilter: 'blur(8px)',
           color: '#fff',
-          fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+          fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
           fontSize: 11.5,
           lineHeight: 1.4,
           animation: 'cc-facts-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both',
@@ -4689,7 +4740,7 @@ function FactsCard({
         display: 'flex',
         justifyContent: 'flex-end',
         width: compact ? 'min(260px, calc(100vw - 72px))' : 'min(340px, calc(100vw - 32px))',
-        fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+        fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
       }}
     >
       <div
@@ -4791,7 +4842,7 @@ function navButtonStyle(disabled: boolean, compact: boolean, nudge = false): CSS
     border: '1px solid rgba(255,255,255,0.14)',
     background: disabled ? 'rgba(21,23,26,0.4)' : 'rgba(21,23,26,0.78)',
     opacity: disabled ? 0.45 : 1,
-    fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+    fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
     fontSize: compact ? 13 : 15,
     fontWeight: 600,
     letterSpacing: '0.02em',
@@ -4851,7 +4902,7 @@ function TourNav({
     >
       <div
         style={{
-          fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+          fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
           fontSize: compact ? 13 : 17,
           fontWeight: 600,
           letterSpacing: '0.04em',
@@ -4976,15 +5027,21 @@ export default function Scene3D() {
     cueState.id = cueTarget;
   }, [cueTarget]);
   useEffect(() => {
-    // reduced motion: the cue becomes a steady faint glow instead of a breath
+    // reduced motion: the cue becomes a steady faint glow instead of a breath.
+    // Both the OS setting and the site's own "Reduce motion" switch (a class on
+    // <html>, see useAccessibilityPrefs) count.
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const root = document.documentElement;
     const apply = () => {
-      cueState.reduced = !!mq?.matches;
+      cueState.reduced = !!mq?.matches || root.classList.contains('reduce-motion');
     };
     apply();
     mq?.addEventListener?.('change', apply);
+    const classWatcher = new MutationObserver(apply);
+    classWatcher.observe(root, { attributes: true, attributeFilter: ['class'] });
     return () => {
       mq?.removeEventListener?.('change', apply);
+      classWatcher.disconnect();
       cueState.id = null;
       exploredParts.clear();
     };
