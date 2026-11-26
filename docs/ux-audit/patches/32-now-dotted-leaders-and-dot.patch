@@ -1,0 +1,24 @@
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -201,7 +201,8 @@
+       {/* ── Now ────────────────────────────────── */}
+       <section className={`${row} mb-14`} aria-labelledby="plate-heading">
+         <div className="mb-4 sm:mb-0 sm:pt-[0.55rem]">
+-          <h2 id="plate-heading" className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>
++          <h2 id="plate-heading" className={`${eyebrow} flex items-center gap-2`} style={{ color: 'var(--fg-eyebrow)' }}>
++            <span className="inline-flex h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent)' }} aria-hidden="true" />
+             Now
+           </h2>
+           <p className="mt-3 text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-45)' }}>
+@@ -212,8 +213,10 @@
+           {ON_MY_PLATE.map((item) => (
+             <li key={item.title} className="flex items-baseline gap-4 border-b py-3" style={{ borderColor: 'var(--border-med)' }}>
+               <span className="text-[1.125rem] tracking-[-0.015em]" style={{ color: 'var(--fg)' }}>{item.title}</span>
++              {/* Dotted leader, the same device as the Projects and Health lists. */}
++              <span className="min-w-6 flex-1 -translate-y-[0.3rem] border-b border-dotted" style={{ borderColor: 'var(--fg-30)' }} aria-hidden="true" />
+               {item.note && (
+-                <span className="ml-auto flex-shrink-0 pl-4 text-right text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
++                <span className="flex-shrink-0 text-right text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+                   {item.note}
+                 </span>
+               )}

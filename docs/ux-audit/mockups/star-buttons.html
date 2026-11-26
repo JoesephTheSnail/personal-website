@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Star project buttons: mockup</title>
+<!-- Static mockup, no build step. Open the file in a browser. Hover (or tab to) a button, or tick "Show hover state". -->
+<style>
+  :root { --bg:#121211; --fg:#EEE9DF; --accent:#5BA3C2; --line:rgba(238,233,223,.13); --dim:rgba(238,233,223,.6); }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 "Instrument Sans", system-ui, sans-serif; padding:48px 32px 80px; }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 2.25rem; font-weight: 500; letter-spacing:-.04em; margin:0 0 8px; }
+  .eyebrow { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 12px; }
+  .lede { color:var(--dim); max-width: 640px; margin:0 0 28px; }
+  .rules { border-top:1px solid var(--line); padding-top:16px; margin-bottom:28px; color:var(--dim); font-size:14px; }
+  .rules li { margin: 4px 0; }
+  label.toggle { display:inline-flex; gap:10px; align-items:center; margin: 0 0 28px; cursor:pointer; color:var(--fg); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 0 40px; }
+  .card { border-top:1px solid var(--line); padding: 22px 0 30px; }
+  .card h2 { font-size: 1.125rem; font-weight:500; margin:0 0 4px; letter-spacing:-.015em; }
+  .card .why { color:var(--dim); font-size:14px; margin:0 0 18px; }
+  .card .how { color:var(--dim); font-size:12px; text-transform:uppercase; letter-spacing:.12em; margin:16px 0 0; }
+
+  /* ── The shared button: a labelled petrol body plus a graphite tile with a little themed object ── */
+  .btn { display:inline-flex; align-items:stretch; text-decoration:none; color:#121211; height:56px; outline-offset:4px; }
+  .btn .body { background:var(--accent); display:flex; align-items:center; padding:0 22px; font-weight:600; letter-spacing:-.01em; border-radius:6px 0 0 6px; transition: background .2s ease; }
+  .btn .art { width:76px; background:#0E0E0D; border:1px solid var(--line); border-left:0; border-radius:0 6px 6px 0; overflow:hidden; display:block; }
+  .btn svg { width:100%; height:100%; display:block; overflow:visible; }
+  .btn .arrow { margin-left:8px; transition: transform .25s cubic-bezier(.22,1,.36,1); }
+  .btn:hover .arrow, .force .btn .arrow, .btn:focus-visible .arrow { transform: translateX(3px); }
+  .btn:hover .body, .force .btn .body, .btn:focus-visible .body { background:#74B6D3; }
+  svg .line { fill:none; stroke:var(--fg); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  svg .fillbone { fill:var(--fg); } svg .fillpet { fill:var(--accent); }
+
+  /* 1 Sleep: phone lit, hover: screen dims, moon rises, stars twinkle */
+  .sleep .screen { transition: opacity .5s ease; }
+  .sleep .moon { transform: translateY(-34px); transition: transform .6s cubic-bezier(.22,1,.36,1); }
+  .sleep .star { opacity:0; transition: opacity .4s ease .3s; }
+  .sleep .btn:hover .screen, .force .sleep .btn .screen, .sleep .btn:focus-visible .screen { opacity:.12; }
+  .sleep .btn:hover .moon, .force .sleep .btn .moon, .sleep .btn:focus-visible .moon { transform: translateY(0); }
+  .sleep .btn:hover .star, .force .sleep .btn .star, .sleep .btn:focus-visible .star { opacity:1; animation: twinkle 1.6s ease-in-out infinite; }
+  @keyframes twinkle { 50% { opacity:.35; } }
+
+  /* 2 MindSet: a breathing circle inside a phone */
+  .mind .circle { transform-origin: 38px 28px; transform: scale(.55); transition: transform .5s ease; }
+  .mind .btn:hover .circle, .force .mind .btn .circle, .mind .btn:focus-visible .circle { animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(.55); } 50% { transform: scale(1.05); } }
+
+  /* 3 InsuSense: a glucose trace that draws itself, then a drop falls */
+  .insu .trace { stroke-dasharray: 120; stroke-dashoffset: 120; }
+  .insu .drop { opacity:0; }
+  .insu .btn:hover .trace, .force .insu .btn .trace, .insu .btn:focus-visible .trace { animation: draw 2.4s ease-in-out infinite; }
+  .insu .btn:hover .drop, .force .insu .btn .drop, .insu .btn:focus-visible .drop { animation: drip 2.4s ease-in infinite; }
+  @keyframes draw { 0% { stroke-dashoffset:120; } 55%,100% { stroke-dashoffset:0; } }
+  @keyframes drip { 0%,55% { opacity:0; transform: translateY(-4px); } 65% { opacity:1; } 100% { opacity:0; transform: translateY(14px); } }
+
+  /* 4 AnyWear: a hanger that swings */
+  .wear .hanger { transform-origin: 38px 8px; transform: rotate(0deg); }
+  .wear .btn:hover .hanger, .force .wear .btn .hanger, .wear .btn:focus-visible .hanger { animation: swing 1.4s ease-in-out infinite alternate; }
+  @keyframes swing { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+
+  /* 5 Mindset Matters: an envelope that opens and offers the letter */
+  .mail .flap-open { opacity:0; } .mail .letter { transform: translateY(6px); transition: transform .5s cubic-bezier(.22,1,.36,1); }
+  .mail .btn:hover .flap-closed, .force .mail .btn .flap-closed, .mail .btn:focus-visible .flap-closed { opacity:0; }
+  .mail .btn:hover .flap-open, .force .mail .btn .flap-open, .mail .btn:focus-visible .flap-open { opacity:1; }
+  .mail .btn:hover .letter, .force .mail .btn .letter, .mail .btn:focus-visible .letter { transform: translateY(-8px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn *, .btn { animation: none !important; transition: none !important; }
+    .btn .arrow { transform: none !important; }
+  }
+  .note { border:1px dashed var(--line); padding:14px 16px; color:var(--dim); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Phase two mockup</p>
+  <h1>Star project buttons</h1>
+  <p class="lede">One small themed object per star project, in the spirit of the truck on the carbon capture page. Palette only: petrol body, graphite tile, bone line art. Hover or tab to a button to see it move, or tick the box.</p>
+  <ul class="rules">
+    <li>The label stays plain text on the body, so it is still one ordinary link for a screen reader (the art is <code>aria-hidden</code>).</li>
+    <li>Motion plays on hover, keyboard focus and touch press only; it is off under reduced motion. Nothing moves at rest.</li>
+    <li>Pure CSS and inline SVG: about 1.5KB each, no images, no scripts.</li>
+    <li>One per star project (6 stars). The truck on carbon capture stays as the reference; it is the only one allowed off-palette.</li>
+  </ul>
+  <label class="toggle"><input type="checkbox" id="force"> Show hover state</label>
+
+  <div class="grid" id="grid">
+    <section class="card sleep">
+      <h2>Pre-Sleep Screen Restriction</h2>
+      <p class="why">Theme: the finding is "30 minutes without a screen". The lit phone goes dark and a moon rises.</p>
+      <a class="btn" href="#"><span class="body">Read the report <span class="arrow" aria-hidden="true">→</span></span>
+        <span class="art" aria-hidden="true"><svg viewBox="0 0 76 56">
+          <rect class="line" x="14" y="8" width="22" height="40" rx="3"/><rect class="fillpet screen" x="17" y="12" width="16" height="30" rx="1.5"/>
+          <g class="moon"><path class="fillbone" d="M58 14a11 11 0 1 0 6 20 9 9 0 0 1-6-20z"/></g>
+          <circle class="fillbone star" cx="50" cy="12" r="1.3"/><circle class="fillbone star" cx="66" cy="22" r="1.1"/><circle class="fillbone star" cx="64" cy="40" r="1.2"/>
+        </svg></span></a>
+      <p class="how">Hover: screen dims, moon rises, stars twinkle</p>
+    </section>
+
+    <section class="card mind">
+      <h2>MindSet</h2>
+      <p class="why">Theme: the app has breathing exercises. A circle inside a phone breathes slowly in and out.</p>
+      <a class="btn" href="#"><span class="body">View the prototype <span class="arrow" aria-hidden="true">→</span></span>
+        <span class="art" aria-hidden="true"><svg viewBox="0 0 76 56">
+          <rect class="line" x="26" y="6" width="24" height="44" rx="4"/>
+          <circle class="fillpet circle" cx="38" cy="28" r="9"/>
+          <line class="line" x1="34" y1="44" x2="42" y2="44"/>
+        </svg></span></a>
+      <p class="how">Hover: the circle breathes (4s in and out)</p>
+    </section>
+
+    <section class="card insu">
+      <h2>InsuSense</h2>
+      <p class="why">Theme: it reads glucose and doses insulin. A glucose trace draws itself and a single drop falls.</p>
+      <a class="btn" href="#"><span class="body">See the prototype <span class="arrow" aria-hidden="true">→</span></span>
+        <span class="art" aria-hidden="true"><svg viewBox="0 0 76 56">
+          <polyline class="line trace" points="6,34 18,34 24,34 28,18 34,44 40,26 46,34 58,34 66,34"/>
+          <path class="fillpet drop" d="M66 36c3 4 4 6 4 8a4 4 0 0 1-8 0c0-2 1-4 4-8z"/>
+        </svg></span></a>
+      <p class="how">Hover: trace draws, drop falls (2.4s loop)</p>
+    </section>
+
+    <section class="card wear">
+      <h2>AnyWear</h2>
+      <p class="why">Theme: clothing rental. A hanger swings gently, like a garment about to be taken off the rail.</p>
+      <a class="btn" href="#"><span class="body">See the pitch <span class="arrow" aria-hidden="true">→</span></span>
+        <span class="art" aria-hidden="true"><svg viewBox="0 0 76 56">
+          <line class="line" x1="8" y1="8" x2="68" y2="8"/>
+          <g class="hanger"><path class="line" d="M38 8v4a4 4 0 1 0-4 4"/><path class="line" d="M38 18 14 38h48z"/></g>
+        </svg></span></a>
+      <p class="how">Hover: hanger swings side to side</p>
+    </section>
+
+    <section class="card mail">
+      <h2>Mindset Matters</h2>
+      <p class="why">Theme: a monthly newsletter. An envelope opens and the letter slides up.</p>
+      <a class="btn" href="#"><span class="body">Read the newsletter <span class="arrow" aria-hidden="true">↗</span></span>
+        <span class="art" aria-hidden="true"><svg viewBox="0 0 76 56">
+          <rect class="fillbone letter" x="24" y="14" width="28" height="24" rx="1.5"/>
+          <rect class="line" x="16" y="22" width="44" height="26" rx="2" style="fill:#0E0E0D"/>
+          <polyline class="line flap-closed" points="16,22 38,38 60,22"/>
+          <polyline class="line flap-open" points="16,22 38,10 60,22"/>
+        </svg></span></a>
+      <p class="how">Hover: flap opens, letter slides up</p>
+    </section>
+
+    <section class="card">
+      <h2>Truck Exhaust Carbon Capture</h2>
+      <p class="why">The reference. Already built: <code>/projects/carbon-capture-model</code>. Wheels spin, exhaust puffs rise.</p>
+      <div class="note">Existing yellow truck button, unchanged. The other five follow its idea (a labelled body plus a small moving object) in the site palette.</div>
+    </section>
+  </div>
+</main>
+<script>
+  document.getElementById('force').addEventListener('change', e => document.body.classList.toggle('force', e.target.checked));
+  if (location.hash === '#hover') { document.getElementById('force').checked = true; document.body.classList.add('force'); }
+</script>
+</body>
+</html>

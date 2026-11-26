@@ -1,0 +1,31 @@
+--- a/src/app/icon.svg
++++ b/src/app/icon.svg
+@@ -1,6 +1,10 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+-  <!-- Monogram tile: a geometric "A" cut out of a petrol rounded square. The solid tile keeps its
+-       contrast on both light and dark browser tabs. -->
+-  <rect width="64" height="64" rx="14" fill="#5BA3C2"/>
+-  <path fill="#121211" fill-rule="evenodd" d="M32 11 L51 53 H42.6 L39.4 45.4 H24.6 L21.4 53 H13 Z M27.7 38.4 H36.3 L32 27.4 Z"/>
++  <!-- A pencil on a bone tile: the writer. The hairline edge keeps the tile visible on light browser tabs. -->
++  <rect width="64" height="64" rx="14" fill="#EEE9DF"/>
++  <rect data-edge x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#121211" stroke-opacity=".28" stroke-width="1.5"/>
++  <g transform="rotate(40 32 32)">
++    <rect x="25.5" y="9" width="13" height="8" rx="2.5" fill="#3F86A8"/>
++    <rect x="25.5" y="19" width="13" height="25" fill="#121211"/>
++    <path d="M25.5 46h13L32 57z" fill="#121211"/>
++  </g>
+ </svg>
+Binary files a/src/app/icon.png and b/src/app/icon.png differ
+Binary files a/src/app/apple-icon.png and b/src/app/apple-icon.png differ
+Binary files a/src/app/favicon.ico and b/src/app/favicon.ico differ
+--- a/docs/ux-audit/scripts/favicon.mjs
++++ b/docs/ux-audit/scripts/favicon.mjs
+@@ -11,7 +11,7 @@
+ for (const size of [512, 192, 180, 48, 32, 16]) {
+   // the Apple icon needs a full-bleed square (iOS rounds the corners itself)
+   const solid = size === 180;
+-  const markup = solid ? svg.replace('rx="14"', 'rx="0"') : svg;
++  const markup = solid ? svg.replace('rx="14"', 'rx="0"').replace(/<rect data-edge[^>]*\/>/, '') : svg;
+   await page.setViewportSize({ width: size, height: size });
+   await page.setContent(`<style>html,body{margin:0;background:transparent}svg{display:block;width:${size}px;height:${size}px}</style>${markup}`);
+   await page.screenshot({ path: path.join(out, `icon-${size}.png`), omitBackground: !solid });

@@ -1,0 +1,148 @@
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -581,6 +581,21 @@
+ .proud-card:hover .proud-link,
+ .proud-card:focus-visible .proud-link { color: var(--accent) !important; }
+ html.reduce-motion .proud-link { transition: none; }
++/* Feedback for the underlined actions ("Get in touch", the email in the dialog):
++   the text takes the petrol accent, the underline thickens and the arrow moves
++   3px. Filters use .proud-link only to mark the active one, so they are left out.
++   Hover is for a real mouse; keyboard focus gets the same cue. */
++.proud-link > span[aria-hidden='true'] { display: inline-block; transition: transform 0.25s var(--ease-out); }
++.proud-link:not(.ledger-filter):focus-visible { color: var(--accent) !important; background-size: 100% 3px; }
++.proud-link:not(.ledger-filter):focus-visible > span[aria-hidden='true'] { transform: translateX(3px); }
++@media (hover: hover) and (pointer: fine) {
++  .proud-link:not(.ledger-filter):hover { color: var(--accent) !important; background-size: 100% 3px; }
++  .proud-link:not(.ledger-filter):hover > span[aria-hidden='true'] { transform: translateX(3px); }
++}
++html.reduce-motion .proud-link > span[aria-hidden='true'] { transition: none; transform: none !important; }
++@media (prefers-reduced-motion: reduce) {
++  .proud-link > span[aria-hidden='true'] { transition: none; transform: none !important; }
++}
+ 
+ /* ── Entrance: one gentle rise, staggered by --d ──
+    It replays on every page navigation, the most frequent thing a visitor does,
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -204,19 +204,13 @@
+           <h2 id="plate-heading" className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>
+             Now
+           </h2>
+-          <p className="mt-2 text-[1.75rem] leading-none tracking-[-0.03em] tabular-nums" style={{ color: 'var(--fg-45)' }} aria-hidden="true">
+-            {String(ON_MY_PLATE.length).padStart(2, '0')}
+-          </p>
+           <p className="mt-3 text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-45)' }}>
+             Updated {UPDATED}
+           </p>
+         </div>
+-        <ol className="border-t" style={{ borderColor: 'var(--border-med)' }}>
+-          {ON_MY_PLATE.map((item, i) => (
++        <ul className="border-t" style={{ borderColor: 'var(--border-med)' }}>
++          {ON_MY_PLATE.map((item) => (
+             <li key={item.title} className="flex items-baseline gap-4 border-b py-3" style={{ borderColor: 'var(--border-med)' }}>
+-              <span className="w-5 flex-shrink-0 text-[10.5px] tabular-nums tracking-[0.1em]" style={{ color: 'var(--fg-45)' }} aria-hidden="true">
+-                {String(i + 1).padStart(2, '0')}
+-              </span>
+               <span className="text-[1.125rem] tracking-[-0.015em]" style={{ color: 'var(--fg)' }}>{item.title}</span>
+               {item.note && (
+                 <span className="ml-auto flex-shrink-0 pl-4 text-right text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+@@ -225,7 +219,7 @@
+               )}
+             </li>
+           ))}
+-        </ol>
++        </ul>
+       </section>
+ 
+       {/* ── Want to connect ────────────────────────────── */}
+--- a/src/app/projects/page.tsx
++++ b/src/app/projects/page.tsx
+@@ -42,14 +42,6 @@
+         >
+           {published.length} projects across {disciplines} disciplines
+         </p>
+-        {/* A big outlined count: the one purely graphic element on the page. */}
+-        <span
+-          aria-hidden="true"
+-          className="pointer-events-none absolute bottom-[-0.12em] right-0 hidden select-none text-[clamp(6rem,11vw,9.5rem)] font-medium leading-[0.8] tracking-[-0.06em] lg:block"
+-          style={{ color: 'transparent', WebkitTextStroke: '1px var(--fg-30)' }}
+-        >
+-          {published.length}
+-        </span>
+       </header>
+ 
+       <div className="rise" style={{ ['--d' as string]: '300ms' } as React.CSSProperties}>
+--- a/src/app/books/page.tsx
++++ b/src/app/books/page.tsx
+@@ -105,9 +105,6 @@
+           <h2 className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>
+             The shelf
+           </h2>
+-          <span className={`hidden sm:inline ${smallCaps}`} style={{ color: 'var(--fg-45)' }}>
+-            Hover the edges to scroll, click a cover to jump to it
+-          </span>
+         </div>
+         <BookCoverScroll books={coverItems} />
+       </section>
+--- a/src/components/BookCoverScroll.tsx
++++ b/src/components/BookCoverScroll.tsx
+@@ -82,7 +82,6 @@
+       // margin is the only gap under the covers — no hidden padding stacking
+       // on top of it the way pb-6 used to.
+       className="relative select-none overflow-hidden"
+-      data-hide-cursor
+       onMouseMove={handleMouseMove}
+       onMouseLeave={stopScroll}
+     >
+--- a/src/app/health/page.tsx
++++ b/src/app/health/page.tsx
+@@ -38,7 +38,7 @@
+         I also shared my training on a gym TikTok for a while.{' '}
+         <Link
+           href="/projects/gym-tiktok"
+-          className="underline underline-offset-4 decoration-[var(--fg-30)] hover:decoration-[var(--accent)]"
++          className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2"
+           style={{ color: 'var(--fg-70)' }}
+         >
+           Read about it
+@@ -105,7 +105,7 @@
+   return (
+     <div className="max-w-5xl mx-auto">
+       <header className="mb-12 sm:mb-16">
+-        <p className={`rise ${eyebrow}`} style={{ color: 'var(--fg-eyebrow)' }}>
++        <p className={`rise ${eyebrow}`} style={{ color: 'var(--accent)' }}>
+           My protocol
+         </p>
+         <h1
+@@ -125,11 +125,11 @@
+           style={{ ['--d' as string]: '230ms', color: 'var(--fg-60)' } as React.CSSProperties}
+         >
+           This is also the lived research behind{' '}
+-          <Link href="/projects/mindset-app" className="underline underline-offset-4 decoration-[var(--fg-30)] hover:decoration-[var(--accent)]" style={{ color: 'var(--fg)' }}>
++          <Link href="/projects/mindset-app" className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2" style={{ color: 'var(--fg)' }}>
+             MindSet
+           </Link>{' '}
+           and{' '}
+-          <Link href="/projects/screens-and-sleep-report" className="underline underline-offset-4 decoration-[var(--fg-30)] hover:decoration-[var(--accent)]" style={{ color: 'var(--fg)' }}>
++          <Link href="/projects/screens-and-sleep-report" className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2" style={{ color: 'var(--fg)' }}>
+             Pre-Sleep Screen Restriction
+           </Link>
+           .
+@@ -146,7 +146,7 @@
+             {SECTIONS.map((s, i) => (
+               <li key={s.id}>
+                 <a href={`#${s.id}`} className="rail-link flex items-baseline gap-3 text-[0.9375rem]" style={{ color: 'var(--fg-60)' }}>
+-                  <span className="text-[10.5px] tabular-nums" style={{ color: 'var(--fg-45)' }}>
++                  <span className="text-[10.5px] tabular-nums" style={{ color: 'var(--accent)' }}>
+                     {String(i + 1).padStart(2, '0')}
+                   </span>
+                   {s.title}
+@@ -168,7 +168,7 @@
+               <div className="mb-6 flex items-baseline gap-4">
+                 <span
+                   className="text-[clamp(1.6rem,2.6vw,2.25rem)] font-medium leading-none tracking-[-0.04em] tabular-nums"
+-                  style={{ color: 'var(--fg-45)' }}
++                  style={{ color: 'var(--accent)' }}
+                   aria-hidden="true"
+                 >
+                   {String(i + 1).padStart(2, '0')}

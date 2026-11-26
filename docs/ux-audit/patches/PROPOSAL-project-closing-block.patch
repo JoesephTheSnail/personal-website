@@ -1,0 +1,75 @@
+--- a/src/app/projects/[slug]/page.tsx	2026-11-24 12:13:29
++++ b/src/app/projects/[slug]/page.tsx	2026-11-24 12:13:29
+@@ -2,6 +2,8 @@
+ import { CATEGORIES, getCategoryBySlug, getCategoryByLabel } from '@/lib/categoryMeta';
+ import { MDXRemote } from 'next-mdx-remote/rsc';
+ import Image from 'next/image';
++import Link from 'next/link';
++import ContactTrigger from '@/components/ContactTrigger';
+ import { notFound } from 'next/navigation';
+ import TruckButton from '@/components/TruckButton';
+ import { FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
+@@ -259,6 +261,17 @@
+   // Robotics writeup should land back on Engineering, not the top grid.
+   const parentCategory = categoryLabel ? getCategoryByLabel(categoryLabel) : undefined;
+   const backHref = parentCategory ? `/projects/${parentCategory.slug}` : '/projects';
++
++  // Where to go next: the following project in the same discipline (wrapping
++  // round), or the following project overall when the discipline has only one.
++  const byNewest = (a: { frontmatter: { date?: string } }, b: { frontmatter: { date?: string } }) =>
++    (b.frontmatter.date ?? '').localeCompare(a.frontmatter.date ?? '');
++  const publishedProjects = getAllProjects().filter((p) => p.frontmatter.status === 'published').sort(byNewest);
++  const sameDiscipline = publishedProjects.filter((p) => p.frontmatter.category === categoryLabel);
++  const nextPool = sameDiscipline.length > 1 ? sameDiscipline : publishedProjects;
++  const nextIndex = nextPool.findIndex((p) => p.slug === slug);
++  const nextCandidate = nextPool.length ? nextPool[(nextIndex + 1) % nextPool.length] : undefined;
++  const nextProject = nextCandidate && nextCandidate.slug !== slug ? nextCandidate : undefined;
+ 
+   return (
+     <div className="max-w-3xl mx-auto">
+@@ -337,6 +350,45 @@
+           Built with {tools.join(', ')}
+         </p>
+       )}
++
++      {/* The end of a write-up is where someone has decided to act, so it
++          offers the next step instead of stopping: another project, or the
++          same two actions that close the home page. */}
++      <section className="mt-16 border-t pt-8" style={{ borderColor: 'var(--border-med)' }}>
++        {nextProject && (
++          <Link href={`/projects/${nextProject.slug}`} className="index-row block pb-10">
++            <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: 'var(--fg-eyebrow)' }}>
++              Next project
++            </span>
++            <span className="mt-3 flex items-baseline gap-4">
++              <span className="index-label text-[clamp(1.5rem,3.2vw,2.15rem)] leading-tight tracking-[-0.025em]" style={{ color: 'var(--fg)' }}>
++                {nextProject.frontmatter.title}
++              </span>
++              <span className="index-leader min-w-6 flex-1 -translate-y-[0.35rem]" aria-hidden="true" />
++              <span className="flex-shrink-0 text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
++                {nextProject.frontmatter.artifactType ?? nextProject.frontmatter.category} <span aria-hidden="true">→</span>
++              </span>
++            </span>
++          </Link>
++        )}
++        <div className="flex flex-wrap items-baseline gap-x-10 gap-y-4">
++          <ContactTrigger className="tap-44 proud-link pb-1 text-[1.125rem] tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
++            Get in touch <span aria-hidden="true">→</span>
++          </ContactTrigger>
++          <a
++            href="https://arnav01.substack.com/"
++            target="_blank"
++            rel="noopener noreferrer"
++            className="tap-44 rail-link inline-block border-b pb-1 text-[1.125rem] tracking-[-0.01em]"
++            style={{ borderColor: 'var(--border-med)', color: 'var(--fg-70)' }}
++          >
++            Read my newsletter <span aria-hidden="true">↗</span>
++          </a>
++          <Link href="/projects" className="tap-44 rail-link inline-block pb-1 text-[1.125rem] tracking-[-0.01em]" style={{ color: 'var(--fg-70)' }}>
++            All projects
++          </Link>
++        </div>
++      </section>
+     </div>
+   );
+ }

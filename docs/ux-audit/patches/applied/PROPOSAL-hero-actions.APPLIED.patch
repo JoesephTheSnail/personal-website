@@ -1,0 +1,26 @@
+--- a/src/app/page.tsx	2026-11-24 09:11:02
++++ b/src/app/page.tsx	2026-11-24 09:11:02
+@@ -112,6 +112,23 @@
+                 <FaLinkedin size={19} />
+               </a>
+             </p>
++            {/* Proposal: the two actions that already close the page, repeated
++                here so a phone visitor sees them on the first screen without
++                opening the menu. Same links, same wording. */}
++            <div className="rise mt-6 flex flex-wrap items-baseline gap-x-8 gap-y-3" style={delay(290)}>
++              <ContactTrigger className="tap-44 proud-link pb-1 text-[1rem] tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
++                Get in touch <span aria-hidden="true">→</span>
++              </ContactTrigger>
++              <a
++                href="https://arnav01.substack.com/"
++                target="_blank"
++                rel="noopener noreferrer"
++                className="tap-44 rail-link inline-block border-b pb-1 text-[1rem] tracking-[-0.01em]"
++                style={{ borderColor: 'var(--border-med)', color: 'var(--fg-70)' }}
++              >
++                Read my newsletter <span aria-hidden="true">↗</span>
++              </a>
++            </div>
+           </div>
+         </div>
+       </header>

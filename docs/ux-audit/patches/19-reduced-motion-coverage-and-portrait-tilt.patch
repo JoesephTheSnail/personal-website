@@ -1,0 +1,105 @@
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -611,3 +611,38 @@
+   .sidebar-input { font-size: 16px; }
+   .a11y-menu__item { min-height: 44px; }
+ }
++
++/* ── Reduced motion, the pieces that used inline styles ──
++   The menu sheet, contact dialog, ledger preview and trio images set their
++   movement inline or through utilities, which the blocks above never reached.
++   Fewer and gentler, not zero: opacity fades stay, position and scale go.
++   Written twice on purpose, like the blocks above: once for the OS setting,
++   once for the in-app "Reduce motion" switch. */
++@keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
++@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
++@media (prefers-reduced-motion: reduce) {
++  /* Mobile menu: keep the fade, drop the slide and the item stagger. */
++  #mobile-menu-panel[data-state='open']    { animation-name: fade-in !important; }
++  #mobile-menu-panel[data-state='closing'] { animation-name: fade-out !important; }
++  #mobile-menu-panel a,
++  #mobile-menu-panel button,
++  #mobile-menu-panel [role='group'] { animation-name: fade-in !important; animation-delay: 0ms !important; }
++  /* Contact dialog: fades in place instead of rising 14px. */
++  .contact-modal-overlay [role='dialog'] { transform: none !important; }
++  /* Ledger preview: fade only, no scale (keeps its centring translate). */
++  .ledger-preview { transform: translate(-50%, -50%) !important; }
++  /* Trio images: no hover zoom. */
++  .proud-card img { transform: none !important; }
++}
++/* Mobile menu: keep the fade, drop the slide and the item stagger. */
++html.reduce-motion #mobile-menu-panel[data-state='open']    { animation-name: fade-in !important; }
++html.reduce-motion #mobile-menu-panel[data-state='closing'] { animation-name: fade-out !important; }
++html.reduce-motion #mobile-menu-panel a,
++html.reduce-motion #mobile-menu-panel button,
++html.reduce-motion #mobile-menu-panel [role='group'] { animation-name: fade-in !important; animation-delay: 0ms !important; }
++/* Contact dialog: fades in place instead of rising 14px. */
++html.reduce-motion .contact-modal-overlay [role='dialog'] { transform: none !important; }
++/* Ledger preview: fade only, no scale (keeps its centring translate). */
++html.reduce-motion .ledger-preview { transform: translate(-50%, -50%) !important; }
++/* Trio images: no hover zoom. */
++html.reduce-motion .proud-card img { transform: none !important; }
+--- a/src/components/MobileNav.tsx
++++ b/src/components/MobileNav.tsx
+@@ -81,6 +81,7 @@
+     <div
+       key={openKey}
+       id="mobile-menu-panel"
++      data-state={open ? 'open' : 'closing'}
+       style={{
+         position:   'fixed',
+         top:        '3.5rem',
+--- a/src/components/ProjectLedger.tsx
++++ b/src/components/ProjectLedger.tsx
+@@ -244,7 +244,7 @@
+         createPortal(
+           <div
+             aria-hidden="true"
+-            className="pointer-events-none fixed left-1/2 top-1/2 z-40 w-[min(320px,70vw)] lg:left-[calc(50%+125px)]"
++            className="ledger-preview pointer-events-none fixed left-1/2 top-1/2 z-40 w-[min(320px,70vw)] lg:left-[calc(50%+125px)]"
+             style={{
+               transform: `translate(-50%, -50%) scale(${previewSlug ? 1 : 0.97})`,
+               opacity: previewSlug ? 1 : 0,
+--- a/src/components/ProfilePhoto.tsx
++++ b/src/components/ProfilePhoto.tsx
+@@ -9,9 +9,16 @@
+ export default function ProfilePhoto() {
+   const photoRef = useRef<HTMLDivElement>(null);
+ 
+-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
++  // Touch taps emit emulated mouse events and never a mouseleave, which could
++  // leave the portrait tilted; pointer events tell us what is really moving.
++  // The tilt is movement, so both reduced-motion settings switch it off.
++  const motionOff = () =>
++    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
++    document.documentElement.classList.contains('reduce-motion');
++
++  const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
+     const el = photoRef.current;
+-    if (!el) return;
++    if (!el || e.pointerType !== 'mouse' || motionOff()) return;
+     const rect = el.getBoundingClientRect();
+     const x = (e.clientX - rect.left) / rect.width - 0.5;
+     const y = (e.clientY - rect.top) / rect.height - 0.5;
+@@ -30,8 +37,8 @@
+     <div
+       ref={photoRef}
+       className="relative flex-shrink-0 w-[148px] h-[148px] sm:w-[216px] sm:h-[216px]"
+-      onMouseMove={handleMove}
+-      onMouseLeave={handleLeave}
++      onPointerMove={handleMove}
++      onPointerLeave={handleLeave}
+     >
+       <span
+         aria-hidden="true"
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -188,7 +188,7 @@
+                   alt={item.alt}
+                   fill
+                   sizes="(min-width: 1024px) 280px, (min-width: 640px) 30vw, 100vw"
+-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]"
++                  className="object-cover transition-transform duration-[400ms] ease-out group-hover:scale-[1.035]"
+                 />
+               </div>
+               <h3

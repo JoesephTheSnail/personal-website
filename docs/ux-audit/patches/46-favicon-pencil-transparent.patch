@@ -1,0 +1,41 @@
+--- a/src/app/icon.svg
++++ b/src/app/icon.svg
+@@ -1,10 +1,14 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+-  <!-- A pencil on a bone tile: the writer. The hairline edge keeps the tile visible on light browser tabs. -->
+-  <rect width="64" height="64" rx="14" fill="#EEE9DF"/>
+-  <rect data-edge x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#121211" stroke-opacity=".28" stroke-width="1.5"/>
+-  <g transform="rotate(40 32 32)">
+-    <rect x="25.5" y="9" width="13" height="8" rx="2.5" fill="#3F86A8"/>
+-    <rect x="25.5" y="19" width="13" height="25" fill="#121211"/>
+-    <path d="M25.5 46h13L32 57z" fill="#121211"/>
++  <!-- A pencil, as large as the square allows, on a transparent background. The bone outline keeps
++       the dark body readable on dark browser tabs; the dark body keeps it readable on light ones. -->
++  <g transform="rotate(45 32 32)" stroke-linejoin="round">
++    <g fill="#EEE9DF" stroke="#EEE9DF" stroke-width="5">
++      <rect x="24.5" y="-2" width="15" height="10" rx="3"/>
++      <rect x="24.5" y="10" width="15" height="38"/>
++      <path d="M24.5 48h15L32 66z"/>
++    </g>
++    <rect x="24.5" y="-2" width="15" height="10" rx="3" fill="#3F86A8"/>
++    <rect x="24.5" y="10" width="15" height="38" fill="#121211"/>
++    <path d="M24.5 48h15L32 66z" fill="#121211"/>
+   </g>
+ </svg>
+Binary files a/src/app/icon.png and b/src/app/icon.png differ
+Binary files a/src/app/apple-icon.png and b/src/app/apple-icon.png differ
+Binary files a/src/app/favicon.ico and b/src/app/favicon.ico differ
+--- a/docs/ux-audit/scripts/favicon.mjs
++++ b/docs/ux-audit/scripts/favicon.mjs
+@@ -9,9 +9,9 @@
+ const browser = await pw().chromium.launch();
+ const page = await browser.newPage({ deviceScaleFactor: 1 });
+ for (const size of [512, 192, 180, 48, 32, 16]) {
+-  // the Apple icon needs a full-bleed square (iOS rounds the corners itself)
++  // the Apple icon needs a solid, full-bleed square (iOS rounds the corners itself): dark, pencil inset
+   const solid = size === 180;
+-  const markup = solid ? svg.replace('rx="14"', 'rx="0"').replace(/<rect data-edge[^>]*\/>/, '') : svg;
++  const markup = solid ? svg.replace(/(<svg[^>]*>)/, '$1<rect width="64" height="64" fill="#121211"/><g transform="translate(7 7) scale(.78)">').replace('</svg>', '</g></svg>') : svg;
+   await page.setViewportSize({ width: size, height: size });
+   await page.setContent(`<style>html,body{margin:0;background:transparent}svg{display:block;width:${size}px;height:${size}px}</style>${markup}`);
+   await page.screenshot({ path: path.join(out, `icon-${size}.png`), omitBackground: !solid });

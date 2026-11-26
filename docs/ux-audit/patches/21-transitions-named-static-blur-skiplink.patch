@@ -1,0 +1,112 @@
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -51,7 +51,7 @@
+    keyboard/screen-reader visitors skip the ~7-stop sidebar on every load. */
+ .skip-link {
+   position: fixed;
+-  top: -60px;
++  top: 16px;
+   left: 16px;
+   z-index: 100;
+   padding: 10px 18px;
+@@ -61,10 +61,13 @@
+   font-size: 13px;
+   font-weight: 600;
+   text-decoration: none;
+-  transition: top 0.18s ease;
++  /* Parked above the viewport with a transform (compositor only) rather than
++     by animating `top`. */
++  transform: translateY(-76px);
++  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+ }
+ .skip-link:focus {
+-  top: 16px;
++  transform: none;
+ }
+ 
+ /* The skip-link's destination, not an interactive element — it only holds
+@@ -269,7 +272,6 @@
+   background-color: var(--bg);
+   color: var(--fg);
+   -webkit-font-smoothing: antialiased;
+-  transition: background-color 0.25s ease, color 0.25s ease;
+ }
+ 
+ /* Hide native cursor on mouse devices so custom cursor shows cleanly —
+--- a/src/app/not-found.tsx
++++ b/src/app/not-found.tsx
+@@ -72,7 +72,7 @@
+       <h1 className="font-semibold text-xl mb-1.5" style={{ color: 'var(--fg)' }}>
+         Page not found
+       </h1>
+-      <p className="text-sm mb-8 transition-all duration-300" style={{ color: 'var(--fg-dim)', minHeight: '1.5rem' }}>
++      <p className="text-sm mb-8 transition-opacity duration-300" style={{ color: 'var(--fg-dim)', minHeight: '1.5rem' }}>
+         {MESSAGES[msgIndex]}
+       </p>
+ 
+@@ -116,7 +116,7 @@
+       {/* Home button */}
+       <Link
+         href="/"
+-        className="tap-44 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
++        className="tap-44 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+         style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-med)', color: 'var(--fg)' }}
+       >
+         <FaHome size={13} />
+--- a/src/app/projects/[slug]/page.tsx
++++ b/src/app/projects/[slug]/page.tsx
+@@ -129,11 +129,11 @@
+           href={url}
+           target="_blank"
+           rel="noopener noreferrer"
+-          className="group flex items-center gap-4 sm:gap-5 rounded-xl border p-4 sm:p-5 transition-all duration-200 hover:border-white/30 hover:bg-white/4"
++          className="group flex items-center gap-4 sm:gap-5 rounded-xl border p-4 sm:p-5 transition-[border-color,background-color] duration-200 hover:border-white/30 hover:bg-white/4"
+           style={{ borderColor: 'var(--border-8)', background: 'var(--card-bg)' }}
+         >
+           <div
+-            className="relative flex-shrink-0 rounded-lg overflow-hidden border shadow-lg transition-transform duration-200 group-hover:scale-[1.02]"
++            className="relative flex-shrink-0 rounded-lg overflow-hidden border shadow-lg transition-transform duration-200 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02]"
+             style={{ width: 84, aspectRatio: '17 / 22', borderColor: 'var(--border-med)' }}
+           >
+             <Image src={coverSrc} alt={`Cover page of ${label}`} fill className="object-cover" sizes="84px" />
+@@ -198,7 +198,7 @@
+       href={url}
+       target="_blank"
+       rel="noopener noreferrer"
+-      className="tap-44 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80 mb-3 mr-3"
++      className="tap-44 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 mb-3 mr-3"
+       style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-med)', color: 'var(--fg)' }}
+     >
+       {label} ↗
+--- a/src/components/MobileNav.tsx
++++ b/src/components/MobileNav.tsx
+@@ -193,7 +193,7 @@
+           if (menuState === 'open') close();
+           else openMenu();
+         }}
+-        className="p-[13px] -m-[9px] transition-all duration-200"
++        className="p-[13px] -m-[9px] transition-[transform,color] duration-200"
+         style={{
+           color:     'var(--fg-50)',
+           transform: open ? 'rotate(90deg) scale(0.9)' : 'rotate(0deg) scale(1)',
+--- a/src/components/ContactModal.tsx
++++ b/src/components/ContactModal.tsx
+@@ -168,10 +168,14 @@
+       data-contact-modal
+       className="contact-modal-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
+       style={{
+-        background: `rgba(10,10,9,${visible ? '0.82' : '0'})`,
+-        backdropFilter: `blur(${visible ? 6 : 0}px)`,
+-        WebkitBackdropFilter: `blur(${visible ? 6 : 0}px)`,
+-        transition: 'background 0.22s ease, backdrop-filter 0.18s ease, -webkit-backdrop-filter 0.18s ease',
++        // The blur stays at a constant 6px and only opacity animates:
++        // changing a backdrop-filter radius every frame repaints the whole
++        // viewport (slowest in Safari and on phones), opacity does not.
++        background: 'rgba(10,10,9,0.82)',
++        backdropFilter: 'blur(6px)',
++        WebkitBackdropFilter: 'blur(6px)',
++        opacity: visible ? 1 : 0,
++        transition: 'opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+       }}
+       onClick={handleClose}
+     >

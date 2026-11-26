@@ -1,0 +1,118 @@
+--- a/src/components/StarButton.tsx
++++ b/src/components/StarButton.tsx
+@@ -51,17 +51,14 @@
+ 
+ function ButtonArt({ variant, label }: { variant: StarVariant; label: React.ReactNode }) {
+   switch (variant) {
+-    // Pre-Sleep Screen Restriction: a simple bed seen from the side; on hover the sleeper starts to snore.
++    // Pre-Sleep Screen Restriction: a bed reduced to its mattress and pillows; on hover the sleeper starts to snore.
+     case 'sleep':
+       return (
+         <>
+-          <Deco className="sx-headboard" />
+-          <Deco className="sx-footboard" />
+-          <Deco className="sx-leg sx-leg--a" />
+-          <Deco className="sx-leg sx-leg--b" />
+           <Face label={label} />
+           <Deco className="sx-sheet" />
+-          <Deco className="sx-pillow" />
++          <Deco className="sx-pillow sx-pillow--a" />
++          <Deco className="sx-pillow sx-pillow--b" />
+           <i className="sx sx-z sx-z1" aria-hidden="true">z</i>
+           <i className="sx sx-z sx-z2" aria-hidden="true">z</i>
+           <i className="sx sx-z sx-z3" aria-hidden="true">z</i>
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -714,8 +714,8 @@
+   --sc-ink: #0E1C22; --sc-dark: #1E2629; --sc-dark2: #2B3539; --sc-bone: #F4EFE3; --sc-bone2: #E3DCCB;
+   position: relative; display: inline-flex; align-items: center; margin: 26px 0 28px; text-decoration: none;
+   color: var(--sc-ink); font-size: 15px; font-weight: 700; letter-spacing: 0.005em; white-space: nowrap;
+-  filter: drop-shadow(0 8px 22px var(--sc-glow, rgba(91, 163, 194, 0.3)));
+-  transition: filter 0.35s ease; -webkit-tap-highlight-color: transparent; outline-offset: 8px;
++  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0));
++  transition: filter 0.4s ease; -webkit-tap-highlight-color: transparent; outline-offset: 8px;
+ }
+ .star-cta .sx { position: absolute; display: block; pointer-events: none; }
+ .sx-face {
+@@ -725,23 +725,23 @@
+ }
+ .sx-label { position: relative; z-index: 3; }
+ 
+-/* ── Pre-Sleep: a simple bed with navy bedding ── */
+-.sc-sleep { margin: 28px 20px 30px 22px;
+-  --sc-hi: #36549A; --sc-mid: #263F7B; --sc-lo: #1A2E5E; --sc-edge: rgba(5, 12, 38, 0.55); --sc-ink: #F6F1E6; --sc-glow: rgba(74, 112, 205, 0.4);
++/* Glow: none at rest, a soft one only while hovered, focused or pressed. */
++.star-cta:focus-visible, .star-cta:active, .star-gallery:has(.star-force:checked) .star-cta { filter: drop-shadow(0 6px 16px var(--sc-glow)); }
++@media (hover: hover) and (pointer: fine) { .star-cta:hover { filter: drop-shadow(0 6px 16px var(--sc-glow)); } }
++
++/* ── Pre-Sleep: a mattress with pillows ── */
++.sc-sleep { margin: 30px 6px 26px 6px;
++  --sc-hi: #36549A; --sc-mid: #263F7B; --sc-lo: #1A2E5E; --sc-edge: rgba(5, 12, 38, 0.55); --sc-ink: #F6F1E6; --sc-glow: rgba(74, 112, 205, 0.24);
+   --b-hi: #EAD393; --b: #C2A055; --b-lo: #8F7132; }
+ .sc-sleep .sx-label { text-shadow: 0 1px 0 rgba(5, 12, 38, 0.5); }
+ .sc-sleep .sx-face { padding: 24px 28px 15px 26px; border-radius: 3px 4px 4px 3px; box-shadow: inset 0 2px 0 rgba(255,255,255,.16), inset 0 -4px 0 var(--sc-edge); }
+ .sc-sleep .sx-sheet { z-index: 3; left: 0; right: 0; top: 0; height: 11px; border-radius: 3px 4px 0 0;
+   background: linear-gradient(180deg, #FFFCF4, #E8E1D2); box-shadow: 0 1px 0 rgba(5,12,38,.4); }
+-.sc-sleep .sx-headboard, .sc-sleep .sx-footboard { background: linear-gradient(90deg, var(--b-hi), var(--b) 45%, var(--b-lo)); }
+-.sc-sleep .sx-headboard { left: -18px; top: -24px; bottom: -10px; width: 16px; border-radius: 8px 8px 2px 2px; }
+-.sc-sleep .sx-footboard { right: -16px; top: 4px; bottom: -10px; width: 14px; border-radius: 6px 6px 2px 2px; }
+-.sc-sleep .sx-leg { bottom: -19px; width: 7px; height: 10px; background: linear-gradient(90deg, var(--b), var(--b-lo)); border-radius: 0 0 3px 3px; }
+-.sc-sleep .sx-leg--a { left: -13px; } .sc-sleep .sx-leg--b { right: -12px; }
+-.sc-sleep .sx-pillow { z-index: 4; left: 10px; top: -13px; width: 46px; height: 20px; border-radius: 12px 12px 7px 7px; transition: transform 0.9s ease-in-out;
++.sc-sleep .sx-pillow { z-index: 4; top: -13px; width: 46px; height: 20px; border-radius: 12px 12px 7px 7px; transition: transform 0.9s ease-in-out;
+   background: linear-gradient(180deg, #FFFCF4, #E6DFCF); box-shadow: 0 2px 0 rgba(5,12,38,.45), inset 0 -2px 0 rgba(0,0,0,.07); }
+-.sc-sleep .sx-z { z-index: 5; left: 44px; top: -20px; font-size: 15px; font-weight: 700; line-height: 1; color: var(--sc-ink); text-shadow: 0 1px 0 rgba(0,0,0,.4); opacity: 0; }
+-.sc-sleep .sx-z2 { left: 54px; font-size: 12px; } .sc-sleep .sx-z3 { left: 63px; font-size: 10px; }
++.sc-sleep .sx-pillow--a { left: 10px; } .sc-sleep .sx-pillow--b { left: 62px; height: 18px; top: -11px; transform: rotate(1.5deg); }
++.sc-sleep .sx-z { z-index: 5; left: 92px; top: -20px; font-size: 15px; font-weight: 700; line-height: 1; color: var(--sc-ink); text-shadow: 0 1px 0 rgba(0,0,0,.4); opacity: 0; }
++.sc-sleep .sx-z2 { left: 102px; font-size: 12px; } .sc-sleep .sx-z3 { left: 111px; font-size: 10px; }
+ .sc-sleep:focus-visible .sx-z, .sc-sleep:active .sx-z, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z { animation: sx-zfloat 3s ease-out infinite; }
+ @media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-z { animation: sx-zfloat 3s ease-out infinite; } }
+ .sc-sleep:focus-visible .sx-z2, .sc-sleep:active .sx-z2, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z2 { animation-delay: 1s; }
+@@ -754,7 +754,7 @@
+ 
+ /* ── MindSet: a phone with a mood face on the screen ── */
+ .sc-mind { margin-left: 16px; margin-right: 10px;
+-  --sc-hi: #B9CFB0; --sc-mid: #8FAD86; --sc-lo: #749469; --sc-edge: rgba(28, 52, 26, 0.34); --sc-ink: #11201A; --sc-glow: rgba(170, 205, 160, 0.34); --sc-terra: #D9845F; --sc-forest: #1B2E22; }
++  --sc-hi: #B9CFB0; --sc-mid: #8FAD86; --sc-lo: #749469; --sc-edge: rgba(28, 52, 26, 0.34); --sc-ink: #11201A; --sc-glow: rgba(170, 205, 160, 0.2); --sc-terra: #D9845F; --sc-forest: #1B2E22; }
+ .sc-mind .sx-bezel { z-index: 1; inset: -7px -8px -7px -14px; border-radius: 14px;
+   background: linear-gradient(180deg, #D9CFB7, #BBAF94); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.4), 0 1px 0 rgba(0,0,0,.22); }
+ .sc-mind .sx-camera { z-index: 2; left: -9px; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #4a5f52 0 35%, #1b2a21 42%); }
+@@ -779,7 +779,7 @@
+ 
+ /* ── InsuSense: a clinical white pen with a crimson insulin window ── */
+ .sc-insu { margin-left: 56px; margin-right: 42px;
+-  --sc-hi: #FFFFFF; --sc-mid: #F1F3F4; --sc-lo: #D3D9DC; --sc-edge: rgba(60, 72, 78, 0.28); --sc-ink: #181E21; --sc-glow: rgba(235, 242, 246, 0.2); --sc-red: #D8312F; }
++  --sc-hi: #FFFFFF; --sc-mid: #F1F3F4; --sc-lo: #D3D9DC; --sc-edge: rgba(60, 72, 78, 0.28); --sc-ink: #181E21; --sc-glow: rgba(235, 242, 246, 0.16); --sc-red: #D8312F; }
+ .sc-insu .sx-face { padding: 15px 22px 20px; border-left: 7px solid var(--sc-dark2); border-right: 7px solid var(--sc-dark2); border-radius: 5px;
+   box-shadow: inset 0 2px 0 rgba(255,255,255,.9), inset 0 -2px 0 var(--sc-edge); }
+ .sc-insu .sx-face::before { content: ''; position: absolute; left: 4px; right: 4px; top: 4px; height: 1.5px; border-radius: 1px; background: rgba(60,72,78,.2); }
+@@ -791,7 +791,7 @@
+   box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.09), inset -3px 0 0 var(--sc-red); }
+ .sc-insu .sx-rod { position: absolute; left: 17px; top: -6px; width: 38px; height: 12px; background: linear-gradient(180deg, #D9DFE2, #8A979C); }
+ .sc-insu .sx-hub { z-index: 1; right: -13px; top: 50%; margin-top: -12px; width: 14px; height: 24px; border-radius: 2px 6px 6px 2px;
+-  background: linear-gradient(180deg, #3B474C, #192124); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
++  background: linear-gradient(180deg, #EEF2F4, #A9B5BA 55%, #7B888E); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 0 rgba(0,0,0,.22), inset -3px 0 0 var(--sc-red); }
+ .sc-insu .sx-needle { z-index: 0; right: -37px; top: 50%; margin-top: -1px; width: 25px; height: 2px; background: linear-gradient(90deg, #E4EAED, #9AA7AC); }
+ .sc-insu .sx-drop { z-index: 0; right: -40px; top: 50%; margin-top: 2px; width: 7px; height: 10px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+   background: radial-gradient(circle at 36% 30%, #fff 0 14%, #FF8E88 42%, var(--sc-red)); opacity: 0; }
+@@ -803,7 +803,7 @@
+ 
+ /* ── AnyWear: a champagne-gold garment tag on a string ── */
+ .sc-wear { margin-top: 40px; margin-left: 6px; margin-right: 6px;
+-  --sc-hi: #F2E1B0; --sc-mid: #DBBF7A; --sc-lo: #B8954A; --sc-edge: rgba(96, 68, 12, 0.42); --sc-ink: #241A0A; --sc-glow: rgba(222, 190, 112, 0.38); --sc-wine: #8A1F33; }
++  --sc-hi: #F2E1B0; --sc-mid: #DBBF7A; --sc-lo: #B8954A; --sc-edge: rgba(96, 68, 12, 0.42); --sc-ink: #241A0A; --sc-glow: rgba(222, 190, 112, 0.24); --sc-wine: #8A1F33; }
+ .sc-wear .sx-peg { position: absolute; left: 0; top: -36px; width: 40px; height: 30px; fill: var(--sc-bone); pointer-events: none; }
+ .sc-wear .sx-hang { position: relative; display: inline-flex; transform-origin: 16px -31px; }
+ .sc-wear .sx-string { position: absolute; z-index: 3; left: 0; top: -36px; width: 40px; height: 64px; overflow: visible; fill: none; stroke: var(--sc-bone); stroke-width: 1.5; stroke-linecap: round; opacity: 0.92; pointer-events: none; }
+@@ -823,8 +823,8 @@
+ @keyframes sx-sheen { 0% { opacity: 1; background-position: 100% 0; } 100% { opacity: 1; background-position: 0% 0; } }
+ 
+ /* ── Mindset Matters: your newsletter's own look, black with lime yellow (its Substack theme), no glow ── */
+-.sc-mail { margin-top: 36px; margin-left: 4px; margin-right: 4px; filter: none;
+-  --sc-hi: #F8FF8C; --sc-mid: #F4FF69; --sc-lo: #D7E34A; --sc-edge: rgba(0,0,0,.5); --sc-ink: #F4FF69; }
++.sc-mail { margin-top: 36px; margin-left: 4px; margin-right: 4px;
++  --sc-hi: #F8FF8C; --sc-mid: #F4FF69; --sc-lo: #D7E34A; --sc-edge: rgba(0,0,0,.5); --sc-ink: #F4FF69; --sc-glow: rgba(244, 255, 105, 0.16); }
+ .sc-mail .sx-face { padding: 26px 30px 15px 24px; border-radius: 4px;
+   background: linear-gradient(180deg, #1B1B1B 0%, #101010 55%, #080808 100%);
+   box-shadow: inset 0 2px 0 rgba(244,255,105,.16), inset 0 -3px 0 rgba(0,0,0,.6), 0 0 0 1px rgba(244,255,105,.28); }

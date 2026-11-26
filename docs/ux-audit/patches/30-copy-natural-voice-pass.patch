@@ -1,0 +1,185 @@
+--- a/content/projects/24-hour-hackathon.mdx
++++ b/content/projects/24-hour-hackathon.mdx
+@@ -26,12 +26,12 @@
+ 
+ ## Our solution
+ 
+-Build enclosed ocean environments where phytoplankton can thrive. Phytoplankton absorb CO₂ through photosynthesis at huge scale. In an enclosure, the uptake can be managed, measured and improved, without releasing genetically modified organisms into open water.
++We proposed building enclosed ocean environments where phytoplankton can thrive. Phytoplankton absorb CO₂ through photosynthesis at huge scale. In an enclosure, the uptake can be managed, measured and improved, without releasing genetically modified organisms into open water.
+ 
+ ## Two things I still use
+ 
+ - **Time management under real pressure.** With 24 hours and a real problem, you triage constantly. It's different from time management in theory.
+-- **Root cause analysis.** Going one level deeper than the surface problem almost always finds a better place to step in.
++- **Root cause analysis.** Going one level deeper than the surface problem almost always shows you a better place to act.
+ 
+ ---
+ 
+--- a/content/projects/ai-chatbot.mdx
++++ b/content/projects/ai-chatbot.mdx
+@@ -23,7 +23,7 @@
+ - Help someone find their stress triggers through guided conversation
+ - Point toward appropriate resources when the situation calls for it
+ 
+-## The hard part: safety
++## The hardest part: safety
+ 
+ Any AI in a mental health setting has to be careful about what it says and what it doesn't. I spent a lot of time on guardrails and edge cases, especially crisis scenarios, before the core features.
+ 
+--- a/content/projects/anywear.mdx
++++ b/content/projects/anywear.mdx
+@@ -17,7 +17,7 @@
+     url: "https://docs.google.com/spreadsheets/d/1MnyFR80K0Qs_NleO21gHGmX3-jPDbB4x/edit?usp=sharing&ouid=115627636465338762884&rtpof=true&sd=true"
+ ---
+ 
+-AnyWear is a peer-to-peer luxury clothing rental platform. The idea: you shouldn't have to own something to wear it once.
++AnyWear is a peer-to-peer luxury clothing rental platform. The idea is that you shouldn't have to own something to wear it once.
+ 
+ ## Who it's for
+ 
+--- a/content/projects/deca-notification-app.mdx
++++ b/content/projects/deca-notification-app.mdx
+@@ -14,7 +14,7 @@
+ 
+ ## The pitch
+ 
+-An app that batches notifications by priority and delivers them in short, scheduled digests instead of one at a time. Users choose when and how often they're updated. The app:
++This pitch proposed an app that batches incoming notifications by priority and delivers them in short, scheduled digests instead of one at a time. Users choose when and how often they want updates. The app:
+ 
+ - Summarizes what happened
+ - Surfaces what's actually urgent
+--- a/content/projects/gmo-bananas.mdx
++++ b/content/projects/gmo-bananas.mdx
+@@ -10,13 +10,13 @@
+     url: "https://docs.google.com/presentation/d/1aLPlOdB9l44RGml8vSRkD86dF2mSVYGGsvTSE8AC520/edit?usp=sharing"
+ ---
+ 
+-The prompt: find something interesting in carbon capture and synthetic biology. We got it before the hackathon started, which gave us a head start.
++The prompt was to find something interesting in carbon capture and synthetic biology. We knew it before the hackathon started, which gave us a head start.
+ 
+ ## The idea
+ 
+-Genetically modify banana plants so they absorb more CO₂ than they naturally do. Bananas grow fast, grow in the tropics, and are farmed worldwide at huge scale. That makes them a plausible way to spread extra carbon uptake, if the biology can be made to work.
++We landed on genetically modifying banana plants so they absorb more CO₂ than they naturally do. Bananas grow fast, grow in the tropics, and are farmed worldwide at huge scale. That makes them a plausible way to spread extra carbon uptake, if the biology can be made to work.
+ 
+-The core argument: a banana plant that fixes more carbon per hectare than current varieties, grown on existing farmland without displacing food. Whether that's technically feasible was the open question. That's where we wanted the conversation to go.
++Our core argument was a banana plant that fixes more carbon per hectare than current varieties, grown on existing farmland without displacing food. Whether that's technically feasible was the open question, and that's where we wanted the conversation to go.
+ 
+ ## How we worked
+ 
+--- a/content/projects/insusense.mdx
++++ b/content/projects/insusense.mdx
+@@ -23,7 +23,7 @@
+ 
+ It connects to continuous glucose monitors (CGMs), reads real-time glucose data, and triggers insulin delivery automatically. That's a step toward a closed-loop artificial pancreas.
+ 
+-The hard engineering part: a delivery mechanism that's reliable, miniaturized, and safe enough to trust with medication.
++The hardest engineering challenge was building a delivery mechanism that's reliable, miniaturized, and safe enough to trust with medication.
+ 
+ ## What it took
+ 
+--- a/content/projects/meta-challenge.mdx
++++ b/content/projects/meta-challenge.mdx
+@@ -12,7 +12,7 @@
+     url: "https://forms.gle/q9tE8t4EjLQTAJcd6"
+ ---
+ 
+-A TKS case study challenge. Our team got a problem straight from Meta:
++This was a TKS case study challenge, and our team was given a problem straight from Meta:
+ 
+ *"What can Meta do to ensure the safety of young people that use its products? As Meta ventures more into the Metaverse, what ideas are important to consider to provide a high quality, non-harmful experience for younger platform users?"*
+ 
+@@ -25,7 +25,7 @@
+ 
+ ## Our approach
+ 
+-Three areas:
++Our approach centered on three areas:
+ 
+ 1. **Age verification** that actually works.
+ 2. **Behavioral monitoring** inside immersive environments.
+--- a/content/projects/mindset-app.mdx
++++ b/content/projects/mindset-app.mdx
+@@ -21,7 +21,7 @@
+ 
+ ## The approach
+ 
+-Treat users like adults, and keep the experience light and non-intimidating. The app includes:
++I designed it to treat users like adults while keeping the experience light and non-intimidating. The app includes:
+ 
+ - Mood tracking
+ - CBT-based journaling prompts
+--- a/content/projects/neonatal-care.mdx
++++ b/content/projects/neonatal-care.mdx
+@@ -16,11 +16,11 @@
+ 
+ ## The goal
+ 
+-Build something that actually works, can be reused, and costs almost nothing. The project was a deep dive into neonatal thermoregulation and the design limits of healthcare in low-resource settings.
++The goal was simple: build something that actually works, can be reused, and costs almost nothing. The project was a deep dive into neonatal thermoregulation and the design limits of healthcare in low-resource settings.
+ 
+ ## The result
+ 
+-A reusable heat pouch for premature newborns.
++The result is a reusable heat pouch for premature newborns:
+ 
+ - **Unit cost: $2.21**, a fraction of existing alternatives
+ - Uses phase-change materials to hold stable warmth for several hours
+--- a/content/projects/robotics.mdx
++++ b/content/projects/robotics.mdx
+@@ -19,7 +19,7 @@
+ 
+ ## Where I'm going
+ 
+-The long-term goal is to understand embodied AI: systems that don't just process data but act in the physical world. A language model and a robot that reliably finishes a task in a messy environment are very far apart. I want to understand why.
++The long-term goal is to understand embodied AI: systems that don't just process data but act in the physical world. The gap between a language model and a robot that can reliably finish a task in a messy environment is huge, and I want to understand why.
+ 
+ This is early-stage work. More to come.
+ 
+--- a/content/projects/short-film.mdx
++++ b/content/projects/short-film.mdx
+@@ -11,7 +11,7 @@
+     url: "https://drive.google.com/file/d/1tWHug2Xgp0uyDe_SLaKmpO1kVADrnLBk/view?usp=sharing"
+ ---
+ 
+-The idea: make procrastination visible. Not one dramatic failure, but the quiet, repeated choice to put things off, which reshapes a life without ever feeling like one decision.
++The idea was to make procrastination visible: not one dramatic failure, but the quiet, repeated choice to put things off that reshapes a life without ever feeling like a single decision.
+ 
+ ## How it was made
+ 
+--- a/content/projects/tailored.mdx
++++ b/content/projects/tailored.mdx
+@@ -16,7 +16,7 @@
+ 
+ ## What's the same
+ 
+-The core concept: peer-to-peer fashion rental that makes designer clothing accessible without ownership.
++It's still peer-to-peer fashion rental that makes designer clothing accessible without ownership.
+ 
+ ## What's different
+ 
+--- a/content/projects/tiktok-challenge.mdx
++++ b/content/projects/tiktok-challenge.mdx
+@@ -10,12 +10,11 @@
+     url: "https://docs.google.com/presentation/d/1nf5lxxhyyXiCQQ3vbUZ9rVoCgfCjtui6T-heJuKTXYw/edit?usp=sharing"
+ ---
+ 
+-A 20-day TKS challenge. My team was Ryan Kadiri, Sara Mohanty, and Jonathan Ye. Ryan and I handled outreach. Sara and Jonathan did research.
++This was a 20-day TKS challenge. My team was Ryan Kadiri, Sara Mohanty, and Jonathan Ye. Ryan and I handled outreach, and Sara and Jonathan did the research.
+ 
+ ## How it ran
+ 
+-- **First half:** outreach and discovery.
+-- **Second half:** synthesis and building the deck.
++The first half was outreach and discovery. The second half was synthesis and building the deck.
+ 
+ ## Outreach was the hard part
+ 
+--- a/content/projects/tok-presentation.mdx
++++ b/content/projects/tok-presentation.mdx
+@@ -24,4 +24,4 @@
+ 
+ ## The argument
+ 
+-Both are true. The tension between them is where most of the interesting intellectual work happens.
++The presentation argues that both are true, and that the tension between them is where most of the interesting intellectual work happens.

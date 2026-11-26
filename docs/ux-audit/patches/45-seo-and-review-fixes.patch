@@ -1,0 +1,291 @@
+--- a/src/app/projects/[slug]/page.tsx
++++ b/src/app/projects/[slug]/page.tsx
+@@ -21,10 +21,8 @@
+   return [...projectParams, ...categoryParams];
+ }
+ 
+-// A page's own `openGraph` replaces the layout's wholesale (Next does not merge
+-// them), so the share image has to be restated here or links to a project or
+-// category page preview with no image on LinkedIn, Slack and iMessage.
+-const SHARE_IMAGE = { url: '/opengraph-image', width: 1200, height: 630, alt: 'Arnav Chandra' };
++// Share images come from opengraph-image.tsx / twitter-image.tsx next to this file. File-based
++// images override config, so no `images` are listed here.
+ 
+ export async function generateMetadata({ params }: Props) {
+   const { slug } = await params;
+@@ -33,20 +31,23 @@
+   if (category) {
+     const url = `https://arnavchandra.com/projects/${slug}`;
+     const title = `${category.label} projects`;
+-    const description = `${category.label} projects by Arnav Chandra.`;
++    const names = getAllProjects()
++      .filter((p) => p.frontmatter.status === 'published' && p.frontmatter.category === category.label)
++      .map((p) => p.frontmatter.title);
++    const description = `${category.label} projects by Arnav Chandra, a Toronto student and builder: ${names.slice(0, 3).join(', ')}${names.length > 3 ? ' and more' : ''}.`;
+     return {
+       title,
+       description,
+       alternates: { canonical: url },
+-      openGraph: { title: `${title} | Arnav Chandra`, description, url, type: 'website', siteName: 'Arnav Chandra', images: [SHARE_IMAGE] },
+-      twitter: { card: 'summary_large_image', title: `${title} | Arnav Chandra`, description, images: [SHARE_IMAGE.url] },
++      openGraph: { title: `${title} | Arnav Chandra`, description, url, type: 'website', siteName: 'Arnav Chandra' },
++      twitter: { card: 'summary_large_image', title: `${title} | Arnav Chandra`, description },
+     };
+   }
+ 
+   const project = getAllProjects().find((p) => p.slug === slug);
+   if (!project) return { title: 'Project' };
+ 
+-  const pageTitle = project.frontmatter.title;
++  const pageTitle = project.frontmatter.seoTitle ?? project.frontmatter.title;
+   const fullTitle = `${pageTitle} | Arnav Chandra`;
+   const description = project.frontmatter.description;
+   const url = `https://arnavchandra.com/projects/${slug}`;
+@@ -55,8 +56,8 @@
+     title: pageTitle,
+     description,
+     alternates: { canonical: url },
+-    openGraph: { title: fullTitle, description, url, type: 'article', siteName: 'Arnav Chandra', images: [SHARE_IMAGE] },
+-    twitter: { card: 'summary_large_image', title: fullTitle, description, images: [SHARE_IMAGE.url] },
++    openGraph: { title: fullTitle, description, url, type: 'article', siteName: 'Arnav Chandra' },
++    twitter: { card: 'summary_large_image', title: fullTitle, description },
+   };
+ }
+ 
+@@ -287,8 +288,38 @@
+   const nextCandidate = nextPool.length ? nextPool[(nextIndex + 1) % nextPool.length] : undefined;
+   const nextProject = nextCandidate && nextCandidate.slug !== slug ? nextCandidate : undefined;
+ 
++  // Structured data: what this page is, who made it, and where it sits in the site.
++  const pageUrl = `https://arnavchandra.com/projects/${slug}`;
++  const crumbs = [
++    { name: 'Home', url: 'https://arnavchandra.com' },
++    { name: 'Projects', url: 'https://arnavchandra.com/projects' },
++    ...(parentCategory ? [{ name: parentCategory.label, url: `https://arnavchandra.com/projects/${parentCategory.slug}` }] : []),
++    { name: title, url: pageUrl },
++  ];
++  const projectJsonLd = {
++    '@context': 'https://schema.org',
++    '@graph': [
++      {
++        '@type': 'CreativeWork',
++        '@id': `${pageUrl}#work`,
++        name: title,
++        description,
++        url: pageUrl,
++        author: { '@type': 'Person', name: 'Arnav Chandra', url: 'https://arnavchandra.com' },
++        genre: artifactType ?? categoryLabel,
++        ...(date && /^\d{4}(-\d{2})?$/.test(date) ? { dateCreated: date } : {}),
++        ...(tools && tools.length ? { keywords: tools.join(', ') } : {}),
++      },
++      {
++        '@type': 'BreadcrumbList',
++        itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.url })),
++      },
++    ],
++  };
++
+   return (
+     <div className="max-w-3xl mx-auto">
++      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }} />
+       <BackLink fallbackHref={backHref} label="Back to Projects" />
+ 
+       {/* Header */}
+--- a/src/app/projects/[slug]/opengraph-image.tsx
++++ b/src/app/projects/[slug]/opengraph-image.tsx
+@@ -0,0 +1,60 @@
++import { ImageResponse } from 'next/og';
++import { getAllProjects } from '@/lib/projects';
++import { CATEGORIES, getCategoryBySlug } from '@/lib/categoryMeta';
++
++// A share card per project and per discipline page, so a pasted link shows what
++// the page is about instead of the generic home-page card.
++export const size = { width: 1200, height: 630 };
++export const contentType = 'image/png';
++export const alt = 'Arnav Chandra: project';
++
++export function generateStaticParams() {
++  return [...getAllProjects().map((p) => ({ slug: p.slug })), ...CATEGORIES.map((c) => ({ slug: c.slug }))];
++}
++
++export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
++  const { slug } = await params;
++  const category = getCategoryBySlug(slug);
++  const project = getAllProjects().find((p) => p.slug === slug);
++
++  const eyebrow = category ? 'Discipline' : (project?.frontmatter.artifactType ?? project?.frontmatter.category ?? 'Project');
++  const title = category ? `${category.label} projects` : (project?.frontmatter.title ?? 'Project');
++  const detail = category ? 'By Arnav Chandra' : (project?.frontmatter.description ?? '');
++  const titleSize = title.length > 48 ? 60 : title.length > 28 ? 72 : 84;
++
++  return new ImageResponse(
++    (
++      <div
++        style={{
++          background: '#121211',
++          width: '100%',
++          height: '100%',
++          display: 'flex',
++          flexDirection: 'column',
++          justifyContent: 'space-between',
++          padding: '72px 80px',
++          fontFamily: '-apple-system, "Segoe UI", sans-serif',
++        }}
++      >
++        <div style={{ display: 'flex', color: '#5BA3C2', fontSize: 24, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
++          {eyebrow}
++        </div>
++        <div style={{ display: 'flex', flexDirection: 'column' }}>
++          <div style={{ display: 'flex', color: '#EEE9DF', fontSize: titleSize, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.02 }}>
++            {title}
++          </div>
++          {detail ? (
++            <div style={{ display: 'flex', marginTop: 28, color: 'rgba(238,233,223,0.6)', fontSize: 30, lineHeight: 1.35, maxWidth: 980 }}>
++              {detail.length > 150 ? `${detail.slice(0, 147)}...` : detail}
++            </div>
++          ) : null}
++        </div>
++        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(238,233,223,0.55)', fontSize: 26 }}>
++          <div style={{ display: 'flex', color: '#EEE9DF', fontWeight: 600 }}>Arnav Chandra</div>
++          <div style={{ display: 'flex' }}>arnavchandra.com</div>
++        </div>
++      </div>
++    ),
++    { ...size },
++  );
++}
+--- a/src/app/projects/[slug]/twitter-image.tsx
++++ b/src/app/projects/[slug]/twitter-image.tsx
+@@ -0,0 +1,2 @@
++// Same card for Twitter/X and other summary_large_image consumers.
++export { default, generateStaticParams, size, contentType, alt } from './opengraph-image';
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -66,6 +66,14 @@
+   ],
+ };
+ 
++const websiteJsonLd = {
++  '@context': 'https://schema.org',
++  '@type': 'WebSite',
++  name: 'Arnav Chandra',
++  url: 'https://arnavchandra.com',
++  inLanguage: 'en',
++};
++
+ export default function RootLayout({ children }: { children: React.ReactNode }) {
+   return (
+     <html lang="en" className={`${sans.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+@@ -74,6 +82,10 @@
+           type="application/ld+json"
+           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+         />
++        <script
++          type="application/ld+json"
++          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
++        />
+         <CustomCursor />
+         {/* After SiteWrapper, not before — the skip-link inside it must be
+             the very first Tab stop on the page, and DOM order is what
+--- a/src/app/dev-preview/layout.tsx
++++ b/src/app/dev-preview/layout.tsx
+@@ -1,10 +1,13 @@
+ import type { Metadata } from 'next';
++import { notFound } from 'next/navigation';
+ 
+-// Scratch previews are reachable by URL but must never appear in search results.
++// Scratch previews for local work only. They are noindex, and on Vercel (where VERCEL is set)
++// they 404 so they never ship to the live site.
+ export const metadata: Metadata = {
+   robots: { index: false, follow: false },
+ };
+ 
+ export default function DevPreviewLayout({ children }: { children: React.ReactNode }) {
++  if (process.env.VERCEL) notFound();
+   return children;
+ }
+--- a/src/lib/projects.ts
++++ b/src/lib/projects.ts
+@@ -9,6 +9,8 @@
+   title: string;
+   date: string;
+   description: string;
++  /** Shorter title for the browser tab and search results, when the on-page title is too long (about 45 characters or fewer). */
++  seoTitle?: string;
+   thumbnail?: string;
+   link?: string;
+   links?: { label: string; url: string }[];
+--- a/content/projects/carbon-capture-model.mdx
++++ b/content/projects/carbon-capture-model.mdx
+@@ -12,7 +12,7 @@
+ demoNote: "Works with touch or a mouse. On a phone, turn it sideways."
+ ---
+ 
+-In Grade 9 I drew a unit that bolts onto a diesel truck and catches CO₂ before it leaves the tailpipe. I never checked whether it would actually help. Click <a href="https://medium.com/@arnav0/eco-trucks-3c9d5dc10f63" target="_blank" rel="noopener noreferrer" aria-label="here, to read the original Grade 9 version (opens Medium)">here</a> to read the original Grade 9 version.
++In Grade 9 I drew a unit that bolts onto a diesel truck and catches CO₂ before it leaves the tailpipe. I never checked whether it would actually help. You can also read <a href="https://medium.com/@arnav0/eco-trucks-3c9d5dc10f63" target="_blank" rel="noopener noreferrer">the original Grade 9 version on Medium</a>.
+ 
+ So I went back and worked it out properly.
+ 
+--- a/content/projects/screens-and-sleep-report.mdx
++++ b/content/projects/screens-and-sleep-report.mdx
+@@ -1,5 +1,6 @@
+ ---
+ title: "Pre-Sleep Screen Restriction and Adolescent Sleep"
++seoTitle: "Pre-Sleep Screen Restriction and Teen Sleep"
+ date: "2026"
+ description: "8 months studying whether cutting screens before bed helps you sleep. 30 minutes is enough. **A self-run study of 8 people across 85 nights.**"
+ thumbnail: ""
+--- a/public/robots.txt
++++ b/public/robots.txt
+@@ -1,4 +1,6 @@
+ User-agent: *
+ Allow: /
++Disallow: /api/
++Disallow: /dev-preview/
+ 
+ Sitemap: https://arnavchandra.com/sitemap.xml
+--- a/package.json
++++ b/package.json
+@@ -0,0 +1,42 @@
++{
++  "name": "personal-website",
++  "version": "0.1.0",
++  "private": true,
++  "scripts": {
++    "dev": "next dev --webpack",
++    "build": "next build",
++    "start": "next start",
++    "lint": "tsc --noEmit",
++    "test": "vitest run",
++    "test:watch": "vitest"
++  },
++  "dependencies": {
++    "@react-three/drei": "^10.7.9",
++    "@react-three/fiber": "^9.8.2",
++    "@types/three": "^0.187.0",
++    "@upstash/redis": "^1.38.0",
++    "@vercel/analytics": "^2.0.1",
++    "@vercel/speed-insights": "^2.0.0",
++    "gray-matter": "^4.0.3",
++    "next": "^16.3.0",
++    "next-mdx-remote": "^6.0.0",
++    "react": "^19.1.0",
++    "react-dom": "^19.1.0",
++    "react-icons": "^5.2.1",
++    "recharts": "^2.15.4",
++    "three": "^0.187.0"
++  },
++  "engines": {
++    "node": ">=20.0.0"
++  },
++  "devDependencies": {
++    "@types/node": "^20",
++    "@types/react": "^19",
++    "@types/react-dom": "^19",
++    "autoprefixer": "^10.4.19",
++    "postcss": "^8.4.38",
++    "tailwindcss": "^3.4.4",
++    "typescript": "^5.4.5",
++    "vitest": "^4.1.10"
++  }
++}

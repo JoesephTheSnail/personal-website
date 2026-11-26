@@ -1,0 +1,128 @@
+--- a/src/components/MobileNav.tsx	2026-11-24 12:14:02
++++ b/src/components/MobileNav.tsx	2026-11-24 12:14:02
+@@ -5,7 +5,8 @@
+ import Link from 'next/link';
+ import { usePathname } from 'next/navigation';
+ import { FaBars, FaTimes } from 'react-icons/fa';
+-import { playPop } from '@/lib/sound';
++import { playPop, playTick } from '@/lib/sound';
++import { useAccessibilityPrefs } from '@/lib/useAccessibilityPrefs';
+ import { NAV_ITEMS, isNavActive } from '@/lib/navItems';
+ 
+ interface Props { onContactClick: () => void; }
+@@ -17,6 +18,7 @@
+   const [openKey, setOpenKey]     = useState(0);
+   const [mounted, setMounted]     = useState(false);
+   const pathname   = usePathname();
++  const { reduceMotion, reduceTransparency, toggleMotion, toggleTransparency } = useAccessibilityPrefs();
+   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+ 
+   useEffect(() => { setMounted(true); }, []);
+@@ -138,6 +140,40 @@
+           Get in touch <span aria-hidden="true">→</span>
+         </button>
+       </div>
++
++      {/* Below 1024px the floating accessibility button is hidden (it sat on
++          top of the text), so the same two settings live here. */}
++      <div
++        role="group"
++        aria-label="Accessibility options"
++        className="mt-5 border-t pt-5"
++        style={{
++          borderColor: 'var(--border-med)',
++          opacity:   open ? 0 : 1,
++          animation: open ? `item-in 0.28s ease forwards ${60 + (NAV_ITEMS.length + 1) * 35}ms` : 'none',
++        }}
++      >
++        <p className="text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
++          Accessibility
++        </p>
++        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
++          {[
++            { label: 'Reduce motion', on: reduceMotion, toggle: toggleMotion },
++            { label: 'Reduce transparency', on: reduceTransparency, toggle: toggleTransparency },
++          ].map(({ label, on, toggle }) => (
++            <button
++              key={label}
++              type="button"
++              aria-pressed={on}
++              onClick={() => { playTick(); toggle(); }}
++              className={`tap-44 ledger-filter pb-1 text-[0.9375rem] ${on ? 'proud-link' : ''}`}
++              style={{ color: on ? 'var(--fg)' : 'var(--fg-60)' }}
++            >
++              {label}
++            </button>
++          ))}
++        </div>
++      </div>
+     </div>
+   ) : null;
+ 
+--- a/src/lib/useAccessibilityPrefs.ts	2026-11-24 12:14:02
++++ b/src/lib/useAccessibilityPrefs.ts	2026-11-24 12:14:02
+@@ -8,6 +8,7 @@
+ // top, not a replacement for it.
+ const MOTION_KEY = 'a11y-reduce-motion';
+ const TRANSPARENCY_KEY = 'a11y-reduce-transparency';
++const SYNC_EVENT = 'a11y-prefs-changed';
+ 
+ function applyClass(className: string, on: boolean) {
+   document.documentElement.classList.toggle(className, on);
+@@ -18,12 +19,19 @@
+   const [reduceTransparency, setReduceTransparency] = useState(false);
+ 
+   useEffect(() => {
+-    const motion = localStorage.getItem(MOTION_KEY) === '1';
+-    const transparency = localStorage.getItem(TRANSPARENCY_KEY) === '1';
+-    setReduceMotion(motion);
+-    setReduceTransparency(transparency);
+-    applyClass('reduce-motion', motion);
+-    applyClass('reduce-transparency', transparency);
++    const read = () => {
++      const motion = localStorage.getItem(MOTION_KEY) === '1';
++      const transparency = localStorage.getItem(TRANSPARENCY_KEY) === '1';
++      setReduceMotion(motion);
++      setReduceTransparency(transparency);
++      applyClass('reduce-motion', motion);
++      applyClass('reduce-transparency', transparency);
++    };
++    read();
++    // The setting can be changed from the phone menu or the desktop corner
++    // button; each instance re-reads when the other one changes it.
++    window.addEventListener(SYNC_EVENT, read);
++    return () => window.removeEventListener(SYNC_EVENT, read);
+   }, []);
+ 
+   const toggleMotion = () => {
+@@ -31,6 +39,7 @@
+       const next = !prev;
+       localStorage.setItem(MOTION_KEY, next ? '1' : '0');
+       applyClass('reduce-motion', next);
++      queueMicrotask(() => window.dispatchEvent(new Event(SYNC_EVENT)));
+       return next;
+     });
+   };
+@@ -40,6 +49,7 @@
+       const next = !prev;
+       localStorage.setItem(TRANSPARENCY_KEY, next ? '1' : '0');
+       applyClass('reduce-transparency', next);
++      queueMicrotask(() => window.dispatchEvent(new Event(SYNC_EVENT)));
+       return next;
+     });
+   };
+--- a/src/app/globals.css	2026-11-24 12:14:02
++++ b/src/app/globals.css	2026-11-24 12:14:02
+@@ -120,6 +120,12 @@
+   right: 16px;
+   bottom: 16px;
+   z-index: 45;
++  /* Below 1024px it covered body text; those widths get the same settings
++     in the mobile menu instead (MobileNav.tsx). */
++  display: none;
++}
++@media (min-width: 1024px) {
++  .a11y-corner { display: block; }
+ }
+ .a11y-corner-btn {
+   display: flex;

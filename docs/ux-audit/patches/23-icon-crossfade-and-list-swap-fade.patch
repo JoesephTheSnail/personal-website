@@ -1,0 +1,119 @@
+--- a/src/components/MobileNav.tsx
++++ b/src/components/MobileNav.tsx
+@@ -193,7 +193,7 @@
+           if (menuState === 'open') close();
+           else openMenu();
+         }}
+-        className="p-[13px] -m-[9px] transition-[transform,color] duration-200"
++        className="menu-toggle p-[13px] -m-[9px] transition-[transform,color] duration-200"
+         style={{
+           color:     'var(--fg-50)',
+           transform: open ? 'rotate(90deg) scale(0.9)' : 'rotate(0deg) scale(1)',
+@@ -202,7 +202,12 @@
+         aria-expanded={open}
+         aria-controls="mobile-menu-panel"
+       >
+-        {open ? <FaTimes size={16} /> : <FaBars size={18} />}
++        {/* Both icons stay mounted and crossfade; swapping them outright popped
++            in the middle of the button's quarter turn. */}
++        <span className="relative block h-[18px] w-[18px]" aria-hidden="true">
++          <FaBars size={18} className="absolute inset-0 transition-opacity duration-150" style={{ opacity: open ? 0 : 1 }} />
++          <FaTimes size={16} className="absolute left-px top-px transition-opacity duration-150" style={{ opacity: open ? 1 : 0 }} />
++        </span>
+       </button>
+ 
+       {mounted && createPortal(panel, document.body)}
+--- a/src/components/ProjectLedger.tsx
++++ b/src/components/ProjectLedger.tsx
+@@ -59,6 +59,9 @@
+   filterable?: boolean;
+ }) {
+   const [active, setActive] = useState<string>('All');
++  // Bumped on every filter change; keys the list so it plays a short fade.
++  // Zero on first render, so nothing animates on page load.
++  const [swaps, setSwaps] = useState(0);
+   const [previewSlug, setPreviewSlug] = useState<string | null>(null);
+   const [mounted, setMounted] = useState(false);
+   const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+@@ -152,7 +155,7 @@
+                     key={opt.label}
+                     type="button"
+                     aria-pressed={on}
+-                    onClick={() => setActive(opt.label)}
++                    onClick={() => { if (opt.label !== active) setSwaps((n) => n + 1); setActive(opt.label); }}
+                     className={`tap-44 ledger-filter pb-1 text-[0.9375rem] ${on ? 'proud-link' : ''}`}
+                     style={{ color: on ? 'var(--fg)' : 'var(--fg-60)' }}
+                   >
+@@ -173,6 +176,7 @@
+           </p>
+         )}
+ 
++        <div key={swaps} className={swaps > 0 ? 'list-swap' : undefined}>
+         {inProgress.length > 0 && (
+           <section className="grid gap-x-6 border-t pt-5 pb-10 sm:grid-cols-[7rem_1fr]" style={{ borderColor: 'var(--border-med)' }}>
+             <h2 className={`${eyebrow} mb-4 flex items-center gap-2 whitespace-nowrap sm:mb-0`} style={{ color: 'var(--accent)' }}>
+@@ -234,6 +238,7 @@
+             </ul>
+           </section>
+         ))}
++        </div>
+       </div>
+ 
+       {/* Portalled to <body>: the page's entrance animation makes its wrapper
+--- a/src/components/BooksList.tsx
++++ b/src/components/BooksList.tsx
+@@ -104,6 +104,8 @@
+ export default function BooksList({ items }: { items: BookListItem[] }) {
+   const [sort, setSort] = useState<SortKey>('recent');
+   const [genre, setGenre] = useState<string | null>(null);
++  // Set on the first sort or genre change; the list then plays a short fade.
++  const [swapped, setSwapped] = useState(false);
+ 
+   // Only groups that at least one book falls into.
+   const groups = useMemo(
+@@ -127,13 +129,13 @@
+   return (
+     <>
+       <div className="space-y-4 border-t pt-5 pb-10" style={{ borderColor: 'var(--border-med)' }}>
+-        <Toggles<SortKey> label="Sort" options={SORTS.map((s) => ({ key: s.key, label: s.label }))} value={sort} onChange={setSort} />
++        <Toggles<SortKey> label="Sort" options={SORTS.map((s) => ({ key: s.key, label: s.label }))} value={sort} onChange={(v) => { setSwapped(true); setSort(v); }} />
+         {groups.length > 1 && (
+           <Toggles<string | null>
+             label="Genre"
+             options={[{ key: null, label: 'All' }, ...groups.map((g) => ({ key: g.label as string | null, label: g.label }))]}
+             value={genre}
+-            onChange={setGenre}
++            onChange={(v) => { setSwapped(true); setGenre(v); }}
+           />
+         )}
+       </div>
+@@ -143,7 +145,7 @@
+         {genre ? `${shown.length} ${shown.length === 1 ? 'book' : 'books'} in ${genre}` : ''}
+       </p>
+ 
+-      <div>
++      <div key={`${sort}|${genre}`} className={swapped ? 'list-swap' : undefined}>
+         {shown.map((book) => (
+           <article
+             key={book.slug}
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -670,3 +670,18 @@
+ @media (hover: hover) and (pointer: fine) {
+   .proud-card:hover .proud-zoom { transform: scale(1.035); }
+ }
++
++/* ── Content swaps (filter and sort) ──
++   A short fade and 6px settle so 23 rows becoming 7 reads as "the list
++   changed" rather than a teleport. */
++@keyframes swap-in {
++  from { opacity: 0; transform: translateY(6px); }
++  to   { opacity: 1; transform: none; }
++}
++.list-swap { animation: swap-in 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
++@media (prefers-reduced-motion: reduce) {
++  .list-swap { animation-name: fade-in !important; }
++  .menu-toggle { transform: none !important; }
++}
++html.reduce-motion .list-swap { animation-name: fade-in !important; }
++html.reduce-motion .menu-toggle { transform: none !important; }

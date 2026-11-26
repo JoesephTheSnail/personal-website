@@ -1,0 +1,141 @@
+--- a/src/lib/projectOrder.ts
++++ b/src/lib/projectOrder.ts
+@@ -19,3 +19,14 @@
+   const i = sorted.findIndex((p) => p.slug === slug);
+   return i >= 0 ? sorted[i + 1] : undefined;
+ }
++
++/**
++ * What the "Next project" link at the end of a write-up points to: the following project, and after the
++ * last one the first (the top of the list), so Next walks the whole list once and then starts over.
++ * `wrapped` is true for that last hop so the page can say "Back to the top". Unknown slugs get nothing.
++ */
++export function nextOrTop<T extends Sortable>(sorted: T[], slug: string): { project: T; wrapped: boolean } | undefined {
++  const i = sorted.findIndex((p) => p.slug === slug);
++  if (i < 0 || sorted.length < 2) return undefined;
++  return i + 1 < sorted.length ? { project: sorted[i + 1], wrapped: false } : { project: sorted[0], wrapped: true };
++}
+--- a/src/lib/projectOrder.test.ts
++++ b/src/lib/projectOrder.test.ts
+@@ -1,30 +1,38 @@
+ import { describe, expect, it } from 'vitest';
+ import { getAllProjects } from './projects';
+-import { compareProjects, nextInSequence } from './projectOrder';
++import { compareProjects, nextInSequence, nextOrTop } from './projectOrder';
+ 
+-// "Next project" must walk the whole list once, in list order: no repeats, no loops, no skipped projects.
++// "Next project" must walk the whole list once, in list order, then go back to the top: no repeats
++// before that, no skipped projects, and no two-project loops.
+ describe('next project sequence', () => {
+   const sorted = getAllProjects().filter((p) => p.frontmatter.status === 'published').sort(compareProjects);
+ 
+-  it('visits every published project exactly once and then ends', () => {
++  it('visits every published project exactly once, then returns to the top', () => {
+     const visited: string[] = [];
+-    let current: (typeof sorted)[number] | undefined = sorted[0];
+-    while (current && visited.length <= sorted.length) {
++    let current = sorted[0];
++    for (let n = 0; n < sorted.length; n++) {
+       visited.push(current.slug);
+-      current = nextInSequence(sorted, current.slug);
++      const hop = nextOrTop(sorted, current.slug)!;
++      expect(hop.wrapped).toBe(n === sorted.length - 1);
++      current = hop.project;
+     }
+     expect(visited).toEqual(sorted.map((p) => p.slug));
+     expect(new Set(visited).size).toBe(sorted.length);
+-    expect(nextInSequence(sorted, sorted[sorted.length - 1].slug)).toBeUndefined();
++    expect(current.slug).toBe(sorted[0].slug);
+   });
+ 
+-  it('never points a project at itself or at an earlier one', () => {
++  it('never sends a project to the one before it (no back-and-forth)', () => {
+     sorted.forEach((p, i) => {
+-      const next = nextInSequence(sorted, p.slug);
+-      if (next) expect(sorted.indexOf(next)).toBe(i + 1);
++      const next = nextOrTop(sorted, p.slug)!.project;
++      expect(sorted.indexOf(next)).toBe((i + 1) % sorted.length);
+     });
+   });
+ 
++  it('has no link for projects that are not in the list', () => {
++    expect(nextOrTop(sorted, 'not-a-project')).toBeUndefined();
++    expect(nextInSequence(sorted, sorted[sorted.length - 1].slug)).toBeUndefined();
++  });
++
+   it('orders ties deterministically', () => {
+     const a = { slug: 'a', frontmatter: { date: '2026', order: 1 } };
+     const b = { slug: 'b', frontmatter: { date: '2026', order: 1 } };
+--- a/src/app/projects/[slug]/page.tsx
++++ b/src/app/projects/[slug]/page.tsx
+@@ -7,7 +7,7 @@
+ import { notFound } from 'next/navigation';
+ import TruckButton from '@/components/TruckButton';
+ import StarButton from '@/components/StarButton';
+-import { compareProjects, nextInSequence } from '@/lib/projectOrder';
++import { compareProjects, nextOrTop } from '@/lib/projectOrder';
+ import { STAR_BUTTONS } from '@/lib/starButtons';
+ import { FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
+ import ProjectLedger from '@/components/ProjectLedger';
+@@ -282,7 +282,8 @@
+   // Where to go next: the following project in the list, in the same order as /projects (newest first).
+   // It runs straight down the list and stops at the last one, so Next never repeats a project or loops.
+   const publishedProjects = getAllProjects().filter((p) => p.frontmatter.status === 'published').sort(compareProjects);
+-  const nextProject = nextInSequence(publishedProjects, slug);
++  const next = nextOrTop(publishedProjects, slug);
++  const nextProject = next?.project;
+ 
+   // Structured data: what this page is, who made it, and where it sits in the site.
+   const pageUrl = `https://arnavchandra.com/projects/${slug}`;
+@@ -420,7 +421,7 @@
+         {nextProject && (
+           <Link href={`/projects/${nextProject.slug}`} className="index-row block pb-10">
+             <span className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: 'var(--fg-eyebrow)' }}>
+-              Next project
++              {next?.wrapped ? 'Back to the top' : 'Next project'}
+             </span>
+             <span className="row-wrap mt-3 flex items-baseline gap-4">
+               <span className="index-label text-[clamp(1.5rem,3.2vw,2.15rem)] leading-tight tracking-[-0.025em]" style={{ color: 'var(--fg)' }}>
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -212,21 +212,19 @@
+             Updated {UPDATED}
+           </p>
+           {reading && (
+-            <Link href="/books" className="group mt-8 hidden items-end gap-4 sm:flex" aria-label={`Currently reading ${reading.frontmatter.title} by ${reading.frontmatter.author}`}>
++            <Link href="/books" className="group mt-8 hidden max-w-[9.5rem] sm:block" aria-label={`Currently reading ${reading.frontmatter.title} by ${reading.frontmatter.author}`}>
+               <Image
+                 src={reading.frontmatter.cover}
+                 alt=""
+-                width={160}
+-                height={240}
+-                sizes="80px"
+-                className="h-[120px] w-[80px] flex-none object-cover"
++                width={228}
++                height={342}
++                sizes="114px"
++                className="h-[171px] w-[114px] object-cover"
+                 style={{ border: '1px solid var(--border-med)', boxShadow: '4px 4px 0 var(--border-med)' }}
+               />
+-              <span className="min-w-0 pb-0.5">
+-                <span className="block text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>Reading</span>
+-                <span className="proud-link mt-1.5 inline text-[0.9375rem] leading-snug tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>{reading.frontmatter.title}</span>
+-                <span className="mt-1 block text-[0.8125rem]" style={{ color: 'var(--fg-dim)' }}>{reading.frontmatter.author}</span>
+-              </span>
++              <span className="mt-4 block text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>Reading</span>
++              <span className="proud-link mt-1.5 inline text-[0.9375rem] leading-snug tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>{reading.frontmatter.title}</span>
++              <span className="mt-1 block text-[0.8125rem]" style={{ color: 'var(--fg-dim)' }}>{reading.frontmatter.author}</span>
+             </Link>
+           )}
+         </div>
+--- a/src/app/books/page.tsx
++++ b/src/app/books/page.tsx
+@@ -42,7 +42,7 @@
+ 
+   return (
+     <div className="max-w-5xl mx-auto" style={{ overflowX: 'hidden' }}>
+-      <header className="relative mb-12 sm:mb-16">
++      <header className="relative mb-6 sm:mb-8">
+         <p className={`rise ${eyebrow}`} style={{ color: 'var(--fg-eyebrow)' }}>
+           Reading
+         </p>

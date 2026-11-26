@@ -1,0 +1,836 @@
+--- a/content/projects/24-hour-hackathon.mdx
++++ b/content/projects/24-hour-hackathon.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "24-Hour Ocean Acidification Hackathon"
+-description: "An overnight hackathon where our team designed a phytoplankton-based solution to ocean acidification caused by rising CO₂."
++description: "An overnight hackathon: our team designed a phytoplankton solution to ocean acidification."
+ date: "2024-10"
+ status: "published"
+ category: "Pitch Deck"
+@@ -12,23 +12,32 @@
+     url: "https://canva.link/2pe0tqkzv9oospj"
+ ---
+ 
+-I almost left at 6 p.m.. I had a long day ahead the next morning and thought I'd put in a few hours and call it.
++I almost left at 6 p.m. I had a long day ahead the next morning and planned to put in a few hours and call it.
+ 
+-I didn't leave. I got so absorbed in the problem that I stayed well past midnight, though not as late as my teammates Bianca and Shreya, who pushed through until 4 a.m..
++I didn't leave. I got so absorbed that I stayed well past midnight. My teammates Bianca and Shreya stayed even later, until 4 a.m.
+ 
+-The problem we were given:
++## The problem
+ 
+-Rising CO₂ is causing ocean acidification. The global ocean pH has dropped from 8.11 in 1985 to 8.05 in 2021. In Alaska, where colder water absorbs more CO₂, it's already at 8.01. This damages the shells of oysters, clams, and other marine life, and since Alaska supplies over 60% of US seafood, the downstream effects on human health are real.
++Rising CO₂ is making the ocean more acidic.
+ 
+-Our solution: build enclosed ocean environments engineered for phytoplankton to thrive. Phytoplankton absorb CO₂ through photosynthesis at massive scale, and doing this in a controlled enclosure means the uptake can be managed, measured, and optimized without releasing genetically modified organisms into open water.
++- Global ocean pH fell from 8.11 in 1985 to 8.05 in 2021.
++- In Alaska, where colder water absorbs more CO₂, it's already 8.01.
++- Acidic water damages the shells of oysters, clams and other marine life. Alaska supplies over 60% of US seafood, so the effects on human health are real.
+ 
+-The hackathon taught me two things I use now. First: time management under real pressure is different from time management in theory. When you have 24 hours and a real problem, you have to triage constantly. Second: root cause analysis. Rather than optimizing a solution to the surface problem, going one level deeper almost always reveals a better intervention point.
++## Our solution
+ 
++Build enclosed ocean environments where phytoplankton can thrive. Phytoplankton absorb CO₂ through photosynthesis at huge scale. In an enclosure, the uptake can be managed, measured and improved, without releasing genetically modified organisms into open water.
++
++## Two things I still use
++
++- **Time management under real pressure.** With 24 hours and a real problem, you triage constantly. It's different from time management in theory.
++- **Root cause analysis.** Going one level deeper than the surface problem almost always finds a better place to step in.
++
+ ---
+ 
+ **Outcome:** Stayed through the night to build a full research-backed pitch: phytoplankton enclosures as a managed CO₂ sink, delivered as a complete deck and memo by morning.
+ 
+ **What I took from it:**
+-- Real pressure reveals how you actually work. I had every reason to leave at 6 p.m. and didn't, and that told me something about what absorbs me.
+-- Root cause analysis is more than a framework. When time is short, going one level deeper than the surface problem saves you from building a great solution to the wrong thing.
+-- Time management in theory and time management at midnight with a real deadline are different skills. You only develop the second one by being in it.
++- Real pressure shows how you actually work. I had every reason to leave at 6 p.m. and didn't, which told me what absorbs me.
++- Root cause analysis is more than a framework. When time is short, going one level deeper stops you from building a great solution to the wrong problem.
++- Time management at midnight with a real deadline is a different skill from the theory. You only build it by being in it.
+--- a/content/projects/ai-chatbot.mdx
++++ b/content/projects/ai-chatbot.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "AI Mental Health Chatbot"
+-description: "A conversational AI built with the Gemini API to provide accessible mental health support and psychoeducation."
++description: "A chatbot built with the Gemini API for accessible mental health support."
+ date: "2024-08"
+ status: "published"
+ category: "Product"
+@@ -8,21 +8,32 @@
+ tools: ["Gemini API"]
+ ---
+ 
+-The premise was simple: what if someone who couldn't access therapy, whether due to cost, availability, or stigma, could still get real psychoeducation and evidence-based coping tools through a conversation?
++## The idea
+ 
+-The goal was to fill the gap for the majority of people who will never see a therapist, not to replace therapists.
++What if someone who can't get therapy, because of cost, availability, or stigma, could still get real psychoeducation and evidence-based coping tools through a conversation?
+ 
+-Built using the Gemini API, the chatbot is designed around psychoeducation rather than diagnosis or treatment. It can walk users through grounding techniques, explain cognitive distortions in plain language, help someone identify stress triggers through guided conversation, and point toward appropriate resources when the situation warrants it.
++The goal is to fill the gap for the majority of people who will never see a therapist, not to replace therapists.
+ 
+-The hardest design challenge was safety. Any AI operating in a mental health context has to be extremely careful about what it says and what it doesn't say. I spent significant time building guardrails and thinking through edge cases, particularly around crisis scenarios, before the core functionality.
++## What it does
+ 
+-The project deepened my interest in AI and healthcare, and directly informed the MindSet app design work that followed.
++Built with the Gemini API, the chatbot focuses on psychoeducation, not diagnosis or treatment. It can:
+ 
++- Walk users through grounding techniques
++- Explain cognitive distortions in plain language
++- Help someone find their stress triggers through guided conversation
++- Point toward appropriate resources when the situation calls for it
++
++## The hard part: safety
++
++Any AI in a mental health setting has to be careful about what it says and what it doesn't. I spent a lot of time on guardrails and edge cases, especially crisis scenarios, before the core features.
++
++The project deepened my interest in AI and healthcare, and directly shaped the MindSet app design that followed.
++
+ ---
+ 
+ **Outcome:** Built a working AI mental health chatbot using the Gemini API. It's designed for psychoeducation and evidence-based coping tools, with safety guardrails for crisis scenarios.
+ 
+ **What I took from it:**
+-- In sensitive domains, safety design is the foundation, not a feature you add at the end. I spent more time on guardrails than on core functionality.
+-- The mental health gap comes down to access more than quality of care. Most people who need support will never see a therapist, and that's the problem worth solving.
+-- Building this made me realize how much the framing matters: psychoeducation feels different to the user than diagnosis, even when the underlying information is the same.
++- In sensitive areas, safety is the foundation, not a feature added at the end. I spent more time on guardrails than on core features.
++- The mental health gap is about access more than quality of care. Most people who need support will never see a therapist, and that's the problem worth solving.
++- Framing matters. Psychoeducation feels different to a user than diagnosis, even when the information is the same.
+--- a/content/projects/anywear.mdx
++++ b/content/projects/anywear.mdx
+@@ -17,14 +17,25 @@
+     url: "https://docs.google.com/spreadsheets/d/1MnyFR80K0Qs_NleO21gHGmX3-jPDbB4x/edit?usp=sharing&ouid=115627636465338762884&rtpof=true&sd=true"
+ ---
+ 
+-AnyWear is a peer-to-peer luxury clothing rental platform built on the idea that you should not have to own something to wear it once. The target market is people who want to look great at a formal event, a photoshoot, or a night out without paying retail prices for an outfit they will wear once.
++AnyWear is a peer-to-peer luxury clothing rental platform. The idea: you shouldn't have to own something to wear it once.
+ 
+-The business model lets owners list high-end items for rent and earn passive income on clothes sitting in their closet. Renters get access to designer pieces at a fraction of the purchase price.
++## Who it's for
+ 
+-We took AnyWear through three full pitch iterations at DragonzDen. Each round, the judges pushed harder on margins, churn, insurance liability, and the cold-start problem of building a two-sided marketplace from zero. I wrote about the March round in my newsletter while we were still in the thick of it, dealing with imposter syndrome and unsure if we would make it through. The feedback was hard. We took it seriously and came back sharper every time.
++People who want to look great at a formal event, a photoshoot, or a night out without paying retail for an outfit they'll wear once.
+ 
++## How it works
++
++- **Owners** list high-end items for rent and earn passive income from clothes sitting in their closet.
++- **Renters** get designer pieces for a fraction of the purchase price.
++
++## The pitches
++
++We took AnyWear through three full pitch rounds at DragonzDen. Each round, the judges pushed harder on margins, churn, insurance liability, and the cold-start problem of building a two-sided marketplace from zero.
++
++I wrote about the March round in my newsletter while we were still in the middle of it, dealing with imposter syndrome and unsure we'd make it through. The feedback was hard. We took it seriously and came back sharper each time.
++
+ **Result:** 1st place at DragonzDen.
+ 
+-When I wrote about winning in my May 2025 newsletter, what I kept coming back to was the process, not the trophy: three pitches, and three rounds of judges who did not owe us anything. The version of AnyWear that won was very different from the version we started with, and that difference came entirely from pressure.
++When I wrote about winning in my May 2025 newsletter, I kept coming back to the process, not the trophy: three pitches, and three rounds of judges who didn't owe us anything. The version that won was very different from the one we started with. That difference came entirely from pressure.
+ 
+-The biggest takeaway: the pitch is only as strong as the business model underneath it. We won because we knew our numbers cold and had thought through the edge cases before anyone asked.
++The biggest takeaway: a pitch is only as strong as the business model under it. We won because we knew our numbers cold and had thought through the edge cases before anyone asked.
+--- a/content/projects/calendar-cipher.mdx
++++ b/content/projects/calendar-cipher.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "The Calendar Cipher"
+ date: "2026-08"
+-description: "A hand-reckoning method I put together for finding the day of the week for any date, no calendar needed."
++description: "A method for working out the day of the week for any date in your head, no calendar needed."
+ thumbnail: ""
+ link: ""
+ status: "published"
+@@ -12,8 +12,16 @@
+     url: "/reports/calendar-cipher.pdf"
+ ---
+ 
+-I was scrolling one night and just got bored of it, so instead I went and learned something I'd always thought was a cool party trick: figuring out what day of the week any date falls on, all in your head.
++I was scrolling one night and got bored of it. So I learned something I'd always thought was a cool party trick: working out what day of the week any date falls on, all in your head.
+ 
+-It comes down to four small numbers you add up (one for the year, one for the month, one for the day, one for the century) and then divide by 7. The remainder tells you the day. Once you know the keys it takes a few seconds per date.
++## How it works
+ 
+-I made this one-page reference to explain it properly and worked through the math myself until it actually made sense, not just something I'd memorized. Small project, but a good reminder that the time I'd have spent doomscrolling can just as easily go toward learning something random and fun instead.
++Add up four small numbers: one for the year, one for the month, one for the day, and one for the century. Divide by 7. The remainder is the day.
++
++Once you know the keys, it takes a few seconds per date.
++
++## The project
++
++I made a one-page reference that explains it, and worked through the math myself until it made sense instead of just being memorized.
++
++It's a small project, but a good reminder: the time I'd have spent doomscrolling can just as easily go toward learning something random and fun.
+--- a/content/projects/carbon-capture.mdx
++++ b/content/projects/carbon-capture.mdx
+@@ -1,27 +1,39 @@
+ ---
+ title: "Carbon Capture Research"
+-description: "Independent research into direct air capture technologies, focusing on cost reduction pathways and scalability."
++description: "Independent research on direct air capture: how to cut its cost and scale it."
+ date: "2024-06"
+ status: "published"
+ category: "Research"
+ order: 9
+ ---
+ 
+-Carbon capture is one of the most important and most underfunded areas of climate technology. The dominant narrative treats it as a backup plan, something we&apos;ll need if emissions reductions fail. The more I researched, the more I became convinced it&apos;s a requirement, not a backup.
++Carbon capture is one of the most important and most underfunded areas of climate tech. Most people treat it as a backup plan, something we'll need if emissions cuts fail. The more I researched, the more I became convinced it's a requirement, not a backup.
+ 
+-This research project ran from October 2023 through summer 2024 and focused specifically on direct air capture (DAC): technologies that pull CO₂ directly from the atmosphere rather than from point sources like power plants. DAC is more expensive and energy-intensive than point-source capture, but it&apos;s the only approach that draws down historical emissions.
++## The focus
+ 
+-The core question I was trying to answer: what are the real cost reduction pathways? The current cost per ton of CO₂ captured via DAC is prohibitively high: $400–$1,000 depending on the system. Learning curve analysis, materials innovation, and process heat integration were the most promising levers.
++The project ran from October 2023 through summer 2024. It focused on direct air capture (DAC): pulling CO₂ straight from the atmosphere instead of from point sources like power plants.
+ 
+-I also spent time understanding the policy and market dynamics: carbon credit markets, government incentives like the 45Q tax credit, and how different regulatory regimes affect the economics.
++DAC costs more and uses more energy than point-source capture. But it's the only approach that draws down past emissions.
+ 
+-The research sharpened my thinking on how hard problems with long time horizons actually get solved, and how rarely the path looks like what anyone predicted.
++## The question
+ 
++What are the real ways to bring the cost down? Today DAC costs $400 to $1,000 per ton of CO₂, depending on the system. The most promising levers:
++
++- Learning curve analysis
++- Materials innovation
++- Process heat integration
++
++## Policy and markets
++
++I also looked at carbon credit markets, government incentives like the 45Q tax credit, and how different regulations change the economics.
++
++The research sharpened my thinking on how hard, long-term problems get solved, and how rarely the path looks like anyone predicted.
++
+ ---
+ 
+ **Outcome:** Produced an independent research report on direct air capture (DAC), covering cost reduction pathways, materials innovation, and the policy and market dynamics shaping the space.
+ 
+ **What I took from it:**
+-- Carbon capture isn't a backup plan. The emissions math doesn't close without it, and treating it as optional is a mistake the field is slowly correcting.
+-- The real levers for cost reduction are learning curves, materials innovation, and process heat integration, not just subsidies. Understanding *why* something is expensive tells you where to push.
+-- Hard problems with long time horizons rarely solve the way anyone predicted. The research made me more comfortable sitting with that uncertainty instead of needing the path to be clear before starting.
++- Carbon capture isn't a backup plan. The emissions math doesn't close without it.
++- The real levers for cost are learning curves, materials, and process heat, not just subsidies. Knowing *why* something is expensive tells you where to push.
++- Hard, long-term problems rarely get solved the way anyone predicted. I got more comfortable with that uncertainty instead of needing the path to be clear before starting.
+--- a/content/projects/deca-notification-app.mdx
++++ b/content/projects/deca-notification-app.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "DECA Notification Summarizer Pitch"
+-description: "A DECA pitch for an app that condenses distracting notifications into brief, timed digests to help users stay focused. **Pitched at DECA Provincials.**"
++description: "A DECA pitch for an app that bundles notifications into short, timed digests. **Pitched at DECA Provincials.**"
+ date: "2025-02"
+ status: "published"
+ category: "Product"
+@@ -10,12 +10,20 @@
+     url: "https://docs.google.com/presentation/d/1W5f19RyegajWELuKmoWLEvmoxV0p2nnFYaK3SS_ujJg/edit?usp=sharing"
+ ---
+ 
+-The average person receives dozens of push notifications a day. Each one is a small interruption: a break in focus that takes longer to recover from than the notification itself takes to read. The cumulative effect is a baseline level of distraction that most people have simply accepted as normal.
++The average person gets dozens of push notifications a day. Each one is a small interruption, and the focus it breaks takes longer to recover than the notification took to read. Most people have accepted that constant distraction as normal.
+ 
+-This pitch proposed an app that batches incoming notifications by priority and delivers them in short, scheduled digests instead of individually as they arrive. Users define when and how often they want to be updated. The app summarizes what happened, surfaces what's actually urgent, and filters out the noise.
++## The pitch
+ 
+-The core insight behind the pitch: notifications are designed to pull your attention toward the app that sent them, not to be useful to you. A summarizer layer flips this dynamic: you decide when to engage, not the apps.
++An app that batches notifications by priority and delivers them in short, scheduled digests instead of one at a time. Users choose when and how often they're updated. The app:
+ 
++- Summarizes what happened
++- Surfaces what's actually urgent
++- Filters out the noise
++
++## The core insight
++
++Notifications are designed to pull your attention toward the app that sent them, not to be useful to you. A summarizer flips that: you decide when to engage, not the apps.
++
+ Presented at DECA Provincials.
+ 
+ ---
+@@ -23,6 +31,6 @@
+ **Outcome:** Pitched the notification summarizer concept at DECA Provincials, a full product pitch covering the problem, solution, and go-to-market.
+ 
+ **What I took from it:**
+-- Notifications are engineered for the app's engagement, not the user's benefit, and that matters more than the sheer volume.
+-- The best product ideas solve problems people have stopped questioning. Constant interruption feels normal now, which is exactly why there's space to fix it.
+-- Competition pressure forces a clarity that casual building doesn't. When you have to explain your thinking to judges in two minutes, every weak assumption gets exposed fast.
++- Notifications are built for the app's engagement, not your benefit. That matters more than the sheer volume.
++- The best ideas solve problems people have stopped questioning. Constant interruption feels normal now, which is why there's room to fix it.
++- Competition pressure forces clarity. When you explain your thinking to judges in two minutes, every weak assumption shows fast.
+--- a/content/projects/gmo-bananas.mdx
++++ b/content/projects/gmo-bananas.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "Carbon Capture via GMO Bananas"
+-description: "A TKS research challenge combining synthetic biology and carbon capture: engineering banana plants to absorb more CO₂."
++description: "A TKS challenge: engineering banana plants to absorb more CO₂."
+ date: "2024-02"
+ status: "published"
+ category: "Pitch Deck"
+@@ -10,23 +10,25 @@
+     url: "https://docs.google.com/presentation/d/1aLPlOdB9l44RGml8vSRkD86dF2mSVYGGsvTSE8AC520/edit?usp=sharing"
+ ---
+ 
+-The prompt was to find something interesting at carbon capture and synthetic biology. We knew the prompt before the hackathon started, which gave us a head start.
++The prompt: find something interesting in carbon capture and synthetic biology. We got it before the hackathon started, which gave us a head start.
+ 
+-We landed on genetically modifying banana plants to absorb more CO₂ than they naturally would. Bananas are fast-growing, tropical, and globally cultivated at massive scale, making them a plausible delivery mechanism for enhanced carbon uptake if the biology could be made to work.
++## The idea
+ 
+-The night before our working session, we mapped each team member's skills and assigned roles accordingly. It sounds simple, but deliberately aligning strengths before starting saved us significant time. Rather than figuring out who does what while the clock is running, we started executing immediately.
++Genetically modify banana plants so they absorb more CO₂ than they naturally do. Bananas grow fast, grow in the tropics, and are farmed worldwide at huge scale. That makes them a plausible way to spread extra carbon uptake, if the biology can be made to work.
+ 
+-Once together, we used a structured research sprint: set a timer, go wide, stop. Whatever we found was our working set. This forced us to synthesize from a fixed information base rather than spiraling into endless research. The constraint made us more decisive.
++The core argument: a banana plant that fixes more carbon per hectare than current varieties, grown on existing farmland without displacing food. Whether that's technically feasible was the open question. That's where we wanted the conversation to go.
+ 
+-We allocated about an hour to the presentation itself, balancing visual design with the actual research. Time-boxing each phase kept us from over-investing in any one part.
++## How we worked
+ 
+-The core argument: a genetically engineered banana plant that fixes more atmospheric carbon per hectare than current varieties, deployed at scale across existing agricultural land without displacing food production. The technical feasibility was the open question, which is exactly where we wanted to push the conversation.
++- **Roles first.** The night before, we mapped each person's skills and assigned roles. When the clock started, we were already doing the work.
++- **Time-boxed research.** Set a timer, go wide, stop. Whatever we found was our working set. The limit made us more decisive.
++- **About an hour on the deck.** We balanced visual design with the research, and time-boxed each phase.
+ 
+ ---
+ 
+ **Outcome:** Developed and presented a synthetic biology carbon capture concept: engineered banana plants as a scalable CO₂ sink deployed through existing agriculture.
+ 
+ **What I took from it:**
+-- Assigning roles before you start, not during, is one of the simplest habits that saves the most time. We hit the ground running because we weren't still figuring out who does what when the clock started.
+-- Structured time-boxing (set a timer, go wide, stop) produces cleaner synthesis than open-ended research. The constraint forces you to work with what you have instead of chasing the perfect source.
+-- Knowing where your argument is uncertain and leaning into it is stronger than pretending you have all the answers. The technical feasibility was our open question, and making that explicit made the pitch more credible, not less.
++- Assign roles before you start, not during. It's one of the simplest habits that saves the most time.
++- Time-boxing gives cleaner results than open-ended research. The limit makes you use what you have instead of chasing the perfect source.
++- Lean into what's uncertain. Feasibility was our open question, and saying so made the pitch more credible, not less.
+--- a/content/projects/gym-tiktok.mdx
++++ b/content/projects/gym-tiktok.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Gym TikTok"
+ date: "2025-04"
+-description: "A page where I posted my workouts, meals, and recovery to track my progress. **One video reached 350K views.**"
++description: "A page where I posted my workouts, meals, and recovery. **One video reached 350K views.**"
+ thumbnail: ""
+ status: "published"
+ category: "Creative"
+--- a/content/projects/insusense.mdx
++++ b/content/projects/insusense.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "InsuSense"
+-description: "A non-invasive insulin delivery prototype that integrates with continuous glucose monitors to automate dosing."
++description: "A non-invasive insulin delivery prototype that uses a glucose monitor to automate dosing."
+ date: "2024-05"
+ status: "published"
+ featured: true
+@@ -13,21 +13,29 @@
+     url: "https://docs.google.com/presentation/d/1gYJb8RkL0DqGZkcITqu3WG3QrOj08B1B3W3zi0u2-kQ/edit?usp=sharing"
+ ---
+ 
+-Insulin-dependent diabetes is a disease of constant management. Every meal, every workout, every stressful day requires a manual decision: how much insulin, when, delivered how. Mistakes have serious consequences. The cognitive and physical burden on patients is enormous.
++## The problem
+ 
+-InsuSense started with a simple question: what if the system could close the loop?
++Insulin-dependent diabetes means constant management. Every meal, workout, and stressful day needs a manual decision: how much insulin, when, and how. Mistakes have serious consequences, and the load on patients is huge.
+ 
+-The prototype integrates with continuous glucose monitors (CGMs) to read real-time glucose data and trigger insulin delivery automatically, a step toward a closed-loop artificial pancreas system. The core engineering challenge was building a delivery mechanism that's reliable, miniaturized, and safe enough to trust with medication.
++InsuSense started with one question: what if the system could close the loop?
+ 
+-This project required going deep on both the biology and the engineering simultaneously. I had to understand how glucose-insulin dynamics work (lag times, correction factors, and carb ratios) before I could design a system that wouldn't over- or under-dose.
++## The prototype
+ 
+-The research phase alone was one of the most intensive I've done. The clinical constraints on any device that touches medication delivery are strict for good reason. This project gave me enormous respect for the people who build medical devices professionally.
++It connects to continuous glucose monitors (CGMs), reads real-time glucose data, and triggers insulin delivery automatically. That's a step toward a closed-loop artificial pancreas.
+ 
++The hard engineering part: a delivery mechanism that's reliable, miniaturized, and safe enough to trust with medication.
++
++## What it took
++
++I had to learn the biology and the engineering at the same time. Before I could design anything that wouldn't over- or under-dose, I had to understand how glucose and insulin behave: lag times, correction factors, and carb ratios.
++
++The research was one of the most intensive I've done. The rules for any device that delivers medication are strict for good reason. It gave me a lot of respect for the people who build medical devices professionally.
++
+ ---
+ 
+ **Outcome:** Designed a non-invasive insulin delivery prototype that reads real-time glucose data from a CGM and automates dosing, a step toward a closed-loop artificial pancreas.
+ 
+ **What I took from it:**
+-- Closed-loop medical systems require understanding the biology and the engineering simultaneously. You can't hand one off to someone else, because the lag times, correction factors, and dosing logic are all connected.
+-- Clinical constraints on medication delivery devices exist for good reason. Designing around them early is what separates a concept that could ship from one that can't.
+-- This was the most intensive research I've done. It also gave me the most respect for healthcare engineering as a discipline: the stakes make every design decision heavier.
++- Closed-loop medical systems need the biology and the engineering together. Lag times, correction factors, and dosing logic are all connected.
++- Clinical rules exist for good reason. Designing around them early separates a concept that could ship from one that can't.
++- This was my most intensive research, and it gave me the most respect for healthcare engineering. The stakes make every design decision heavier.
+--- a/content/projects/meta-challenge.mdx
++++ b/content/projects/meta-challenge.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "Meta Safety Challenge"
+-description: "A case study on protecting young users in the Metaverse, built as part of TKS. **Meta case competition.**"
++description: "A TKS case study on protecting young users in the Metaverse. **Meta case competition.**"
+ date: "2023-12"
+ status: "published"
+ category: "Pitch Deck"
+@@ -12,21 +12,36 @@
+     url: "https://forms.gle/q9tE8t4EjLQTAJcd6"
+ ---
+ 
+-This was a TKS case study challenge where our team was given a problem directly from Meta:
++A TKS case study challenge. Our team got a problem straight from Meta:
+ 
+ *"What can Meta do to ensure the safety of young people that use its products? As Meta ventures more into the Metaverse, what ideas are important to consider to provide a high quality, non-harmful experience for younger platform users?"*
+ 
+-The challenge forced us to think across two dimensions at once: the existing platforms (Instagram, Facebook) and the emerging Metaverse, where the risks are meaningfully different. In a screen-based environment you can regulate content. In an immersive 3D environment, harmful experiences are spatial and harder to filter.
++## Two things at once
+ 
+-Our approach centered on three areas: age verification that actually works, behavioral monitoring within immersive environments, and parental oversight tools that don't kill the user experience. We backed each proposal with our research survey, which gathered real perspectives from young users and parents.
++We had to think about the existing platforms (Instagram, Facebook) and the emerging Metaverse, where the risks are different.
+ 
+-The most interesting part of this challenge was realizing that safety and engagement are not opposites. The Metaverse will only succeed if users, especially younger ones, feel safe enough to stay. Meta's business interest and the safety imperative are more aligned than the public debate suggests.
++- On a screen, you can regulate content.
++- In an immersive 3D space, harm is spatial and harder to filter.
+ 
++## Our approach
++
++Three areas:
++
++1. **Age verification** that actually works.
++2. **Behavioral monitoring** inside immersive environments.
++3. **Parental oversight tools** that don't kill the user experience.
++
++We backed each proposal with our research survey, which gathered real views from young users and parents.
++
++## What stood out
++
++Safety and engagement aren't opposites. The Metaverse only succeeds if users, especially younger ones, feel safe enough to stay. Meta's business interest and safety are more aligned than the public debate suggests.
++
+ ---
+ 
+ **Outcome:** Developed safety recommendations for a challenge set directly by Meta, as part of a TKS case competition. They covered age verification, monitoring in immersive environments, and parental oversight tools, and were backed by original user research.
+ 
+ **What I took from it:**
+-- Safety and engagement aren't opposites, especially in the Metaverse. Platforms that feel unsafe lose users. Meta's business interest and the safety imperative point in the same direction.
+-- Immersive 3D environments create very different risks than screens. You can filter a piece of content. You can't easily filter a spatial experience: the harm happens in the moment, not after.
+-- Running a real survey changed the quality of our recommendations. User research consistently surfaces things you'd never find by just thinking about the problem from the outside.
++- Safety and engagement aren't opposites. Platforms that feel unsafe lose users, so Meta's interest and safety point the same way.
++- Immersive 3D spaces create different risks than screens. You can filter a piece of content. You can't easily filter an experience, because the harm happens in the moment.
++- A real survey changed the quality of our recommendations. User research surfaces things you'd never find by thinking about the problem from outside.
+--- a/content/projects/mindset-app.mdx
++++ b/content/projects/mindset-app.mdx
+@@ -15,19 +15,32 @@
+     url: "https://docs.google.com/document/d/1fFDxwc99CygObknHKSVSNFB9o1umfcVCi0XXfNub66g/edit?usp=sharing"
+ ---
+ 
+-MindSet was designed around a clear problem: most mental health apps are either too clinical, too expensive, or too adult-coded to actually reach teenagers. The ones that do reach teens often feel patronizing or gamified in ways that undermine the content.
++## The problem
+ 
+-The design philosophy was to treat users like adults while keeping the UX lightweight and non-intimidating. The app includes mood tracking, CBT-based journaling prompts, breathing exercises, and a resource library, but the architecture is modular, so users can use just the pieces that feel useful to them.
++Most mental health apps are too clinical, too expensive, or too adult-coded to reach teenagers. The ones that do reach teens often feel patronizing or gamified in ways that hurt the content.
+ 
+-The entire product was built in Figma: a full high-fidelity prototype with interactive flows, component library, and design system. Every screen was designed with accessibility in mind: contrast ratios, tap targets, readable type at small sizes.
++## The approach
+ 
+-This project pushed my product thinking more than any other. When your user is a stressed 16-year-old at 2 a.m., every friction point in the UX matters. I went through five major redesigns before landing on something I felt actually served the user rather than just looking good in a portfolio.
++Treat users like adults, and keep the experience light and non-intimidating. The app includes:
+ 
++- Mood tracking
++- CBT-based journaling prompts
++- Breathing exercises
++- A resource library
++
++It's modular, so people can use only the pieces that feel useful to them.
++
++## What I built
++
++The whole product was built in Figma: a full high-fidelity prototype with interactive flows, a component library, and a design system. Every screen was designed with accessibility in mind: contrast ratios, tap targets, and readable type at small sizes.
++
++This project pushed my product thinking more than any other. When your user is a stressed 16-year-old at 2 a.m., every friction point matters. I went through five major redesigns before landing on something that served the user, not just my portfolio.
++
+ ---
+ 
+ **Outcome:** Built a full high-fidelity Figma prototype, with interactive flows, component library, and design system, for a modular teen mental wellness app after five major redesigns.
+ 
+ **What I took from it:**
+-- Most mental health apps fail teenagers because the design talks down to them, not because the content is wrong. Respecting your user's intelligence is a design decision.
+-- When your user is a stressed 16-year-old at 2 a.m., every friction point matters more than it would in a normal app. Emotional state changes what "usable" means.
+-- Five redesigns taught me that the first version that looks good is not the first version that works. The willingness to throw it out and start again is what separates good product thinking from taste.
++- Most apps fail teenagers because the design talks down to them, not because the content is wrong. Respecting your user's intelligence is a design decision.
++- A stressed 16-year-old at 2 a.m. changes what "usable" means. Every friction point matters more.
++- The first version that looks good isn't the first version that works. Being willing to throw it out is what separates product thinking from taste.
+--- a/content/projects/mindset-matters-newsletter.mdx
++++ b/content/projects/mindset-matters-newsletter.mdx
+@@ -1,13 +1,14 @@
+ ---
+ title: "Mindset Matters"
+ date: "2023-12"
+-description: "A monthly newsletter on building a positive mindset, developing better habits, and growing as a person. **41 issues published.**"
++description: "A monthly newsletter on mindset, habits, and growing as a person. **41 issues published.**"
+ thumbnail: ""
+ link: "https://arnav01.substack.com/"
+ links:
+   - label: "Read on Substack"
+     url: "https://arnav01.substack.com/"
+ status: "published"
++featured: true
+ category: "Creative"
+ order: 1
+ ---
+--- a/content/projects/neonatal-care.mdx
++++ b/content/projects/neonatal-care.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "Neonatal Care Solution"
+-description: "A reusable heat pouch for premature infants in low-resource settings, designed to replace single-use warmers at $2.21 per unit."
++description: "A reusable heat pouch that replaces single-use warmers for premature infants, at $2.21 per unit."
+ date: "2025-04"
+ status: "published"
+ category: "Research"
+@@ -12,10 +12,21 @@
+     url: "https://docs.google.com/presentation/d/184wy2tnWtXG0mZxIlDfFCDJZuff0y6gl9JFgRBBdK_Q/edit?usp=sharing"
+ ---
+ 
+-Hypothermia is one of the leading causes of death in premature infants, particularly in low-income countries where access to incubators is limited. Most existing solutions are either expensive, require electricity, or are single-use, creating ongoing cost and waste problems for under-resourced clinics.
++Hypothermia is one of the leading causes of death in premature infants, especially in low-income countries where incubators are hard to get. Most existing solutions are expensive, need electricity, or are single-use. That means ongoing cost and waste for under-resourced clinics.
+ 
+-This project was a deep dive into neonatal thermoregulation and the design constraints of healthcare in low-resource environments. The goal was simple: build something that actually works, can be reused, and costs almost nothing.
++## The goal
+ 
+-The result was a reusable heat pouch designed for premature newborns. The final unit cost came in at **$2.21**, a fraction of existing alternatives. The design uses phase-change materials to maintain stable warmth over several hours, doesn't require electricity to activate, and can be sterilized and reused repeatedly.
++Build something that actually works, can be reused, and costs almost nothing. The project was a deep dive into neonatal thermoregulation and the design limits of healthcare in low-resource settings.
+ 
+-The hardest part of this project was not the engineering but the distribution and adoption problem. A good product doesn't help if clinics can't get it, can't afford it, or don't trust it. That system-level thinking reshaped how I approached the design entirely.
++## The result
++
++A reusable heat pouch for premature newborns.
++
++- **Unit cost: $2.21**, a fraction of existing alternatives
++- Uses phase-change materials to hold stable warmth for several hours
++- Needs no electricity to activate
++- Can be sterilized and reused again and again
++
++## The hardest part
++
++It wasn't the engineering. It was distribution and adoption. A good product doesn't help if clinics can't get it, can't afford it, or don't trust it. That system-level thinking reshaped my whole approach to the design.
+--- a/content/projects/robotics.mdx
++++ b/content/projects/robotics.mdx
+@@ -1,18 +1,26 @@
+ ---
+ title: "Robotics"
+-description: "Building and programming autonomous robots, exploring hardware, control systems, and what it means to give machines physical agency."
++description: "Building and programming autonomous robots to learn how hardware and control systems work."
+ date: "2026-03"
+ status: "published"
+ category: "Engineering"
+ order: 11
+ ---
+ 
+-I started getting into robotics in early 2026, and it's been one of the most humbling things I've worked on. Software is forgiving: you can iterate quickly, errors are reversible, and the feedback loop is fast. Hardware is the opposite. A robot doesn't care about your logic if the motors can't execute it.
++I started getting into robotics in early 2026, and it's been one of the most humbling things I've worked on.
+ 
+-The early focus has been on fundamentals: understanding control systems, sensors, and what it actually takes to make a machine navigate an environment reliably. I wrote about starting out in my March 2026 newsletter. The short version is that robotics combines everything I find interesting: AI decision-making, physical systems, and real-world constraints that force you to think differently than you do when writing pure software.
++Software is forgiving. You can iterate fast, errors are reversible, and feedback is quick. Hardware is the opposite. A robot doesn't care about your logic if the motors can't carry it out.
+ 
+-The longer-term goal is to understand embodied AI: systems that don't just process data but interact with the physical world. The gap between a language model and a robot that can reliably complete a task in a messy environment is enormous, and I want to understand why.
++## Where I'm at
+ 
++My early focus is on fundamentals: control systems, sensors, and what it takes to make a machine move through an environment reliably. I wrote about starting out in my March 2026 newsletter.
++
++Robotics combines what I find most interesting: AI decision-making, physical systems, and real-world limits that make you think differently than pure software does.
++
++## Where I'm going
++
++The long-term goal is to understand embodied AI: systems that don't just process data but act in the physical world. A language model and a robot that reliably finishes a task in a messy environment are very far apart. I want to understand why.
++
+ This is early-stage work. More to come.
+ 
+ ---
+@@ -20,6 +28,6 @@
+ **Outcome:** Began building and programming autonomous robots, focusing on control systems, sensors, and the fundamentals of making machines navigate physical environments reliably.
+ 
+ **What I took from it:**
+-- Hardware is humbling in a way software isn't. Errors aren't reversible, the feedback loop is slow, and the machine doesn't care how elegant your logic is if the motors can't execute it.
+-- The gap between an AI making a decision and a robot carrying it out in the real world is much larger than it looks from the outside. That gap is where the interesting work is.
+-- Physical constraints force a different mode of thinking. In software you can abstract almost anything. In robotics, the physics always win.
++- Hardware is humbling in a way software isn't. Errors can't be undone, feedback is slow, and the machine doesn't care how elegant your logic is.
++- The gap between an AI deciding and a robot doing is much bigger than it looks. That gap is where the interesting work is.
++- Physical limits force a different kind of thinking. In software you can abstract almost anything. In robotics, physics wins.
+--- a/content/projects/school-livestream.mdx
++++ b/content/projects/school-livestream.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Livestreamed School Assembly"
+ date: "2026"
+-description: "My school started livestreaming its announcements this year, and I'm in charge of making sure the assembly runs smoothly."
++description: "My school started livestreaming its announcements, and I make sure the assembly runs smoothly."
+ thumbnail: ""
+ status: "published"
+ category: "Film"
+@@ -11,14 +11,20 @@
+     url: "https://arnav01.substack.com/p/september-and-october"
+ ---
+ 
+-This year my school began livestreaming its announcements, as a new way to let parents and students know what's happening each day. It sounds simple, but because it's live, the five minutes before we go on air are the most stressful.
++This year my school began livestreaming its announcements, so parents and students know what's happening each day. It sounds simple, but because it's live, the five minutes before we go on air are the most stressful.
+ 
+-I'm in charge of making sure the assembly runs smoothly, and I love the role. I already love film and all the technology behind it, and this puts those things together. Since I'm only one person, I also had to learn to delegate. Organizing a group of people is hard, but I know it's a big skill to build if I want to do anything in business.
++## My role
+ 
++I'm in charge of making sure the assembly runs smoothly, and I love it. I already love film and the technology behind it, and this puts the two together.
++
++I'm only one person, so I had to learn to delegate. Organizing a group is hard, but I know it's a big skill to build if I want to do anything in business.
++
+ ![A black teleprompter on a table, with its glass held at an angle inside a fabric hood.](/projects/school-livestream-teleprompter.jpg)
+ 
+ *Setting up our teleprompter.*
+ 
+-It's new for both the school and me, so we've had some funny moments. Once we forgot to mute our mics while setting up, and everyone heard us panicking. Another time we cut to the outro, and a friend didn't realize the mics were still on and did a funny celebration.
++## The funny moments
+ 
++It's new for both the school and me. Once we forgot to mute our mics while setting up, and everyone heard us panicking. Another time we cut to the outro, and a friend didn't realize the mics were still on and did a funny celebration.
++
+ This is where it stood in my November 2026 newsletter. I hoped to get better at each assembly over the next six months.
+--- a/content/projects/screens-and-sleep-report.mdx
++++ b/content/projects/screens-and-sleep-report.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Pre-Sleep Screen Restriction and Adolescent Sleep"
+ date: "2026"
+-description: "8 months of work on whether cutting screens before bed actually helps you sleep. Turns out 30 minutes is enough. **A self-run study of 8 people across 85 nights.**"
++description: "8 months studying whether cutting screens before bed helps you sleep. 30 minutes is enough. **A self-run study of 8 people across 85 nights.**"
+ thumbnail: ""
+ link: ""
+ status: "published"
+@@ -14,15 +14,25 @@
+     url: "/reports/pre-sleep-screen-restriction.pdf"
+ ---
+ 
+-Everyone says no screens before bed, but nobody says for how long. So I ran my own study on it: 8 people, 85 nights, split into three groups (no restriction, 30 minutes screen-free, 60 minutes screen-free).
++Everyone says no screens before bed, but nobody says for how long. So I ran my own study: 8 people, 85 nights, split into three groups:
+ 
+-The actual data collection took about 20 days. The rest of the 8 months went into writing it up and doing the stats properly, since with only 8 people you can't just eyeball the results.
++- No restriction
++- 30 minutes screen-free
++- 60 minutes screen-free
+ 
+-30 minutes screen-free made people feel noticeably more rested. 60 minutes didn't do anything extra on top of that. Wake-ups overnight didn't really change either way, so it looks more like a wind-down effect than an actual change in sleep quality.
++## How it went
+ 
++Collecting the data took about 20 days. The rest of the 8 months went into writing it up and getting the stats right. With only 8 people, you can't just eyeball the results.
++
++## What I found
++
++- **30 minutes screen-free** made people feel noticeably more rested.
++- **60 minutes** didn't add anything on top of that.
++- **Wake-ups overnight** didn't really change either way. So it looks more like a wind-down effect than a real change in sleep quality.
++
+ **Outcome:** An 8-person, 85-night study finding that 30 minutes screen-free before bed improves how rested people feel, with no added benefit from a full hour.
+ 
+ **What I took from it:**
+-- The generic "no screens before bed" advice is basically right, but nobody tests the actual duration, which is where this got interesting.
+-- Chasing 8 people to log data every night for 20 days was harder than any of the analysis after.
+-- Small samples are messy. Most of the 8 months went into picking statistics that wouldn't lie to me about 8 people's worth of data.
++- "No screens before bed" is basically right, but nobody tests how long. That's where this got interesting.
++- Chasing 8 people to log data every night for 20 days was harder than any of the analysis.
++- Small samples are messy. Most of the 8 months went into picking statistics that wouldn't lie to me about 8 people's data.
+--- a/content/projects/short-film.mdx
++++ b/content/projects/short-film.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Short Film"
+ date: "2025"
+-description: "A short film about procrastination and how it quietly eats away at a life, written, shot, and edited entirely on an iPhone."
++description: "A short film about procrastination, written, shot, and edited entirely on an iPhone."
+ thumbnail: ""
+ status: "published"
+ category: "Film"
+@@ -11,10 +11,16 @@
+     url: "https://drive.google.com/file/d/1tWHug2Xgp0uyDe_SLaKmpO1kVADrnLBk/view?usp=sharing"
+ ---
+ 
+-The idea was to make procrastination visible: not one dramatic failure, but the quiet, repeated choice to put things off that reshapes a life without ever feeling like a single decision.
++The idea: make procrastination visible. Not one dramatic failure, but the quiet, repeated choice to put things off, which reshapes a life without ever feeling like one decision.
+ 
+-Shot entirely on an iPhone, with no crew or rented gear. That meant learning colour grading to hold a consistent mood across scenes shot at different times of day, building the sound design from scratch, and figuring out framing and lighting with whatever was actually on hand instead of a proper kit.
++## How it was made
+ 
++Shot entirely on an iPhone, with no crew or rented gear. That meant:
++
++- Learning colour grading to keep a consistent mood across scenes shot at different times of day
++- Building the sound design from scratch
++- Working out framing and lighting with whatever was on hand
++
+ **What I took from it:**
+-- Most "amateur" footage comes down to untouched audio or bad light, not gear, and both are fixable with attention instead of budget.
++- Most "amateur" footage comes down to untouched audio or bad light, not gear. Both are fixable with attention, not budget.
+ - Making a film about procrastination while fighting the urge to procrastinate on making it was its own lesson.
+--- a/content/projects/tailored.mdx
++++ b/content/projects/tailored.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "Tailored"
+-description: "A more refined take on peer-to-peer fashion rental, with a working app demo and a stronger business model than AnyWear."
++description: "A better take on peer-to-peer fashion rental, with a working app demo and a tighter business model."
+ date: "2026-02"
+ status: "published"
+ category: "Creative"
+@@ -14,10 +14,17 @@
+ 
+ AnyWear taught me a lot. Tailored is what happens when you take those lessons seriously.
+ 
+-The core concept is the same (peer-to-peer fashion rental, making designer clothing accessible without ownership), but Tailored approaches it differently. The business model is tighter, the unit economics are clearer, and unlike AnyWear there's a working app demo.
++## What's the same
+ 
+-After going through three pitch rounds at DragonzDen with AnyWear, I understood exactly where the holes were: trust between strangers, insurance for damaged items, the cold-start problem of building a two-sided marketplace from zero. Tailored was built with those objections already answered.
++The core concept: peer-to-peer fashion rental that makes designer clothing accessible without ownership.
+ 
+-The shift in framing matters too. AnyWear was positioned around sustainability and savings. Tailored is positioned around access: the idea that the clothes you wear to a once-in-a-while event don't need to be yours. The target user is someone who cares about looking great but doesn't want to pay retail for an outfit they'll wear once.
++## What's different
+ 
++- **A tighter business model** and clearer unit economics.
++- **A working app demo,** which AnyWear didn't have.
++- **Objections already answered.** After three pitch rounds at DragonzDen, I knew where the holes were: trust between strangers, insurance for damaged items, and the cold-start problem of building a two-sided marketplace from zero.
++- **A new framing.** AnyWear was about sustainability and savings. Tailored is about access: the clothes you wear to a once-in-a-while event don't need to be yours.
++
++The target user cares about looking great but doesn't want to pay retail for an outfit they'll wear once.
++
+ This project is ongoing.
+--- a/content/projects/thawless-poem.mdx
++++ b/content/projects/thawless-poem.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Thawless"
+ date: "2026"
+-description: "A poem I wrote for an English class project. **Selected by the Polar Expressions Writing Contest for its publication.**"
++description: "A poem I wrote for English class. **Selected by the Polar Expressions Writing Contest for publication.**"
+ thumbnail: ""
+ status: "published"
+ category: "Creative"
+--- a/content/projects/tiktok-challenge.mdx
++++ b/content/projects/tiktok-challenge.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "TikTok Creator Challenge"
+-description: "A TKS case study on improving the TikTok creator experience, built through creator outreach, user research, and a 20-day sprint."
++description: "A TKS case study on improving TikTok for creators, built on outreach and research over 20 days."
+ date: "2024-03"
+ status: "published"
+ category: "Pitch Deck"
+@@ -10,21 +10,37 @@
+     url: "https://docs.google.com/presentation/d/1nf5lxxhyyXiCQQ3vbUZ9rVoCgfCjtui6T-heJuKTXYw/edit?usp=sharing"
+ ---
+ 
+-This was a 20-day TKS challenge. My team was Ryan Kadiri, Sara Mohanty, and Jonathan Ye. We split the work early: Ryan and I handled outreach while Sara and Jonathan did research. The first half was outreach and discovery; the second half was synthesis and deck-building.
++A 20-day TKS challenge. My team was Ryan Kadiri, Sara Mohanty, and Jonathan Ye. Ryan and I handled outreach. Sara and Jonathan did research.
+ 
+-Outreach turned out to be the hard part. I was traveling for over a week of our research window, which left me with only three days to get enough creator responses. I reached out to as many creators as I could, and yes, I even messaged Mark Rober on the off chance he replied. He did not.
++## How it ran
+ 
+-Despite the time zone complications, I stayed in the loop through the meetings I could make it to. The project kept moving.
++- **First half:** outreach and discovery.
++- **Second half:** synthesis and building the deck.
+ 
+-For validation, we deliberately sought two perspectives: creators and consumers. The creator side gave us insight into what the platform makes easy versus frustrating. The consumer side told us what viewers actually want. Holding both at once was what made our recommendations useful rather than one-sided.
++## Outreach was the hard part
+ 
+-The final week was building the deck. We were stressed on the last day but pulled it together. Looking back, the most valuable thing I took from this challenge was learning to gather enough, not everything. Limited time forces you to work with what you have, and that constraint often produces cleaner thinking than unlimited access to information.
++I was traveling for over a week of our research window. That left me three days to get enough creator responses. I messaged as many creators as I could, including Mark Rober, just in case. He did not reply.
+ 
++I stayed in the loop through the meetings I could make, and the project kept moving.
++
++## Two perspectives
++
++We deliberately looked at both creators and consumers.
++
++- **Creators** showed us what the platform makes easy and what frustrates them.
++- **Consumers** told us what viewers actually want.
++
++Holding both at once made our recommendations useful instead of one-sided.
++
++## The last week
++
++We built the deck. The last day was stressful, but we pulled it together. The biggest lesson: gather enough, not everything. Limited time forces you to work with what you have, and that often gives cleaner thinking than unlimited information.
++
+ ---
+ 
+ **Outcome:** Completed a 20-day sprint researching the TikTok creator experience through outreach, user interviews, and dual-perspective analysis, delivered as a full pitch deck.
+ 
+ **What I took from it:**
+-- Gather enough, not everything. Unlimited research time often produces worse thinking than a hard deadline. Constraints force you to synthesize instead of accumulate.
+-- Researching from two sides, creators and consumers, is what made our recommendations actually useful. One perspective alone gives you half the picture, and usually the half that confirms what you already thought.
+-- Staying in the loop while travelling is a skill. I missed meetings and still kept the project moving. Momentum matters more than presence.
++- Gather enough, not everything. A hard deadline forces you to synthesize instead of pile up.
++- Research from two sides. Creators and consumers together made our recommendations useful. One side alone gives you half the picture, usually the half that agrees with you.
++- Staying in the loop while travelling is a skill. I missed meetings and still kept things moving. Momentum matters more than presence.
+--- a/content/projects/tiny-hearts.mdx
++++ b/content/projects/tiny-hearts.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Tiny Hearts"
+ date: "2025"
+-description: "A DECA campaign to raise awareness about pediatric cancer, and to fundraise and support those who need it."
++description: "A DECA campaign raising awareness and funds for pediatric cancer."
+ thumbnail: ""
+ status: "published"
+ category: "Creative"
+@@ -11,10 +11,12 @@
+     url: "https://arnav01.substack.com/p/leadership-october-and-november-newsletter"
+ ---
+ 
+-Through DECA, my team and I took the initiative to join a campaign to raise awareness about pediatric cancer. Cancer is the second leading cause of death in Canada, and the respect I have for the people who go through it is hard to put into words. It is worse when it happens to someone young, and a lot of people don't know how many kids suffer from it.
++Through DECA, my team and I joined a campaign to raise awareness about pediatric cancer.
+ 
+-One of the ways my group and I spread the word was a booth at a school open house. We talked with a lot of parents, and it was lovely to see how much they cared.
++Cancer is the second leading cause of death in Canada. I have a lot of respect for the people who go through it, and it's worse when it happens to someone young. Many people don't know how many kids suffer from it.
+ 
++One way we spread the word was a booth at a school open house. We talked with a lot of parents, and it was lovely to see how much they cared.
++
+ ![Three people standing at a Tiny Hearts booth. Two hold Tiny Hearts brochures, and the person in the middle holds a yellow flyer reading "Tiny Hearts for Pediatric Cancer: Join Us in Spreading Love, Hope and Strength".](/projects/tiny-hearts-booth.jpg)
+ 
+ *Our booth at the school open house.*
+--- a/content/projects/tok-presentation.mdx
++++ b/content/projects/tok-presentation.mdx
+@@ -1,6 +1,6 @@
+ ---
+ title: "TOK: Why We Seek Knowledge"
+-description: "A Theory of Knowledge presentation exploring the philosophical motivations behind human curiosity and the pursuit of understanding."
++description: "A Theory of Knowledge presentation on why humans are curious and seek understanding."
+ date: "2026-04"
+ status: "published"
+ category: "Pitch Deck"
+@@ -10,10 +10,18 @@
+     url: "https://docs.google.com/presentation/d/1ftku9i48Ww5WLYBWHwGT4DsTCfuMun2woJOkXla2f5g/edit?usp=sharing"
+ ---
+ 
+-Theory of Knowledge combines epistemology and self-reflection. It asks what we know and why we bother knowing it in the first place.
++Theory of Knowledge combines epistemology and self-reflection. It asks what we know and why we bother knowing it at all.
+ 
+-This presentation explored the question of why humans seek knowledge at all. The obvious answer is utility: we learn things because knowing them helps us survive, build, and succeed. But that doesn't explain why people read books they'll never apply, research questions with no practical stakes, or feel real satisfaction from understanding something abstract.
++## The question
+ 
+-The more interesting answer involves curiosity as a drive in itself. Knowledge-seeking isn't purely instrumental. There's something about the act of understanding, of making sense of a thing that was previously opaque, that people pursue independent of outcome. The question is whether that drive is intrinsic to human cognition or culturally produced.
++Why do humans seek knowledge?
+ 
+-The presentation argues that both are true, and that the tension between them is where most of the interesting intellectual work happens.
++The obvious answer is utility: knowing things helps us survive, build, and succeed. But that doesn't explain why people read books they'll never use, research questions with no practical stakes, or feel real satisfaction from understanding something abstract.
++
++## The other answer
++
++Curiosity is a drive in itself. There's something about making sense of a thing that was unclear that people pursue whatever the outcome. The question is whether that drive is built into human thinking or produced by culture.
++
++## The argument
++
++Both are true. The tension between them is where most of the interesting intellectual work happens.
+--- a/content/projects/triathlon-training.mdx
++++ b/content/projects/triathlon-training.mdx
+@@ -1,7 +1,7 @@
+ ---
+ title: "Triathlon Training"
+ date: "2026"
+-description: "Training for my first triathlon: swimming, biking, and running through one training block."
++description: "Training for my first triathlon: swimming, biking, and running."
+ thumbnail: ""
+ link: ""
+ status: "upcoming"

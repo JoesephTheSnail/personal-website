@@ -1,0 +1,258 @@
+--- a/src/components/StarButton.tsx
++++ b/src/components/StarButton.tsx
+@@ -51,12 +51,13 @@
+ 
+ function ButtonArt({ variant, label }: { variant: StarVariant; label: React.ReactNode }) {
+   switch (variant) {
+-    // Pre-Sleep Screen Restriction: a bed seen from the side; on hover the sleeper starts to snore.
++    // Pre-Sleep Screen Restriction: a brass bed seen from the side; on hover the sleeper starts to snore.
+     case 'sleep':
+       return (
+         <>
+           <Deco className="sx-headboard" />
+           <Deco className="sx-footboard" />
++          <Deco className="sx-rail" />
+           <Deco className="sx-leg sx-leg--a" />
+           <Deco className="sx-leg sx-leg--b" />
+           <Face label={label} />
+@@ -67,7 +68,7 @@
+           <i className="sx sx-z sx-z3" aria-hidden="true">z</i>
+         </>
+       );
+-    // MindSet: a phone held sideways; the screen is the label, and breathing rings spread behind it.
++    // MindSet: a phone held sideways with a mood face on the screen (the app tracks mood); on hover the face brightens into a smile.
+     case 'mind':
+       return (
+         <>
+@@ -78,12 +79,18 @@
+           <Face
+             label={label}
+             fx={
+-              <span className="sx-screen-fx" aria-hidden="true">
+-                <i className="sx-ring sx-ring--1" />
+-                <i className="sx-ring sx-ring--2" />
+-                <i className="sx-ring sx-ring--3" />
+-                <i className="sx-gloss" />
+-              </span>
++              <>
++                <span className="sx-screen-fx" aria-hidden="true">
++                  <i className="sx-gloss" />
++                </span>
++                <span className="sx-mood" aria-hidden="true">
++                  <i className="sx-eye sx-eye--l" />
++                  <i className="sx-eye sx-eye--r" />
++                  <i className="sx-mouth" />
++                  <i className="sx-cheek sx-cheek--l" />
++                  <i className="sx-cheek sx-cheek--r" />
++                </span>
++              </>
+             }
+           />
+           <Deco className="sx-home-bar" />
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -703,8 +703,11 @@
+ 
+ /* ── Star project buttons (see StarButton.tsx) ──
+    Like the truck: the whole button is an object from the project's world and the
+-   label is printed on its main face. Palette only (petrol, bone, graphite) with a soft
+-   petrol glow. Nothing moves at rest; motion plays on hover (mouse only), focus and press,
++   label is printed on its main face. Each button has its own colours on purpose
++   (only one appears per page, so it can catch the eye), chosen to match its product:
++   navy and brass for sleep, sage and cream for wellness, clinical white and crimson for
++   the insulin pen, champagne gold for luxury rental, black ink and emerald for the
++   newsletter. Nothing moves at rest; motion plays on hover (mouse only), focus and press,
+    and is finite or slow, never frantic. Off under reduced motion. */
+ .star-cta {
+   --sc-hi: #8CC9E1; --sc-mid: #5BA3C2; --sc-lo: #4A91B1; --sc-edge: rgba(18, 74, 98, 0.34);
+@@ -722,25 +725,28 @@
+ }
+ .sx-label { position: relative; z-index: 3; }
+ 
+-/* ── Pre-Sleep: a bed ── */
+-.sc-sleep { margin-left: 16px; margin-right: 14px;
+-  --sc-hi: #8793FF; --sc-mid: #5864EB; --sc-lo: #4650CB; --sc-edge: rgba(22, 27, 105, 0.42); --sc-ink: #FFFFFF; --sc-glow: rgba(88, 100, 235, 0.42); }
+-.sc-sleep .sx-label { text-shadow: 0 1px 0 rgba(22, 27, 105, 0.45); }
+-.sc-sleep .sx-face { padding: 22px 26px 14px 24px; border-radius: 4px 6px 6px 4px; }
+-.sc-sleep .sx-face::before { content: ''; position: absolute; left: 0; right: 0; top: 9px; height: 8px; border-bottom: 1px solid rgba(18,74,98,.28);
+-  background: linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,.04)); }
+-.sc-sleep .sx-headboard { left: -12px; top: -22px; bottom: -8px; width: 14px; border-radius: 6px 6px 3px 3px;
+-  background: linear-gradient(90deg, var(--sc-dark2), var(--sc-dark)); box-shadow: inset 0 4px 0 var(--sc-mid), inset 0 0 0 1px rgba(255,255,255,.07); }
+-.sc-sleep .sx-footboard { right: -10px; top: 4px; bottom: -8px; width: 12px; border-radius: 5px 5px 3px 3px;
+-  background: linear-gradient(90deg, var(--sc-dark), var(--sc-dark2)); box-shadow: inset 0 3px 0 var(--sc-mid), inset 0 0 0 1px rgba(255,255,255,.07); }
+-.sc-sleep .sx-leg { bottom: -17px; width: 8px; height: 11px; background: linear-gradient(90deg, #39454A, var(--sc-dark)); border-radius: 0 0 3px 3px; }
+-.sc-sleep .sx-leg--a { left: -9px; } .sc-sleep .sx-leg--b { right: -8px; }
+-.sc-sleep .sx-sheet { z-index: 3; left: 0; right: 0; top: 0; height: 10px; border-radius: 4px 6px 0 0;
+-  background: linear-gradient(180deg, #fffdf7, var(--sc-bone2)); box-shadow: 0 1px 0 var(--sc-edge); }
+-.sc-sleep .sx-pillow { z-index: 4; left: 8px; top: -12px; width: 42px; height: 18px; border-radius: 11px 11px 6px 6px;
+-  background: linear-gradient(180deg, #fffdf7, var(--sc-bone2)); box-shadow: 0 2px 0 var(--sc-edge), inset 0 -2px 0 rgba(0,0,0,.07); transition: transform 0.9s ease-in-out; }
+-.sc-sleep .sx-z { z-index: 5; left: 40px; top: -18px; font-size: 15px; font-weight: 700; line-height: 1; color: var(--sc-bone); text-shadow: 0 1px 0 rgba(0,0,0,.35); opacity: 0; }
+-.sc-sleep .sx-z2 { left: 50px; font-size: 12px; } .sc-sleep .sx-z3 { left: 59px; font-size: 10px; }
++/* ── Pre-Sleep: a brass bed with navy bedding ── */
++.sc-sleep { margin: 28px 24px 34px 26px;
++  --sc-hi: #36549A; --sc-mid: #263F7B; --sc-lo: #1A2E5E; --sc-edge: rgba(5, 12, 38, 0.55); --sc-ink: #F6F1E6; --sc-glow: rgba(74, 112, 205, 0.4);
++  --b-hi: #EAD393; --b: #C2A055; --b-lo: #8F7132; }
++.sc-sleep .sx-label { text-shadow: 0 1px 0 rgba(5, 12, 38, 0.5); }
++.sc-sleep .sx-face { padding: 24px 28px 15px 26px; border-radius: 3px 4px 4px 3px; box-shadow: inset 0 2px 0 rgba(255,255,255,.16), inset 0 -4px 0 var(--sc-edge), 0 0 0 1px rgba(5,12,38,.5); }
++.sc-sleep .sx-face::before { content: ''; position: absolute; left: 0; right: 0; top: 11px; height: 8px; border-top: 1.5px solid var(--b);
++  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0)); }
++.sc-sleep .sx-sheet { z-index: 3; left: 0; right: 0; top: 0; height: 11px; border-radius: 3px 4px 0 0;
++  background: linear-gradient(180deg, #FFFCF4, #E8E1D2); box-shadow: 0 1px 0 rgba(5,12,38,.4); }
++.sc-sleep .sx-headboard, .sc-sleep .sx-footboard { border: 2.5px solid var(--b); border-bottom: 0; background: repeating-linear-gradient(90deg, var(--b) 0 2px, transparent 2px 5.2px);
++  box-shadow: inset 0 3px 0 var(--b-hi); }
++.sc-sleep .sx-headboard { left: -22px; top: -28px; bottom: -13px; width: 20px; border-radius: 10px 10px 0 0; }
++.sc-sleep .sx-footboard { right: -20px; top: 0; bottom: -13px; width: 18px; border-radius: 8px 8px 0 0; }
++.sc-sleep .sx-rail { z-index: 1; left: -22px; right: -20px; bottom: -13px; height: 7px; border-radius: 2px; background: linear-gradient(180deg, var(--b-hi), var(--b) 55%, var(--b-lo)); }
++.sc-sleep .sx-leg { bottom: -24px; width: 6px; height: 12px; background: linear-gradient(90deg, var(--b), var(--b-lo)); border-radius: 0 0 3px 3px; }
++.sc-sleep .sx-leg--a { left: -17px; } .sc-sleep .sx-leg--b { right: -15px; }
++.sc-sleep .sx-pillow { z-index: 4; left: 10px; top: -13px; width: 46px; height: 20px; border-radius: 12px 12px 7px 7px; transition: transform 0.9s ease-in-out;
++  background: linear-gradient(180deg, #FFFCF4, #E6DFCF); box-shadow: 0 2px 0 rgba(5,12,38,.45), inset 0 -2px 0 rgba(0,0,0,.07); }
++.sc-sleep .sx-pillow::after { content: ''; position: absolute; left: 10px; right: 10px; top: 9px; height: 1.5px; border-radius: 1px; background: rgba(110, 92, 55, 0.22); }
++.sc-sleep .sx-z { z-index: 5; left: 44px; top: -20px; font-size: 15px; font-weight: 700; line-height: 1; color: var(--sc-ink); text-shadow: 0 1px 0 rgba(0,0,0,.4); opacity: 0; }
++.sc-sleep .sx-z2 { left: 54px; font-size: 12px; } .sc-sleep .sx-z3 { left: 63px; font-size: 10px; }
+ .sc-sleep:focus-visible .sx-z, .sc-sleep:active .sx-z, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z { animation: sx-zfloat 3s ease-out infinite; }
+ @media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-z { animation: sx-zfloat 3s ease-out infinite; } }
+ .sc-sleep:focus-visible .sx-z2, .sc-sleep:active .sx-z2, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z2 { animation-delay: 1s; }
+@@ -751,88 +757,94 @@
+ @media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-pillow { transform: translateY(-1px) scale(1, 1.07); transform-origin: 50% 100%; } }
+ @keyframes sx-zfloat { 0% { opacity: 0; transform: translate(0, 0) scale(0.7); } 18% { opacity: 0.95; } 100% { opacity: 0; transform: translate(18px, -28px) scale(1.2); } }
+ 
+-/* ── MindSet: a phone held sideways ── */
++/* ── MindSet: a phone with a mood face on the screen ── */
+ .sc-mind { margin-left: 16px; margin-right: 10px;
+-  --sc-hi: #82EAD3; --sc-mid: #3FCBAB; --sc-lo: #2EAA8F; --sc-edge: rgba(6, 84, 66, 0.36); --sc-ink: #052A23; --sc-glow: rgba(63, 203, 171, 0.4); }
++  --sc-hi: #B9CFB0; --sc-mid: #8FAD86; --sc-lo: #749469; --sc-edge: rgba(28, 52, 26, 0.34); --sc-ink: #11201A; --sc-glow: rgba(170, 205, 160, 0.34); --sc-terra: #D9845F; --sc-forest: #1B2E22; }
+ .sc-mind .sx-bezel { z-index: 1; inset: -7px -8px -7px -14px; border-radius: 14px;
+-  background: linear-gradient(180deg, #4A585F, #2A3438); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.17), inset 0 2px 0 rgba(255,255,255,.12), 0 1px 0 rgba(255,255,255,.18); }
+-.sc-mind .sx-camera { z-index: 2; left: -9px; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #3c6a8c 0 35%, #0b0f10 42%); }
+-.sc-mind .sx-speaker { z-index: 2; left: -9px; top: 50%; margin-top: -9px; width: 3px; height: 18px; border-radius: 2px; background: #0b0f10; }
+-.sc-mind .sx-side-btn { z-index: 0; top: -10px; right: 34px; width: 22px; height: 4px; border-radius: 2px 2px 0 0; background: #3A464C; }
+-.sc-mind .sx-home-bar { z-index: 3; left: 50%; bottom: -5px; width: 44px; height: 2.5px; margin-left: -22px; border-radius: 2px; background: rgba(255,255,255,.42); }
+-.sc-mind .sx-face { padding: 15px 24px; border-radius: 7px; overflow: hidden; }
++  background: linear-gradient(180deg, #FBF7EC, #E4DCCA); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.75), 0 1px 0 rgba(0,0,0,.18); }
++.sc-mind .sx-camera { z-index: 2; left: -9px; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #4a5f52 0 35%, #1b2a21 42%); }
++.sc-mind .sx-speaker { z-index: 2; left: -9px; top: 50%; margin-top: -9px; width: 3px; height: 18px; border-radius: 2px; background: #2a3a30; }
++.sc-mind .sx-side-btn { z-index: 0; top: -10px; right: 34px; width: 22px; height: 4px; border-radius: 2px 2px 0 0; background: #CFC6B2; }
++.sc-mind .sx-home-bar { z-index: 3; left: 50%; bottom: -5px; width: 44px; height: 2.5px; margin-left: -22px; border-radius: 2px; background: rgba(27, 46, 34, .35); }
++.sc-mind .sx-face { padding: 15px 24px 15px 64px; border-radius: 7px; overflow: hidden; }
+ .sc-mind .sx-screen-fx { position: absolute; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; }
+-.sc-mind .sx-ring { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.6); opacity: 0; }
+ .sc-mind .sx-gloss { position: absolute; inset: 0; background: linear-gradient(112deg, rgba(255,255,255,.2) 0 24%, transparent 24.2%); }
+-.sc-mind:focus-visible .sx-ring--1, .sc-mind:active .sx-ring--1, .star-gallery:has(.star-force:checked) .sc-mind .sx-ring--1 { animation: sx-breathe 3.6s ease-out infinite; }
+-@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-ring--1 { animation: sx-breathe 3.6s ease-out infinite; } }
+-.sc-mind:focus-visible .sx-ring--2, .sc-mind:active .sx-ring--2, .star-gallery:has(.star-force:checked) .sc-mind .sx-ring--2 { animation: sx-breathe 3.6s ease-out 1.2s infinite; }
+-@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-ring--2 { animation: sx-breathe 3.6s ease-out 1.2s infinite; } }
+-.sc-mind:focus-visible .sx-ring--3, .sc-mind:active .sx-ring--3, .star-gallery:has(.star-force:checked) .sc-mind .sx-ring--3 { animation: sx-breathe 3.6s ease-out 2.4s infinite; }
+-@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-ring--3 { animation: sx-breathe 3.6s ease-out 2.4s infinite; } }
+-@keyframes sx-breathe { 0% { opacity: 0.7; transform: scale(0.35); } 100% { opacity: 0; transform: scale(3.4); } }
++.sc-mind .sx-mood { position: absolute; z-index: 1; left: 15px; top: 50%; width: 34px; height: 34px; margin-top: -17px; border-radius: 50%;
++  background: radial-gradient(circle at 35% 28%, #FFFDF6, #EFE7D6); box-shadow: 0 0 0 1.5px rgba(27,46,34,.2), 0 2px 0 rgba(27,46,34,.18); }
++.sc-mind .sx-eye { position: absolute; top: 12px; width: 4px; height: 5px; border-radius: 50%; background: var(--sc-forest); }
++.sc-mind .sx-eye--l { left: 10px; } .sc-mind .sx-eye--r { right: 10px; }
++.sc-mind .sx-mouth { position: absolute; left: 50%; top: 18px; width: 14px; height: 7px; margin-left: -7px; border-bottom: 2.5px solid var(--sc-forest); border-radius: 0 0 14px 14px;
++  transform: scaleY(-0.55); transition: transform 0.7s ease-in-out; }
++.sc-mind .sx-cheek { position: absolute; top: 20px; width: 6px; height: 4px; border-radius: 50%; background: var(--sc-terra); opacity: 0; transition: opacity 0.7s ease; }
++.sc-mind .sx-cheek--l { left: 3px; } .sc-mind .sx-cheek--r { right: 3px; }
++.sc-mind:focus-visible .sx-mouth, .sc-mind:active .sx-mouth, .star-gallery:has(.star-force:checked) .sc-mind .sx-mouth { transform: scaleY(1); }
++@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-mouth { transform: scaleY(1); } }
++.sc-mind:focus-visible .sx-cheek, .sc-mind:active .sx-cheek, .star-gallery:has(.star-force:checked) .sc-mind .sx-cheek { opacity: 0.85; }
++@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-cheek { opacity: 0.85; } }
+ 
+-/* ── InsuSense: an insulin pen ── */
++/* ── InsuSense: a clinical white pen with a crimson insulin window ── */
+ .sc-insu { margin-left: 56px; margin-right: 42px;
+-  --sc-hi: #FFA38D; --sc-mid: #F26A52; --sc-lo: #D9533C; --sc-edge: rgba(122, 26, 10, 0.38); --sc-ink: #2A0904; --sc-glow: rgba(242, 106, 82, 0.4); }
+-.sc-insu .sx-face { padding: 15px 22px; border-left: 7px solid var(--sc-dark2); border-right: 7px solid var(--sc-dark2); border-radius: 5px;
+-  background: linear-gradient(180deg, var(--sc-hi) 0%, var(--sc-mid) 50%, var(--sc-lo) 100%); }
+-.sc-insu .sx-face::before { content: ''; position: absolute; left: 4px; right: 4px; top: 4px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.34); }
+-.sc-insu .sx-face::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 5px;
+-  background: repeating-linear-gradient(90deg, rgba(14,28,34,.5) 0 1.5px, transparent 1.5px 9px); }
++  --sc-hi: #FFFFFF; --sc-mid: #F1F3F4; --sc-lo: #D3D9DC; --sc-edge: rgba(60, 72, 78, 0.28); --sc-ink: #181E21; --sc-glow: rgba(235, 242, 246, 0.2); --sc-red: #D8312F; }
++.sc-insu .sx-face { padding: 15px 22px 20px; border-left: 7px solid var(--sc-dark2); border-right: 7px solid var(--sc-dark2); border-radius: 5px;
++  box-shadow: inset 0 2px 0 rgba(255,255,255,.9), inset 0 -2px 0 var(--sc-edge); }
++.sc-insu .sx-face::before { content: ''; position: absolute; left: 4px; right: 4px; top: 4px; height: 1.5px; border-radius: 1px; background: rgba(60,72,78,.2); }
++.sc-insu .sx-face::after { content: ''; position: absolute; left: 5px; right: 5px; bottom: 4px; height: 7px; border-radius: 1px;
++  background: repeating-linear-gradient(90deg, rgba(0,0,0,.32) 0 1.5px, transparent 1.5px 9px), linear-gradient(180deg, #EC4A47, #B71F1D); }
+ .sc-insu .sx-plunger { position: absolute; z-index: 1; left: -52px; top: 50%; width: 55px; height: 0; transition: transform 0.7s ease-in-out; }
+ .sc-insu .sx-knob { position: absolute; left: 0; top: -19px; width: 18px; height: 38px; border-radius: 8px 3px 3px 8px;
+   background: repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 2px, transparent 2px 4px), linear-gradient(90deg, var(--sc-dark2), var(--sc-dark));
+-  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.09), inset -3px 0 0 var(--sc-mid); }
+-.sc-insu .sx-rod { position: absolute; left: 17px; top: -6px; width: 38px; height: 12px; background: linear-gradient(180deg, #87949A, #46535A); }
++  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.09), inset -3px 0 0 var(--sc-red); }
++.sc-insu .sx-rod { position: absolute; left: 17px; top: -6px; width: 38px; height: 12px; background: linear-gradient(180deg, #D9DFE2, #8A979C); }
+ .sc-insu .sx-hub { z-index: 1; right: -13px; top: 50%; margin-top: -12px; width: 14px; height: 24px; border-radius: 2px 6px 6px 2px;
+   background: linear-gradient(180deg, #3B474C, #192124); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+-.sc-insu .sx-needle { z-index: 0; right: -37px; top: 50%; margin-top: -1px; width: 25px; height: 2px; background: linear-gradient(90deg, #D6DEE1, #8E9CA1); }
++.sc-insu .sx-needle { z-index: 0; right: -37px; top: 50%; margin-top: -1px; width: 25px; height: 2px; background: linear-gradient(90deg, #E4EAED, #9AA7AC); }
+ .sc-insu .sx-drop { z-index: 0; right: -40px; top: 50%; margin-top: 2px; width: 7px; height: 10px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+-  background: radial-gradient(circle at 36% 30%, #fff 0 14%, var(--sc-hi) 42%, var(--sc-mid)); opacity: 0; }
++  background: radial-gradient(circle at 36% 30%, #fff 0 14%, #FF8E88 42%, var(--sc-red)); opacity: 0; }
+ .sc-insu:focus-visible .sx-plunger, .sc-insu:active .sx-plunger, .star-gallery:has(.star-force:checked) .sc-insu .sx-plunger { transform: translateX(14px); }
+ @media (hover: hover) and (pointer: fine) { .sc-insu:hover .sx-plunger { transform: translateX(14px); } }
+-.sc-insu:focus-visible .sx-drop, .sc-insu:active .sx-drop, .star-gallery:has(.star-force:checked) .sc-insu .sx-drop { animation: sx-drip 2.4s ease-in 0.55s infinite; }
+-@media (hover: hover) and (pointer: fine) { .sc-insu:hover .sx-drop { animation: sx-drip 2.4s ease-in 0.55s infinite; } }
++.sc-insu:focus-visible .sx-drop, .sc-insu:active .sx-drop, .star-gallery:has(.star-force:checked) .sc-insu .sx-drop { animation: sx-drip 2.4s ease-in 0.55s 2; }
++@media (hover: hover) and (pointer: fine) { .sc-insu:hover .sx-drop { animation: sx-drip 2.4s ease-in 0.55s 2; } }
+ @keyframes sx-drip { 0%, 35% { opacity: 0; transform: translateY(0) scale(0.4); } 50% { opacity: 1; transform: translateY(1px) scale(1); } 100% { opacity: 0; transform: translateY(26px) scale(1); } }
+ 
+-/* ── AnyWear: a garment price tag on a string ── */
++/* ── AnyWear: a champagne-gold garment tag on a string ── */
+ .sc-wear { margin-top: 40px; margin-left: 6px; margin-right: 6px;
+-  --sc-hi: #FF94BE; --sc-mid: #EE5C96; --sc-lo: #D4427B; --sc-edge: rgba(112, 10, 56, 0.38); --sc-ink: #2C0616; --sc-glow: rgba(238, 92, 150, 0.42); }
++  --sc-hi: #F2E1B0; --sc-mid: #DBBF7A; --sc-lo: #B8954A; --sc-edge: rgba(96, 68, 12, 0.42); --sc-ink: #241A0A; --sc-glow: rgba(222, 190, 112, 0.38); --sc-wine: #8A1F33; }
+ .sc-wear .sx-peg { position: absolute; left: 0; top: -36px; width: 40px; height: 30px; fill: var(--sc-bone); pointer-events: none; }
+ .sc-wear .sx-hang { position: relative; display: inline-flex; transform-origin: 16px -31px; }
+-.sc-wear .sx-string { position: absolute; z-index: 3; left: 0; top: -36px; width: 40px; height: 64px; overflow: visible; fill: none; stroke: var(--sc-bone); stroke-width: 1.5; stroke-linecap: round; opacity: 0.9; pointer-events: none; }
++.sc-wear .sx-string { position: absolute; z-index: 3; left: 0; top: -36px; width: 40px; height: 64px; overflow: visible; fill: none; stroke: var(--sc-bone); stroke-width: 1.5; stroke-linecap: round; opacity: 0.92; pointer-events: none; }
+ .sc-wear .sx-face { padding: 15px 50px 15px 38px; clip-path: polygon(17px 0, 100% 0, 100% 100%, 17px 100%, 0 50%); }
+-.sc-wear .sx-face::after { content: ''; position: absolute; inset: 4px 4px 4px 16px; border: 1.5px dashed rgba(14,28,34,.3); border-radius: 2px; pointer-events: none; }
++.sc-wear .sx-face::after { content: ''; position: absolute; inset: 4px 4px 4px 16px; border: 1.5px dashed rgba(36,26,10,.38); border-radius: 2px; pointer-events: none; }
+ .sc-wear .sx-eyelet { z-index: 4; left: 11px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
+-  background: radial-gradient(circle, #0c1519 0 30%, var(--sc-bone) 33%); box-shadow: 0 1px 0 var(--sc-edge); }
+-.sc-wear .sx-barcode { z-index: 4; right: 15px; top: 14px; bottom: 14px; width: 18px; background: repeating-linear-gradient(90deg, rgba(14,28,34,.55) 0 1.4px, transparent 1.4px 3.4px); }
++  background: radial-gradient(circle, #1a0d10 0 30%, var(--sc-wine) 33%); box-shadow: 0 1px 0 var(--sc-edge); }
++.sc-wear .sx-barcode { z-index: 4; right: 15px; top: 14px; bottom: 14px; width: 18px; background: repeating-linear-gradient(90deg, rgba(36,26,10,.62) 0 1.4px, transparent 1.4px 3.4px); }
++/* The shine is a gradient sliding inside the tag's own shape, so it can only ever appear on the tag. */
+ .sc-wear .sx-sheen { z-index: 5; inset: 0; clip-path: polygon(17px 0, 100% 0, 100% 100%, 17px 100%, 0 50%); opacity: 0;
+-  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.4) 50%, transparent 62%); transform: translateX(-110%); }
++  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.55) 50%, transparent 60%); background-size: 250% 100%; background-position: 100% 0; }
+ .sc-wear:focus-visible .sx-hang, .sc-wear:active .sx-hang, .star-gallery:has(.star-force:checked) .sc-wear .sx-hang { animation: sx-swing 2.6s ease-out 1; }
+ @media (hover: hover) and (pointer: fine) { .sc-wear:hover .sx-hang { animation: sx-swing 2.6s ease-out 1; } }
+-.sc-wear:focus-visible .sx-sheen, .sc-wear:active .sx-sheen, .star-gallery:has(.star-force:checked) .sc-wear .sx-sheen { animation: sx-sheen 1.1s ease-out 0.15s 1; }
+-@media (hover: hover) and (pointer: fine) { .sc-wear:hover .sx-sheen { animation: sx-sheen 1.1s ease-out 0.15s 1; } }
++.sc-wear:focus-visible .sx-sheen, .sc-wear:active .sx-sheen, .star-gallery:has(.star-force:checked) .sc-wear .sx-sheen { animation: sx-sheen 1s ease-in-out 0.2s 1; }
++@media (hover: hover) and (pointer: fine) { .sc-wear:hover .sx-sheen { animation: sx-sheen 1s ease-in-out 0.2s 1; } }
+ @keyframes sx-swing { 0% { transform: rotate(0); } 16% { transform: rotate(5.5deg); } 36% { transform: rotate(-4deg); } 56% { transform: rotate(2.4deg); } 76% { transform: rotate(-1.2deg); } 100% { transform: rotate(0); } }
+-@keyframes sx-sheen { 0% { opacity: 1; transform: translateX(-110%); } 100% { opacity: 1; transform: translateX(110%); } }
++@keyframes sx-sheen { 0% { opacity: 1; background-position: 100% 0; } 100% { opacity: 1; background-position: 0% 0; } }
+ 
+-/* ── Mindset Matters: a paper envelope ── */
++/* ── Mindset Matters: a black-ink envelope with an emerald lining ── */
+ .sc-mail { margin-top: 36px; margin-left: 4px; margin-right: 4px;
+-  --sc-hi: #FFC35C; --sc-mid: #F8A12B; --sc-lo: #E08515; --sc-edge: rgba(120, 66, 4, 0.38); --sc-ink: #2A1B07; --sc-glow: rgba(248, 161, 43, 0.4); }
++  --sc-hi: #3FA67F; --sc-mid: #2B8F6B; --sc-lo: #1D6E52; --sc-edge: rgba(0,0,0,.5); --sc-ink: #F4EEE1; --sc-glow: rgba(50, 165, 125, 0.34); }
++.sc-mail .sx-label { text-shadow: 0 1px 0 rgba(0,0,0,.6); }
+ .sc-mail .sx-face { padding: 26px 30px 15px 24px; border-radius: 4px;
+-  background: linear-gradient(180deg, #FBF8F0 0%, #EFE9DA 55%, #E4DDCB 100%);
+-  box-shadow: inset 0 2px 0 rgba(255,255,255,.85), inset 0 -3px 0 rgba(110,92,55,.2); }
++  background: linear-gradient(180deg, #2E2E32 0%, #1C1C1F 55%, #111113 100%);
++  box-shadow: inset 0 2px 0 rgba(255,255,255,.16), inset 0 -3px 0 rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.1); }
+ .sc-mail .sx-flap, .sc-mail .sx-flap-open { left: 0; right: 0; width: 100%; height: 17px; overflow: visible; }
+-.sc-mail .sx-flap polygon { fill: var(--sc-mid); stroke: rgba(10,35,50,.32); stroke-width: 1; vector-effect: non-scaling-stroke; }
++.sc-mail .sx-flap polygon { fill: #262629; stroke: rgba(244,238,225,.3); stroke-width: 1; vector-effect: non-scaling-stroke; }
+ .sc-mail .sx-flap { z-index: 3; top: 0; transition: opacity 0.18s ease; }
+ .sc-mail .sx-flap-open { z-index: 0; top: -17px; opacity: 0; transition: opacity 0.2s ease 0.1s; }
+-.sc-mail .sx-flap-open polygon { fill: var(--sc-lo); stroke: rgba(10,35,50,.3); stroke-width: 1; vector-effect: non-scaling-stroke; }
++.sc-mail .sx-flap-open polygon { fill: var(--sc-mid); stroke: rgba(0,0,0,.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
+ .sc-mail .sx-letter { z-index: 1; left: 14px; right: 14px; top: 8px; height: 38px; border-radius: 3px 3px 0 0; transform-origin: 50% 100%;
+-  background: linear-gradient(180deg, #FFFFFF, #F1ECDF); box-shadow: 0 0 0 1px rgba(110,92,55,.18); transition: transform 0.6s var(--ease-out) 0.08s; }
++  background: linear-gradient(180deg, #FBF7EC, #EDE6D6); box-shadow: 0 0 0 1px rgba(0,0,0,.25); transition: transform 0.6s var(--ease-out) 0.08s; }
+ .sc-mail .sx-letter::before { content: ''; position: absolute; left: 11px; right: 11px; top: 8px; height: 9px;
+-  background: repeating-linear-gradient(180deg, rgba(224,133,21,.75) 0 2px, transparent 2px 5px); }
++  background: repeating-linear-gradient(180deg, rgba(43,143,107,.8) 0 2px, transparent 2px 5px); }
+ .sc-mail .sx-stamp { z-index: 4; right: 13px; top: 6px; width: 15px; height: 19px; background: linear-gradient(180deg, var(--sc-hi), var(--sc-lo));
+-  border: 2px dashed rgba(255,255,255,.95); box-shadow: 0 0 0 1px rgba(110,92,55,.25), 0 1px 0 1px rgba(110,92,55,.2); }
++  border: 2px dashed rgba(244,238,225,.95); box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 1px 0 1px rgba(0,0,0,.35); }
+ .sc-mail:focus-visible .sx-flap, .sc-mail:active .sx-flap, .star-gallery:has(.star-force:checked) .sc-mail .sx-flap { opacity: 0; }
+ @media (hover: hover) and (pointer: fine) { .sc-mail:hover .sx-flap { opacity: 0; } }
+ .sc-mail:focus-visible .sx-flap-open, .sc-mail:active .sx-flap-open, .star-gallery:has(.star-force:checked) .sc-mail .sx-flap-open { opacity: 1; }

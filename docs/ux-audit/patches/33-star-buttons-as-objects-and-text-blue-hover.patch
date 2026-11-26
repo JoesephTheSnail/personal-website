@@ -1,0 +1,480 @@
+--- a/src/components/StarButton.tsx
++++ b/src/components/StarButton.tsx
+@@ -3,12 +3,13 @@
+ export type StarVariant = 'sleep' | 'mind' | 'insu' | 'wear' | 'mail';
+ 
+ /**
+- * The "view project" button for the star projects: a labelled petrol body with
+- * a small themed object beside it, in the spirit of the truck on the carbon
+- * capture page but in the site palette. The label is the only thing a screen
+- * reader gets; the art is decoration (aria-hidden). Motion lives in CSS
+- * (`.star-cta` in globals.css), plays on hover, focus and press only, and is
+- * off under reduced motion.
++ * The "view project" button for the star projects. Like the truck on the carbon
++ * capture page, the whole button is an object from the project's world and the
++ * label is printed on its main face: a bed (Pre-Sleep), a phone (MindSet), an
++ * insulin pen (InsuSense), a price tag (AnyWear), an envelope (Mindset Matters).
++ * Everything except the label is decoration (aria-hidden), so to a screen reader
++ * it is one plain link. Motion lives in CSS (`.star-cta` in globals.css), plays
++ * on hover, focus and press only, and is off under reduced motion.
+  */
+ export default function StarButton({
+   href,
+@@ -21,83 +22,120 @@
+   children: React.ReactNode;
+   external?: boolean;
+ }) {
+-  const inner = (
+-    <>
+-      <span className="star-cta__body">
+-        {children} <span className="star-cta__arrow" aria-hidden="true">{external ? '↗' : '→'}</span>
+-      </span>
+-      <span className="star-cta__art" aria-hidden="true">
+-        <Art variant={variant} />
+-      </span>
+-    </>
+-  );
++  const body = <ButtonArt variant={variant} label={children} />;
++  const className = `star-cta sc-${variant}`;
+   if (external || href.startsWith('#')) {
+     return (
+-      <a
+-        href={href}
+-        className="star-cta"
+-        data-variant={variant}
+-        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+-      >
+-        {inner}
++      <a href={href} className={className} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
++        {body}
+       </a>
+     );
+   }
+   return (
+-    <Link href={href} className="star-cta" data-variant={variant}>
+-      {inner}
++    <Link href={href} className={className}>
++      {body}
+     </Link>
+   );
+ }
+ 
+-function Art({ variant }: { variant: StarVariant }) {
++const Deco = ({ className }: { className: string }) => <i className={`sx ${className}`} aria-hidden="true" />;
++
++// The object's main face, with the label printed on it. `fx` is decoration that sits on the
++// face but behind the label (the phone's breathing rings).
++const Face = ({ label, fx }: { label: React.ReactNode; fx?: React.ReactNode }) => (
++  <span className="sx-face">
++    {fx}
++    <span className="sx-label">{label}</span>
++  </span>
++);
++
++function ButtonArt({ variant, label }: { variant: StarVariant; label: React.ReactNode }) {
+   switch (variant) {
++    // Pre-Sleep Screen Restriction: a bed seen from the side; on hover the sleeper starts to snore.
+     case 'sleep':
+       return (
+-        <svg viewBox="0 0 76 56">
+-          <rect className="sc-line" x="14" y="8" width="22" height="40" rx="3" />
+-          <rect className="sc-petrol sc-screen" x="17" y="12" width="16" height="30" rx="1.5" />
+-          <g className="sc-moon">
+-            <path className="sc-bone" d="M58 14a11 11 0 1 0 6 20 9 9 0 0 1-6-20z" />
+-          </g>
+-          <circle className="sc-bone sc-star" cx="50" cy="12" r="1.3" />
+-          <circle className="sc-bone sc-star" cx="66" cy="22" r="1.1" />
+-          <circle className="sc-bone sc-star" cx="64" cy="40" r="1.2" />
+-        </svg>
++        <>
++          <Deco className="sx-headboard" />
++          <Deco className="sx-footboard" />
++          <Deco className="sx-leg sx-leg--a" />
++          <Deco className="sx-leg sx-leg--b" />
++          <Face label={label} />
++          <Deco className="sx-sheet" />
++          <Deco className="sx-pillow" />
++          <i className="sx sx-z sx-z1" aria-hidden="true">z</i>
++          <i className="sx sx-z sx-z2" aria-hidden="true">z</i>
++          <i className="sx sx-z sx-z3" aria-hidden="true">z</i>
++        </>
+       );
++    // MindSet: a phone held sideways; the screen is the label, and breathing rings spread behind it.
+     case 'mind':
+       return (
+-        <svg viewBox="0 0 76 56">
+-          <rect className="sc-line" x="26" y="6" width="24" height="44" rx="4" />
+-          <circle className="sc-petrol sc-circle" cx="38" cy="28" r="9" />
+-          <line className="sc-line" x1="34" y1="44" x2="42" y2="44" />
+-        </svg>
++        <>
++          <Deco className="sx-bezel" />
++          <Deco className="sx-camera" />
++          <Deco className="sx-speaker" />
++          <Deco className="sx-side-btn" />
++          <Face
++            label={label}
++            fx={
++              <span className="sx-screen-fx" aria-hidden="true">
++                <i className="sx-ring sx-ring--1" />
++                <i className="sx-ring sx-ring--2" />
++                <i className="sx-ring sx-ring--3" />
++                <i className="sx-gloss" />
++              </span>
++            }
++          />
++          <Deco className="sx-home-bar" />
++        </>
+       );
++    // InsuSense: an insulin pen; the label is on the barrel, hover pushes the plunger and a drop forms.
+     case 'insu':
+       return (
+-        <svg viewBox="0 0 76 56">
+-          <polyline className="sc-line sc-trace" points="6,34 18,34 24,34 28,18 34,44 40,26 46,34 58,34 66,34" />
+-          <path className="sc-petrol sc-drop" d="M66 36c3 4 4 6 4 8a4 4 0 0 1-8 0c0-2 1-4 4-8z" />
+-        </svg>
++        <>
++          <span className="sx-plunger" aria-hidden="true">
++            <i className="sx-knob" />
++            <i className="sx-rod" />
++          </span>
++          <Face label={label} />
++          <Deco className="sx-hub" />
++          <Deco className="sx-needle" />
++          <Deco className="sx-drop" />
++        </>
+       );
++    // AnyWear: a garment price tag on a string looped through its eyelet; on hover it swings once and settles.
+     case 'wear':
+       return (
+-        <svg viewBox="0 0 76 56">
+-          <line className="sc-line" x1="8" y1="8" x2="68" y2="8" />
+-          <g className="sc-hanger">
+-            <path className="sc-line" d="M38 8v4a4 4 0 1 0-4 4" />
+-            <path className="sc-line" d="M38 18 14 38h48z" />
+-          </g>
+-        </svg>
++        <>
++          <svg className="sx-peg" viewBox="0 0 40 30" aria-hidden="true">
++            <circle cx="16" cy="5" r="4.2" />
++          </svg>
++          <span className="sx-hang">
++            <svg className="sx-string" viewBox="0 0 40 64" aria-hidden="true">
++              <path d="M16 5 C 9 22, 9 42, 16 60" />
++              <path d="M16 5 C 23 22, 23 42, 16 60" />
++            </svg>
++            <Face label={label} />
++            <Deco className="sx-eyelet" />
++            <Deco className="sx-barcode" />
++            <Deco className="sx-sheen" />
++          </span>
++        </>
+       );
++    // Mindset Matters: a paper envelope; on hover the flap lifts and the letter slides up.
+     case 'mail':
+       return (
+-        <svg viewBox="0 0 76 56">
+-          <rect className="sc-bone sc-letter" x="24" y="14" width="28" height="24" rx="1.5" />
+-          <rect className="sc-line sc-envelope" x="16" y="22" width="44" height="26" rx="2" />
+-          <polyline className="sc-line sc-flap-closed" points="16,22 38,38 60,22" />
+-          <polyline className="sc-line sc-flap-open" points="16,22 38,10 60,22" />
+-        </svg>
++        <>
++          <svg className="sx sx-flap-open" viewBox="0 0 100 17" preserveAspectRatio="none" aria-hidden="true">
++            <polygon points="0,17 100,17 50,0" />
++          </svg>
++          <Deco className="sx-letter" />
++          <Face label={label} />
++          <svg className="sx sx-flap" viewBox="0 0 100 17" preserveAspectRatio="none" aria-hidden="true">
++            <polygon points="0,0 100,0 50,17" />
++          </svg>
++          <Deco className="sx-stamp" />
++        </>
+       );
+   }
+ }
+--- a/src/app/dev-preview/star-buttons/page.tsx
++++ b/src/app/dev-preview/star-buttons/page.tsx
+@@ -9,44 +9,44 @@
+ const ITEMS: { title: string; why: string; label: string; variant: StarVariant; href: string; external?: boolean; how: string }[] = [
+   {
+     title: 'Pre-Sleep Screen Restriction',
+-    why: 'The finding is "30 minutes without a screen". The lit phone goes dark and a moon rises.',
++    why: 'A bed, with the label on the duvet. The research is about sleep, so on hover the sleeper starts to snore.',
+     label: 'Read the report',
+     variant: 'sleep',
+     href: '/projects/screens-and-sleep-report',
+-    how: 'Screen dims, moon rises, stars twinkle',
++    how: 'Pillow settles, z\'s float up',
+   },
+   {
+     title: 'MindSet',
+-    why: 'The app has breathing exercises, so a circle inside a phone breathes slowly in and out.',
++    why: 'A phone held sideways, with the label as the screen. The app has breathing exercises, so rings spread slowly behind the text.',
+     label: 'View the prototype',
+     variant: 'mind',
+     href: '/projects/mindset-app',
+-    how: 'The circle breathes (4s in and out)',
++    how: 'Rings expand like a slow breath',
+   },
+   {
+     title: 'InsuSense',
+-    why: 'It reads glucose and doses insulin: a glucose trace draws itself and one drop falls.',
++    why: 'An insulin pen, with the label on the barrel. On hover the plunger pushes in and a drop forms at the needle.',
+     label: 'See the prototype',
+     variant: 'insu',
+     href: '/projects/insusense',
+-    how: 'Trace draws, drop falls (2.4s loop)',
++    how: 'Plunger pushes, a drop falls',
+   },
+   {
+     title: 'AnyWear',
+-    why: 'Clothing rental: a hanger swings gently, like a garment about to be taken off the rail.',
++    why: 'A garment price tag on a string, with the label as the tag. On hover it swings once and settles, with a light sheen across it.',
+     label: 'See the pitch',
+     variant: 'wear',
+     href: '/projects/anywear',
+-    how: 'Hanger swings side to side',
++    how: 'One swing, then still',
+   },
+   {
+     title: 'Mindset Matters',
+-    why: 'A monthly newsletter: an envelope opens and the letter slides up.',
++    why: 'A paper envelope, with the label on its front. On hover the flap lifts and the letter slides up.',
+     label: 'Read the newsletter',
+     variant: 'mail',
+     href: LINKS.substack,
+     external: true,
+-    how: 'Flap opens, letter slides up',
++    how: 'Flap opens, letter slides out',
+   },
+ ];
+ 
+@@ -58,8 +58,8 @@
+         Star project buttons
+       </h1>
+       <p className="mt-4 max-w-xl text-[1.0625rem] leading-relaxed" style={{ color: 'var(--fg-60)' }}>
+-        One small themed object per star project, in the spirit of the truck. Hover or tab to a button, or tick the box to
+-        show every hover state at once. The truck at the bottom is the existing one for reference.
++        Like the truck, each star project's button is an object from that project's world with the label printed on it. Hover or
++        tab to a button, or tick the box to show every hover state at once. The truck at the bottom is the existing one.
+       </p>
+ 
+       <label className="mt-8 inline-flex cursor-pointer items-center gap-3 text-[0.9375rem]" style={{ color: 'var(--fg)' }}>
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -582,12 +582,12 @@
+ .proud-card:focus-visible .proud-link { color: var(--accent) !important; }
+ html.reduce-motion .proud-link { transition: none; }
+ /* Feedback for the underlined actions ("Get in touch", the email in the dialog):
+-   the underline bar grows from 2px to 4px and nothing else changes. Filters use
+-   .proud-link only to mark the active one, so they are left out. Hover is for a
+-   real mouse; keyboard focus gets the same cue. */
+-.proud-link:not(.ledger-filter):focus-visible { background-size: 100% 4px; }
++   the text turns petrol and nothing else changes. Filters use .proud-link only to
++   mark the active one, so they are left out. Hover is for a real mouse; keyboard
++   focus gets the same cue. */
++.proud-link:not(.ledger-filter):focus-visible { color: var(--accent) !important; }
+ @media (hover: hover) and (pointer: fine) {
+-  .proud-link:not(.ledger-filter):hover { background-size: 100% 4px; }
++  .proud-link:not(.ledger-filter):hover { color: var(--accent) !important; }
+ }
+ 
+ /* ── Entrance: one gentle rise, staggered by --d ──
+@@ -702,66 +702,139 @@
+ html.reduce-motion .menu-toggle { transform: none !important; }
+ 
+ /* ── Star project buttons (see StarButton.tsx) ──
+-   A labelled petrol body plus a graphite tile holding one small themed object.
+-   Nothing moves at rest. Motion plays on hover (mouse only), keyboard focus and
+-   press, and is off under reduced motion. */
+-.star-cta { display: inline-flex; align-items: stretch; height: 56px; color: #121211; text-decoration: none; outline-offset: 4px; }
+-.star-cta__body { display: flex; align-items: center; gap: 0; padding: 0 22px; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; background: var(--accent); border-radius: 6px 0 0 6px; transition: background-color 0.2s ease; }
+-.star-cta__arrow { margin-left: 8px; }
+-.star-cta__art { width: 76px; background: var(--sidebar-bg); border: 1px solid var(--border-med); border-left: 0; border-radius: 0 6px 6px 0; overflow: hidden; display: block; }
+-.star-cta__art svg { width: 100%; height: 100%; display: block; overflow: visible; }
+-.star-cta .sc-line { fill: none; stroke: var(--fg); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+-.star-cta .sc-bone { fill: var(--fg); }
+-.star-cta .sc-petrol { fill: var(--accent); }
+-.star-cta .sc-envelope { fill: var(--sidebar-bg); }
+-.star-cta:focus-visible .star-cta__body { background: #74B6D3; }
+-@media (hover: hover) and (pointer: fine) { .star-cta:hover .star-cta__body { background: #74B6D3; } }
+-
+-/* Pre-Sleep: the lit phone goes dark, a moon rises, stars twinkle */
+-.star-cta[data-variant='sleep'] .sc-screen { transition: opacity 0.5s ease; }
+-.star-cta[data-variant='sleep'] .sc-moon { transform: translateY(-34px); transition: transform 0.6s var(--ease-out); }
+-.star-cta[data-variant='sleep'] .sc-star { opacity: 0; transition: opacity 0.4s ease 0.3s; }
+-.star-cta[data-variant='sleep']:focus-visible .sc-screen, .star-cta[data-variant='sleep']:active .sc-screen, .star-gallery:has(.star-force:checked) .star-cta[data-variant='sleep'] .sc-screen { opacity: 0.12; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='sleep']:hover .sc-screen { opacity: 0.12; } }
+-.star-cta[data-variant='sleep']:focus-visible .sc-moon, .star-cta[data-variant='sleep']:active .sc-moon, .star-gallery:has(.star-force:checked) .star-cta[data-variant='sleep'] .sc-moon { transform: translateY(0); }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='sleep']:hover .sc-moon { transform: translateY(0); } }
+-.star-cta[data-variant='sleep']:focus-visible .sc-star, .star-cta[data-variant='sleep']:active .sc-star, .star-gallery:has(.star-force:checked) .star-cta[data-variant='sleep'] .sc-star { opacity: 1; animation: sc-twinkle 1.6s ease-in-out infinite; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='sleep']:hover .sc-star { opacity: 1; animation: sc-twinkle 1.6s ease-in-out infinite; } }
+-@keyframes sc-twinkle { 50% { opacity: 0.35; } }
+-
+-/* MindSet: a circle in a phone breathes slowly in and out */
+-.star-cta[data-variant='mind'] .sc-circle { transform-origin: 38px 28px; transform: scale(0.55); }
+-.star-cta[data-variant='mind']:focus-visible .sc-circle, .star-cta[data-variant='mind']:active .sc-circle, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mind'] .sc-circle { animation: sc-breathe 4s ease-in-out infinite; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mind']:hover .sc-circle { animation: sc-breathe 4s ease-in-out infinite; } }
+-@keyframes sc-breathe { 0%, 100% { transform: scale(0.55); } 50% { transform: scale(1.05); } }
++   Like the truck: the whole button is an object from the project's world and the
++   label is printed on its main face. Palette only (petrol, bone, graphite) with a soft
++   petrol glow. Nothing moves at rest; motion plays on hover (mouse only), focus and press,
++   and is finite or slow, never frantic. Off under reduced motion. */
++.star-cta {
++  --sc-hi: #8CC9E1; --sc-mid: #5BA3C2; --sc-lo: #4A91B1; --sc-edge: rgba(18, 74, 98, 0.34);
++  --sc-ink: #0E1C22; --sc-dark: #1E2629; --sc-dark2: #2B3539; --sc-bone: #F4EFE3; --sc-bone2: #E3DCCB;
++  position: relative; display: inline-flex; align-items: center; margin: 26px 0 28px; text-decoration: none;
++  color: var(--sc-ink); font-size: 15px; font-weight: 700; letter-spacing: 0.005em; white-space: nowrap;
++  filter: drop-shadow(0 8px 22px rgba(91, 163, 194, 0.3));
++  transition: filter 0.35s ease; -webkit-tap-highlight-color: transparent; outline-offset: 8px;
++}
++.star-cta .sx { position: absolute; display: block; pointer-events: none; }
++.sx-face {
++  position: relative; z-index: 2; display: inline-flex; align-items: center;
++  background: linear-gradient(180deg, var(--sc-hi) 0%, var(--sc-mid) 52%, var(--sc-lo) 100%);
++  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.42), inset 0 -3px 0 var(--sc-edge);
++}
++.sx-label { position: relative; z-index: 3; }
+ 
+-/* InsuSense: a glucose trace draws itself, then a drop falls */
+-.star-cta[data-variant='insu'] .sc-trace { stroke-dasharray: 120; stroke-dashoffset: 120; }
+-.star-cta[data-variant='insu'] .sc-drop { opacity: 0; }
+-.star-cta[data-variant='insu']:focus-visible .sc-trace, .star-cta[data-variant='insu']:active .sc-trace, .star-gallery:has(.star-force:checked) .star-cta[data-variant='insu'] .sc-trace { animation: sc-draw 2.4s ease-in-out infinite; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='insu']:hover .sc-trace { animation: sc-draw 2.4s ease-in-out infinite; } }
+-.star-cta[data-variant='insu']:focus-visible .sc-drop, .star-cta[data-variant='insu']:active .sc-drop, .star-gallery:has(.star-force:checked) .star-cta[data-variant='insu'] .sc-drop { animation: sc-drip 2.4s ease-in infinite; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='insu']:hover .sc-drop { animation: sc-drip 2.4s ease-in infinite; } }
+-@keyframes sc-draw { 0% { stroke-dashoffset: 120; } 55%, 100% { stroke-dashoffset: 0; } }
+-@keyframes sc-drip { 0%, 55% { opacity: 0; transform: translateY(-4px); } 65% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
++/* ── Pre-Sleep: a bed ── */
++.sc-sleep { margin-left: 16px; margin-right: 14px; }
++.sc-sleep .sx-face { padding: 22px 26px 14px 24px; border-radius: 4px 6px 6px 4px; }
++.sc-sleep .sx-face::before { content: ''; position: absolute; left: 0; right: 0; top: 9px; height: 8px; border-bottom: 1px solid rgba(18,74,98,.28);
++  background: linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,.04)); }
++.sc-sleep .sx-headboard { left: -12px; top: -22px; bottom: -8px; width: 14px; border-radius: 6px 6px 3px 3px;
++  background: linear-gradient(90deg, var(--sc-dark2), var(--sc-dark)); box-shadow: inset 0 4px 0 var(--sc-mid), inset 0 0 0 1px rgba(255,255,255,.07); }
++.sc-sleep .sx-footboard { right: -10px; top: 4px; bottom: -8px; width: 12px; border-radius: 5px 5px 3px 3px;
++  background: linear-gradient(90deg, var(--sc-dark), var(--sc-dark2)); box-shadow: inset 0 3px 0 var(--sc-mid), inset 0 0 0 1px rgba(255,255,255,.07); }
++.sc-sleep .sx-leg { bottom: -17px; width: 8px; height: 11px; background: linear-gradient(90deg, #39454A, var(--sc-dark)); border-radius: 0 0 3px 3px; }
++.sc-sleep .sx-leg--a { left: -9px; } .sc-sleep .sx-leg--b { right: -8px; }
++.sc-sleep .sx-sheet { z-index: 3; left: 0; right: 0; top: 0; height: 10px; border-radius: 4px 6px 0 0;
++  background: linear-gradient(180deg, #fffdf7, var(--sc-bone2)); box-shadow: 0 1px 0 var(--sc-edge); }
++.sc-sleep .sx-pillow { z-index: 4; left: 8px; top: -12px; width: 42px; height: 18px; border-radius: 11px 11px 6px 6px;
++  background: linear-gradient(180deg, #fffdf7, var(--sc-bone2)); box-shadow: 0 2px 0 var(--sc-edge), inset 0 -2px 0 rgba(0,0,0,.07); transition: transform 0.9s ease-in-out; }
++.sc-sleep .sx-z { z-index: 5; left: 40px; top: -18px; font-size: 15px; font-weight: 700; line-height: 1; color: var(--sc-bone); text-shadow: 0 1px 0 rgba(0,0,0,.35); opacity: 0; }
++.sc-sleep .sx-z2 { left: 50px; font-size: 12px; } .sc-sleep .sx-z3 { left: 59px; font-size: 10px; }
++.sc-sleep:focus-visible .sx-z, .sc-sleep:active .sx-z, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z { animation: sx-zfloat 3s ease-out infinite; }
++@media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-z { animation: sx-zfloat 3s ease-out infinite; } }
++.sc-sleep:focus-visible .sx-z2, .sc-sleep:active .sx-z2, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z2 { animation-delay: 1s; }
++@media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-z2 { animation-delay: 1s; } }
++.sc-sleep:focus-visible .sx-z3, .sc-sleep:active .sx-z3, .star-gallery:has(.star-force:checked) .sc-sleep .sx-z3 { animation-delay: 2s; }
++@media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-z3 { animation-delay: 2s; } }
++.sc-sleep:focus-visible .sx-pillow, .sc-sleep:active .sx-pillow, .star-gallery:has(.star-force:checked) .sc-sleep .sx-pillow { transform: translateY(-1px) scale(1, 1.07); transform-origin: 50% 100%; }
++@media (hover: hover) and (pointer: fine) { .sc-sleep:hover .sx-pillow { transform: translateY(-1px) scale(1, 1.07); transform-origin: 50% 100%; } }
++@keyframes sx-zfloat { 0% { opacity: 0; transform: translate(0, 0) scale(0.7); } 18% { opacity: 0.95; } 100% { opacity: 0; transform: translate(18px, -28px) scale(1.2); } }
++
++/* ── MindSet: a phone held sideways ── */
++.sc-mind { margin-left: 16px; margin-right: 10px; }
++.sc-mind .sx-bezel { z-index: 1; inset: -7px -8px -7px -14px; border-radius: 14px;
++  background: linear-gradient(180deg, #4A585F, #2A3438); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.17), inset 0 2px 0 rgba(255,255,255,.12), 0 1px 0 rgba(255,255,255,.18); }
++.sc-mind .sx-camera { z-index: 2; left: -9px; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle, #3c6a8c 0 35%, #0b0f10 42%); }
++.sc-mind .sx-speaker { z-index: 2; left: -9px; top: 50%; margin-top: -9px; width: 3px; height: 18px; border-radius: 2px; background: #0b0f10; }
++.sc-mind .sx-side-btn { z-index: 0; top: -10px; right: 34px; width: 22px; height: 4px; border-radius: 2px 2px 0 0; background: #3A464C; }
++.sc-mind .sx-home-bar { z-index: 3; left: 50%; bottom: -5px; width: 44px; height: 2.5px; margin-left: -22px; border-radius: 2px; background: rgba(255,255,255,.42); }
++.sc-mind .sx-face { padding: 15px 24px; border-radius: 7px; overflow: hidden; }
++.sc-mind .sx-screen-fx { position: absolute; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; }
++.sc-mind .sx-ring { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.6); opacity: 0; }
++.sc-mind .sx-gloss { position: absolute; inset: 0; background: linear-gradient(112deg, rgba(255,255,255,.2) 0 24%, transparent 24.2%); }
++.sc-mind:focus-visible .sx-ring--1, .sc-mind:active .sx-ring--1, .star-gallery:has(.star-force:checked) .sc-mind .sx-ring--1 { animation: sx-breathe 3.6s ease-out infinite; }
++@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-ring--1 { animation: sx-breathe 3.6s ease-out infinite; } }
++.sc-mind:focus-visible .sx-ring--2, .sc-mind:active .sx-ring--2, .star-gallery:has(.star-force:checked) .sc-mind .sx-ring--2 { animation: sx-breathe 3.6s ease-out 1.2s infinite; }
++@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-ring--2 { animation: sx-breathe 3.6s ease-out 1.2s infinite; } }
++.sc-mind:focus-visible .sx-ring--3, .sc-mind:active .sx-ring--3, .star-gallery:has(.star-force:checked) .sc-mind .sx-ring--3 { animation: sx-breathe 3.6s ease-out 2.4s infinite; }
++@media (hover: hover) and (pointer: fine) { .sc-mind:hover .sx-ring--3 { animation: sx-breathe 3.6s ease-out 2.4s infinite; } }
++@keyframes sx-breathe { 0% { opacity: 0.7; transform: scale(0.35); } 100% { opacity: 0; transform: scale(3.4); } }
+ 
+-/* AnyWear: a hanger swings */
+-.star-cta[data-variant='wear'] .sc-hanger { transform-origin: 38px 8px; }
+-.star-cta[data-variant='wear']:focus-visible .sc-hanger, .star-cta[data-variant='wear']:active .sc-hanger, .star-gallery:has(.star-force:checked) .star-cta[data-variant='wear'] .sc-hanger { animation: sc-swing 1.4s ease-in-out infinite alternate; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='wear']:hover .sc-hanger { animation: sc-swing 1.4s ease-in-out infinite alternate; } }
+-@keyframes sc-swing { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
++/* ── InsuSense: an insulin pen ── */
++.sc-insu { margin-left: 56px; margin-right: 42px; }
++.sc-insu .sx-face { padding: 15px 22px; border-left: 7px solid var(--sc-dark2); border-right: 7px solid var(--sc-dark2); border-radius: 5px;
++  background: linear-gradient(180deg, #A2D6EA 0%, var(--sc-mid) 50%, var(--sc-lo) 100%); }
++.sc-insu .sx-face::before { content: ''; position: absolute; left: 4px; right: 4px; top: 4px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.34); }
++.sc-insu .sx-face::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 5px;
++  background: repeating-linear-gradient(90deg, rgba(14,28,34,.5) 0 1.5px, transparent 1.5px 9px); }
++.sc-insu .sx-plunger { position: absolute; z-index: 1; left: -52px; top: 50%; width: 55px; height: 0; transition: transform 0.7s ease-in-out; }
++.sc-insu .sx-knob { position: absolute; left: 0; top: -19px; width: 18px; height: 38px; border-radius: 8px 3px 3px 8px;
++  background: repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 2px, transparent 2px 4px), linear-gradient(90deg, var(--sc-dark2), var(--sc-dark));
++  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.09), inset -3px 0 0 var(--sc-mid); }
++.sc-insu .sx-rod { position: absolute; left: 17px; top: -6px; width: 38px; height: 12px; background: linear-gradient(180deg, #87949A, #46535A); }
++.sc-insu .sx-hub { z-index: 1; right: -13px; top: 50%; margin-top: -12px; width: 14px; height: 24px; border-radius: 2px 6px 6px 2px;
++  background: linear-gradient(180deg, #3B474C, #192124); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
++.sc-insu .sx-needle { z-index: 0; right: -37px; top: 50%; margin-top: -1px; width: 25px; height: 2px; background: linear-gradient(90deg, #D6DEE1, #8E9CA1); }
++.sc-insu .sx-drop { z-index: 0; right: -40px; top: 50%; margin-top: 2px; width: 7px; height: 10px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
++  background: radial-gradient(circle at 36% 30%, #fff 0 14%, var(--sc-hi) 42%, var(--sc-mid)); opacity: 0; }
++.sc-insu:focus-visible .sx-plunger, .sc-insu:active .sx-plunger, .star-gallery:has(.star-force:checked) .sc-insu .sx-plunger { transform: translateX(14px); }
++@media (hover: hover) and (pointer: fine) { .sc-insu:hover .sx-plunger { transform: translateX(14px); } }
++.sc-insu:focus-visible .sx-drop, .sc-insu:active .sx-drop, .star-gallery:has(.star-force:checked) .sc-insu .sx-drop { animation: sx-drip 2.4s ease-in 0.55s infinite; }
++@media (hover: hover) and (pointer: fine) { .sc-insu:hover .sx-drop { animation: sx-drip 2.4s ease-in 0.55s infinite; } }
++@keyframes sx-drip { 0%, 35% { opacity: 0; transform: translateY(0) scale(0.4); } 50% { opacity: 1; transform: translateY(1px) scale(1); } 100% { opacity: 0; transform: translateY(26px) scale(1); } }
+ 
+-/* Mindset Matters: the envelope opens and the letter slides up */
+-.star-cta[data-variant='mail'] .sc-flap-open { opacity: 0; }
+-.star-cta[data-variant='mail'] .sc-letter { transform: translateY(6px); transition: transform 0.5s var(--ease-out); }
+-.star-cta[data-variant='mail']:focus-visible .sc-flap-closed, .star-cta[data-variant='mail']:active .sc-flap-closed, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mail'] .sc-flap-closed { opacity: 0; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mail']:hover .sc-flap-closed { opacity: 0; } }
+-.star-cta[data-variant='mail']:focus-visible .sc-flap-open, .star-cta[data-variant='mail']:active .sc-flap-open, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mail'] .sc-flap-open { opacity: 1; }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mail']:hover .sc-flap-open { opacity: 1; } }
+-.star-cta[data-variant='mail']:focus-visible .sc-letter, .star-cta[data-variant='mail']:active .sc-letter, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mail'] .sc-letter { transform: translateY(-8px); }
+-@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mail']:hover .sc-letter { transform: translateY(-8px); } }
++/* ── AnyWear: a garment price tag on a string ── */
++.sc-wear { margin-top: 40px; margin-left: 6px; margin-right: 6px; }
++.sc-wear .sx-peg { position: absolute; left: 0; top: -36px; width: 40px; height: 30px; fill: var(--sc-bone); pointer-events: none; }
++.sc-wear .sx-hang { position: relative; display: inline-flex; transform-origin: 16px -31px; }
++.sc-wear .sx-string { position: absolute; z-index: 3; left: 0; top: -36px; width: 40px; height: 64px; overflow: visible; fill: none; stroke: var(--sc-bone); stroke-width: 1.5; stroke-linecap: round; opacity: 0.9; pointer-events: none; }
++.sc-wear .sx-face { padding: 15px 50px 15px 38px; clip-path: polygon(17px 0, 100% 0, 100% 100%, 17px 100%, 0 50%); }
++.sc-wear .sx-face::after { content: ''; position: absolute; inset: 4px 4px 4px 16px; border: 1.5px dashed rgba(14,28,34,.3); border-radius: 2px; pointer-events: none; }
++.sc-wear .sx-eyelet { z-index: 4; left: 11px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
++  background: radial-gradient(circle, #0c1519 0 30%, var(--sc-bone) 33%); box-shadow: 0 1px 0 var(--sc-edge); }
++.sc-wear .sx-barcode { z-index: 4; right: 15px; top: 14px; bottom: 14px; width: 18px; background: repeating-linear-gradient(90deg, rgba(14,28,34,.55) 0 1.4px, transparent 1.4px 3.4px); }
++.sc-wear .sx-sheen { z-index: 5; inset: 0; clip-path: polygon(17px 0, 100% 0, 100% 100%, 17px 100%, 0 50%); opacity: 0;
++  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.4) 50%, transparent 62%); transform: translateX(-110%); }
++.sc-wear:focus-visible .sx-hang, .sc-wear:active .sx-hang, .star-gallery:has(.star-force:checked) .sc-wear .sx-hang { animation: sx-swing 2.6s ease-out 1; }
++@media (hover: hover) and (pointer: fine) { .sc-wear:hover .sx-hang { animation: sx-swing 2.6s ease-out 1; } }
++.sc-wear:focus-visible .sx-sheen, .sc-wear:active .sx-sheen, .star-gallery:has(.star-force:checked) .sc-wear .sx-sheen { animation: sx-sheen 1.1s ease-out 0.15s 1; }
++@media (hover: hover) and (pointer: fine) { .sc-wear:hover .sx-sheen { animation: sx-sheen 1.1s ease-out 0.15s 1; } }
++@keyframes sx-swing { 0% { transform: rotate(0); } 16% { transform: rotate(5.5deg); } 36% { transform: rotate(-4deg); } 56% { transform: rotate(2.4deg); } 76% { transform: rotate(-1.2deg); } 100% { transform: rotate(0); } }
++@keyframes sx-sheen { 0% { opacity: 1; transform: translateX(-110%); } 100% { opacity: 1; transform: translateX(110%); } }
+ 
++/* ── Mindset Matters: a paper envelope ── */
++.sc-mail { margin-top: 36px; margin-left: 4px; margin-right: 4px; }
++.sc-mail .sx-face { padding: 26px 30px 15px 24px; border-radius: 4px;
++  background: linear-gradient(180deg, #FBF8F0 0%, #EFE9DA 55%, #E4DDCB 100%);
++  box-shadow: inset 0 2px 0 rgba(255,255,255,.85), inset 0 -3px 0 rgba(110,92,55,.2); }
++.sc-mail .sx-flap, .sc-mail .sx-flap-open { left: 0; right: 0; width: 100%; height: 17px; overflow: visible; }
++.sc-mail .sx-flap polygon { fill: #6FB4D2; stroke: rgba(10,35,50,.32); stroke-width: 1; vector-effect: non-scaling-stroke; }
++.sc-mail .sx-flap { z-index: 3; top: 0; transition: opacity 0.18s ease; }
++.sc-mail .sx-flap-open { z-index: 0; top: -17px; opacity: 0; transition: opacity 0.2s ease 0.1s; }
++.sc-mail .sx-flap-open polygon { fill: #3F86A6; stroke: rgba(10,35,50,.3); stroke-width: 1; vector-effect: non-scaling-stroke; }
++.sc-mail .sx-letter { z-index: 1; left: 14px; right: 14px; top: 8px; height: 38px; border-radius: 3px 3px 0 0; transform-origin: 50% 100%;
++  background: linear-gradient(180deg, #FFFFFF, #F1ECDF); box-shadow: 0 0 0 1px rgba(110,92,55,.18); transition: transform 0.6s var(--ease-out) 0.08s; }
++.sc-mail .sx-letter::before { content: ''; position: absolute; left: 11px; right: 11px; top: 8px; height: 9px;
++  background: repeating-linear-gradient(180deg, rgba(74,145,177,.7) 0 2px, transparent 2px 5px); }
++.sc-mail .sx-stamp { z-index: 4; right: 13px; top: 6px; width: 15px; height: 19px; background: linear-gradient(180deg, var(--sc-hi), var(--sc-lo));
++  border: 2px dashed rgba(255,255,255,.95); box-shadow: 0 0 0 1px rgba(110,92,55,.25), 0 1px 0 1px rgba(110,92,55,.2); }
++.sc-mail:focus-visible .sx-flap, .sc-mail:active .sx-flap, .star-gallery:has(.star-force:checked) .sc-mail .sx-flap { opacity: 0; }
++@media (hover: hover) and (pointer: fine) { .sc-mail:hover .sx-flap { opacity: 0; } }
++.sc-mail:focus-visible .sx-flap-open, .sc-mail:active .sx-flap-open, .star-gallery:has(.star-force:checked) .sc-mail .sx-flap-open { opacity: 1; }
++@media (hover: hover) and (pointer: fine) { .sc-mail:hover .sx-flap-open { opacity: 1; } }
++.sc-mail:focus-visible .sx-letter, .sc-mail:active .sx-letter, .star-gallery:has(.star-force:checked) .sc-mail .sx-letter { transform: translateY(-19px) rotate(-1.5deg); }
++@media (hover: hover) and (pointer: fine) { .sc-mail:hover .sx-letter { transform: translateY(-19px) rotate(-1.5deg); } }
++
+ @media (prefers-reduced-motion: reduce) {
+-  .star-cta, .star-cta * { animation: none !important; transition: none !important; }
++  .star-cta, .star-cta *, .star-cta *::before, .star-cta *::after { animation: none !important; transition: none !important; }
+ }
+-html.reduce-motion .star-cta, html.reduce-motion .star-cta * { animation: none !important; transition: none !important; }
++html.reduce-motion .star-cta, html.reduce-motion .star-cta *, html.reduce-motion .star-cta *::before, html.reduce-motion .star-cta *::after { animation: none !important; transition: none !important; }

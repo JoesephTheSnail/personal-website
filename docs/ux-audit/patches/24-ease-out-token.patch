@@ -1,0 +1,160 @@
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -31,13 +31,20 @@
+      is the neutral ramp above. */
+   --accent:        #5BA3C2;
+ 
++  /* ── Motion ──
++     The site's one ease-out curve (strong, fast start, soft landing), used for
++     everything that enters, exits or settles. Hover colour changes keep plain
++     `ease`. Durations in use: 140ms feedback, 200ms hover, 260ms open,
++     500ms page entrance. */
++  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
++
+   /* ── Project card surface: flat, no gradient ── */
+ }
+ 
+ html { scroll-behavior: smooth; }
+ 
+ /* ── Navigation and section rails: plain text links that nudge on hover ── */
+-.rail-link { transition: color 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
++.rail-link { transition: color 0.2s ease, transform 0.25s var(--ease-out); }
+ .rail-link:focus-visible { color: var(--accent) !important; transform: translateX(3px); }
+ /* Hover motion is for a real mouse only: a tap fires :hover on touch and would
+    leave the link nudged until the next tap elsewhere. Focus stays ungated. */
+@@ -64,7 +71,7 @@
+   /* Parked above the viewport with a transform (compositor only) rather than
+      by animating `top`. */
+   transform: translateY(-76px);
+-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
++  transition: transform 0.18s var(--ease-out);
+ }
+ .skip-link:focus {
+   transform: none;
+@@ -118,7 +125,7 @@
+ .cover-track::-webkit-scrollbar { display: none; height: 0; }
+ /* Covers lift a few pixels and take a petrol outline on hover; the anchor's
+    group state drives it so the whole cover is the hit area. */
+-.cover-item { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease; }
++.cover-item { transition: transform 0.25s var(--ease-out), box-shadow 0.2s ease; }
+ .group:focus-visible .cover-item { transform: translateY(-5px); box-shadow: 0 0 0 1px var(--accent); }
+ @media (hover: hover) and (pointer: fine) {
+   .group:hover .cover-item { transform: translateY(-5px); box-shadow: 0 0 0 1px var(--accent); }
+@@ -393,7 +400,7 @@
+   margin: 12px 0 22px;
+   text-decoration: none;
+   filter: drop-shadow(0 8px 22px rgba(255, 178, 0, 0.3));
+-  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
++  transition: transform 0.35s var(--ease-out), filter 0.35s ease;
+   -webkit-tap-highlight-color: transparent;
+ }
+ .truck-cta__rig {
+@@ -582,7 +589,7 @@
+ .rise {
+   opacity: 0;
+   transform: translateY(8px);
+-  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
++  animation: rise 0.5s var(--ease-out) forwards;
+   animation-delay: calc(var(--d, 0ms) * 0.5);
+ }
+ @keyframes rise { to { opacity: 1; transform: none; } }
+@@ -595,7 +602,7 @@
+ html.reduce-motion .ledger-filter { transition: none; }
+ 
+ /* ── Home: index rows with dotted leaders ── */
+-.index-row .index-label { transition: color 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); display: inline-block; }
++.index-row .index-label { transition: color 0.2s ease, transform 0.25s var(--ease-out); display: inline-block; }
+ .index-row:focus-visible .index-label { color: var(--accent); transform: translateX(4px); }
+ @media (hover: hover) and (pointer: fine) {
+   .index-row:hover .index-label { color: var(--accent); transform: translateX(4px); }
+@@ -678,7 +685,7 @@
+   from { opacity: 0; transform: translateY(6px); }
+   to   { opacity: 1; transform: none; }
+ }
+-.list-swap { animation: swap-in 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
++.list-swap { animation: swap-in 0.18s var(--ease-out); }
+ @media (prefers-reduced-motion: reduce) {
+   .list-swap { animation-name: fade-in !important; }
+   .menu-toggle { transform: none !important; }
+--- a/src/components/ContactModal.tsx
++++ b/src/components/ContactModal.tsx
+@@ -175,7 +175,7 @@
+         backdropFilter: 'blur(6px)',
+         WebkitBackdropFilter: 'blur(6px)',
+         opacity: visible ? 1 : 0,
+-        transition: 'opacity 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
++        transition: 'opacity 0.22s var(--ease-out)',
+       }}
+       onClick={handleClose}
+     >
+@@ -190,7 +190,7 @@
+           border: '1px solid var(--border-med)',
+           opacity: visible ? 1 : 0,
+           transform: visible ? 'translateY(0)' : 'translateY(14px)',
+-          transition: 'opacity 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
++          transition: 'opacity 0.25s ease, transform 0.3s var(--ease-out)',
+         }}
+         onClick={(e) => e.stopPropagation()}
+       >
+--- a/src/components/MobileNav.tsx
++++ b/src/components/MobileNav.tsx
+@@ -72,8 +72,8 @@
+   // Close uses ease-out like open: an ease-in exit starts slowly, which is the
+   // exact moment the visitor is watching. Items arrive on a 25ms stagger.
+   const animStyle = open
+-    ? { animation: 'sheet-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards' }
+-    : { animation: 'sheet-out 0.16s cubic-bezier(0.22, 1, 0.36, 1) forwards' };
++    ? { animation: 'sheet-in 0.26s var(--ease-out) forwards' }
++    : { animation: 'sheet-out 0.16s var(--ease-out) forwards' };
+ 
+   // A flat sheet that drops from under the bar: same plain type as the
+   // desktop sidebar, no card, no icons.
+@@ -115,7 +115,7 @@
+                   color:     active ? 'var(--accent)' : 'var(--fg)',
+                   // items start transparent and fade in; during close they stay visible (panel handles exit)
+                   opacity:   open ? 0 : 1,
+-                  animation: open ? `item-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards ${40 + i * 25}ms` : 'none',
++                  animation: open ? `item-in 0.22s var(--ease-out) forwards ${40 + i * 25}ms` : 'none',
+                 }}
+               >
+                 <span className="w-6 text-[11px] tabular-nums" style={{ color: active ? 'var(--accent)' : 'var(--fg-45)' }}>
+@@ -137,7 +137,7 @@
+           style={{
+             color:     'var(--fg)',
+             opacity:   open ? 0 : 1,
+-            animation: open ? `item-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards ${40 + NAV_ITEMS.length * 25}ms` : 'none',
++            animation: open ? `item-in 0.22s var(--ease-out) forwards ${40 + NAV_ITEMS.length * 25}ms` : 'none',
+           }}
+         >
+           Get in touch <span aria-hidden="true">→</span>
+@@ -153,7 +153,7 @@
+         style={{
+           borderColor: 'var(--border-med)',
+           opacity:   open ? 0 : 1,
+-          animation: open ? `item-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards ${40 + (NAV_ITEMS.length + 1) * 25}ms` : 'none',
++          animation: open ? `item-in 0.22s var(--ease-out) forwards ${40 + (NAV_ITEMS.length + 1) * 25}ms` : 'none',
+         }}
+       >
+         <p className="text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>
+--- a/src/components/ProfilePhoto.tsx
++++ b/src/components/ProfilePhoto.tsx
+@@ -29,7 +29,7 @@
+   const handleLeave = () => {
+     const el = photoRef.current;
+     if (!el) return;
+-    el.style.transition = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
++    el.style.transition = 'transform 0.5s var(--ease-out)';
+     el.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg)';
+   };
+ 
+--- a/src/components/ProjectLedger.tsx
++++ b/src/components/ProjectLedger.tsx
+@@ -253,7 +253,7 @@
+             style={{
+               transform: `translate(-50%, -50%) scale(${previewSlug ? 1 : 0.97})`,
+               opacity: previewSlug ? 1 : 0,
+-              transition: 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
++              transition: 'opacity 0.3s ease, transform 0.3s var(--ease-out)',
+             }}
+           >
+             <div className="relative aspect-[4/5] overflow-hidden" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-med)', boxShadow: '0 24px 64px -16px rgba(0,0,0,0.7)' }}>

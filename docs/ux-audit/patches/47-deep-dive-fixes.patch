@@ -1,0 +1,191 @@
+--- a/src/components/ProfilePhoto.tsx
++++ b/src/components/ProfilePhoto.tsx
+@@ -3,7 +3,8 @@
+ import { useRef } from 'react';
+ import Image from 'next/image';
+ 
+-// Square, sharp-cornered portrait with a flat accent block offset behind it.
++// Square, sharp-cornered portrait with a flat accent block offset behind it (close and slightly
++// faded so it supports the photo instead of competing with it).
+ // The block is the only graphic on the page header — one shape, one colour —
+ // and it reads as a plinth the portrait stands on.
+ export default function ProfilePhoto() {
+@@ -42,8 +43,8 @@
+     >
+       <span
+         aria-hidden="true"
+-        className="absolute inset-0 translate-x-3 translate-y-3 sm:translate-x-4 sm:translate-y-4"
+-        style={{ background: 'var(--accent)' }}
++        className="absolute inset-0 translate-x-2 translate-y-2 sm:translate-x-2.5 sm:translate-y-2.5"
++        style={{ background: 'var(--accent)', opacity: 0.7 }}
+       />
+       <div className="relative w-full h-full overflow-hidden" style={{ background: 'var(--card-bg)' }}>
+         <Image
+--- a/src/lib/seo.ts
++++ b/src/lib/seo.ts
+@@ -0,0 +1,19 @@
++import type { Metadata } from 'next';
++
++const BASE = 'https://arnavchandra.com';
++
++/**
++ * Metadata for a top-level page. A page's own `openGraph` replaces the layout's wholesale, so this
++ * restates the share image; without it /books, /projects and /health shared the home page's title.
++ */
++export function pageMetadata(path: string, title: string, description: string): Metadata {
++  const url = `${BASE}${path}`;
++  const image = { url: '/opengraph-image', width: 1200, height: 630, alt: 'Arnav Chandra' };
++  return {
++    title,
++    description,
++    alternates: { canonical: url },
++    openGraph: { title: `${title} | Arnav Chandra`, description, url, siteName: 'Arnav Chandra', type: 'website', locale: 'en_US', images: [image] },
++    twitter: { card: 'summary_large_image', title: `${title} | Arnav Chandra`, description, images: [image.url] },
++  };
++}
+--- a/src/app/projects/page.tsx
++++ b/src/app/projects/page.tsx
+@@ -1,14 +1,10 @@
+ import { getAllProjects } from '@/lib/projects';
++import { pageMetadata } from '@/lib/seo';
+ import ProjectLedger from '@/components/ProjectLedger';
+ import { CATEGORIES } from '@/lib/categoryMeta';
+ import { eyebrow } from '@/components/typeClasses';
+ 
+-export const metadata = {
+-  title: 'Projects',
+-  description:
+-    'Projects by Arnav Chandra: apps, pitch decks, and experiments in health and technology, including MindSet.',
+-  alternates: { canonical: 'https://arnavchandra.com/projects' },
+-};
++export const metadata = pageMetadata('/projects', 'Projects', 'Projects by Arnav Chandra: apps, pitch decks, and experiments in health and technology, including MindSet.');
+ 
+ 
+ export default function ProjectsPage() {
+--- a/src/app/books/page.tsx
++++ b/src/app/books/page.tsx
+@@ -1,16 +1,12 @@
+ import { getAllBooks } from '@/lib/books';
++import { pageMetadata } from '@/lib/seo';
+ import { MDXRemote } from 'next-mdx-remote/rsc';
+ import Image from 'next/image';
+ import BookCoverScroll from '@/components/BookCoverScroll';
+ import BooksList, { type BookListItem } from '@/components/BooksList';
+ import { eyebrow, smallCaps } from '@/components/typeClasses';
+ 
+-export const metadata = {
+-  title: 'Books',
+-  description:
+-    'Books Arnav Chandra has read, with ratings and notes, spanning health, technology, psychology, and personal growth.',
+-  alternates: { canonical: 'https://arnavchandra.com/books' },
+-};
++export const metadata = pageMetadata('/books', 'Books', 'Books Arnav Chandra has read, with ratings and notes, spanning health, technology, psychology, and personal growth.');
+ 
+ 
+ export default function BooksPage() {
+--- a/src/app/health/page.tsx
++++ b/src/app/health/page.tsx
+@@ -1,12 +1,8 @@
+ import Link from 'next/link';
++import { pageMetadata } from '@/lib/seo';
+ import { eyebrow } from '@/components/typeClasses';
+ 
+-export const metadata = {
+-  title: 'Health',
+-  description:
+-    'How Arnav Chandra approaches health: training, nutrition, sleep, and the habits behind long-term performance.',
+-  alternates: { canonical: 'https://arnavchandra.com/health' },
+-};
++export const metadata = pageMetadata('/health', 'Health', 'How Arnav Chandra approaches health: training, nutrition, sleep, and the habits behind long-term performance.');
+ 
+ 
+ interface Section {
+--- a/src/app/error.tsx
++++ b/src/app/error.tsx
+@@ -0,0 +1,18 @@
++'use client';
++
++import Link from 'next/link';
++
++// Shown when a page throws while rendering. Keeps the site's look instead of the framework default.
++export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
++  return (
++    <div className="mx-auto max-w-xl py-24">
++      <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--fg-eyebrow)' }}>Something went wrong</p>
++      <h1 className="mt-3 text-[clamp(2rem,5vw,3rem)] font-medium leading-[1] tracking-[-0.04em]">This page did not load</h1>
++      <p className="mt-5" style={{ color: 'var(--fg-70)' }}>It is probably a one-off. Try again, or head back to the home page.</p>
++      <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
++        <button type="button" onClick={reset} className="tap-44 rail-link text-[1.0625rem] underline underline-offset-4">Try again</button>
++        <Link href="/" className="tap-44 rail-link text-[1.0625rem] underline underline-offset-4">Home</Link>
++      </div>
++    </div>
++  );
++}
+--- a/src/app/manifest.ts
++++ b/src/app/manifest.ts
+@@ -0,0 +1,18 @@
++import type { MetadataRoute } from 'next';
++
++// Lets the site be added to a home screen with the right name, colours and icon.
++export default function manifest(): MetadataRoute.Manifest {
++  return {
++    name: 'Arnav Chandra',
++    short_name: 'Arnav',
++    description: 'Writer, student, and builder working on health and technology.',
++    start_url: '/',
++    display: 'browser',
++    background_color: '#121211',
++    theme_color: '#121211',
++    icons: [
++      { src: '/icon.png', sizes: '192x192', type: 'image/png' },
++      { src: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
++    ],
++  };
++}
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -1,4 +1,4 @@
+-import type { Metadata } from 'next';
++import type { Metadata, Viewport } from 'next';
+ import { Instrument_Sans } from 'next/font/google';
+ import './globals.css';
+ import SiteWrapper from '@/components/SiteWrapper';
+@@ -15,6 +15,12 @@
+   variable: '--font-sans',
+ });
+ 
++// Colours the phone's browser bar to match the page and tells browsers the site is dark.
++export const viewport: Viewport = {
++  themeColor: '#121211',
++  colorScheme: 'dark',
++};
++
+ export const metadata: Metadata = {
+   metadataBase: new URL('https://arnavchandra.com'),
+   title: {
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -211,7 +211,7 @@
+         </div>
+         <ul className="border-t" style={{ borderColor: 'var(--border-med)' }}>
+           {ON_MY_PLATE.map((item) => (
+-            <li key={item.title} className="flex items-baseline gap-4 border-b py-3" style={{ borderColor: 'var(--border-med)' }}>
++            <li key={item.title} className="flex flex-wrap items-baseline gap-x-4 border-b py-3" style={{ borderColor: 'var(--border-med)' }}>
+               <span className="text-[1.125rem] tracking-[-0.015em]" style={{ color: 'var(--fg)' }}>{item.title}</span>
+               {/* Dotted leader, the same device as the Projects and Health lists. */}
+               <span className="min-w-6 flex-1 -translate-y-[0.3rem] border-b border-dotted" style={{ borderColor: 'var(--fg-30)' }} aria-hidden="true" />
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -863,3 +863,12 @@
+   .star-cta, .star-cta *, .star-cta *::before, .star-cta *::after { animation: none !important; transition: none !important; }
+ }
+ html.reduce-motion .star-cta, html.reduce-motion .star-cta *, html.reduce-motion .star-cta *::before, html.reduce-motion .star-cta *::after { animation: none !important; transition: none !important; }
++
++/* ── Print: light, ink-friendly, no chrome ── */
++@media print {
++  :root { --bg: #fff; --sidebar-bg: #fff; --sheet-bg: #fff; --fg: #111; --fg-70: #333; --fg-muted: #444; --fg-60: #444; --fg-50: #555; --fg-45: #555; --fg-dim: #555; --fg-30: #999; --fg-dimmer: #666; --fg-eyebrow: #444; --border: #ddd; --border-8: #ddd; --border-med: #ccc; --card-bg: transparent; --accent: #1f6f8f; }
++  html, body { background: #fff !important; color: #111 !important; }
++  .fixed, aside, [role='dialog'] { display: none !important; }
++  main { padding: 0 !important; }
++  a[href^='http']::after { content: ' (' attr(href) ')'; font-size: 0.8em; color: #555; word-break: break-all; }
++}

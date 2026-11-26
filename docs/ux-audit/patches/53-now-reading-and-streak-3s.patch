@@ -1,0 +1,55 @@
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -4,6 +4,7 @@
+ import ProfilePhoto from '@/components/ProfilePhoto';
+ import NowSection from '@/components/NowSection';
+ import { getAllProjects } from '@/lib/projects';
++import { getAllBooks } from '@/lib/books';
+ import { LINKS } from '@/lib/links';
+ import { FaLinkedin } from 'react-icons/fa';
+ import { eyebrow } from '@/components/typeClasses';
+@@ -60,6 +61,8 @@
+ 
+ export default function HomePage() {
+   const projects = getAllProjects();
++  // The book being read right now (status: reading), shown under "Now" so the label has a second line of truth.
++  const reading = getAllBooks().find((b) => b.frontmatter.status === 'reading');
+   const proudest = PROUDEST.map((item) => {
+     const project = projects.find((p) => p.slug === item.slug);
+     return {
+@@ -208,6 +211,24 @@
+           <p className="mt-3 text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-45)' }}>
+             Updated {UPDATED}
+           </p>
++          {reading && (
++            <Link href="/books" className="group mt-8 hidden items-end gap-4 sm:flex" aria-label={`Currently reading ${reading.frontmatter.title} by ${reading.frontmatter.author}`}>
++              <Image
++                src={reading.frontmatter.cover}
++                alt=""
++                width={160}
++                height={240}
++                sizes="80px"
++                className="h-[120px] w-[80px] flex-none object-cover"
++                style={{ border: '1px solid var(--border-med)', boxShadow: '4px 4px 0 var(--border-med)' }}
++              />
++              <span className="min-w-0 pb-0.5">
++                <span className="block text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>Reading</span>
++                <span className="proud-link mt-1.5 inline text-[0.9375rem] leading-snug tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>{reading.frontmatter.title}</span>
++                <span className="mt-1 block text-[0.8125rem]" style={{ color: 'var(--fg-dim)' }}>{reading.frontmatter.author}</span>
++              </span>
++            </Link>
++          )}
+         </div>
+         <ul className="border-t" style={{ borderColor: 'var(--border-med)' }}>
+           {ON_MY_PLATE.map((item) => (
+--- a/src/components/ContactModal.tsx
++++ b/src/components/ContactModal.tsx
+@@ -24,7 +24,7 @@
+   'It is the same email. It has always been the same email.',
+   'Okay, you clearly like it. Now send one.',
+ ];
+-const STREAK_RESET_MS = 5000;
++const STREAK_RESET_MS = 3000;
+ const GODLIKE_AT = 10;
+ 
+ const links = [

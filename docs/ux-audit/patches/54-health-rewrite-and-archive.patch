@@ -1,0 +1,589 @@
+--- a/src/app/health/page.tsx
++++ b/src/app/health/page.tsx
+@@ -1,102 +1,11 @@
+ import Link from 'next/link';
+ import { pageMetadata } from '@/lib/seo';
+ import { eyebrow } from '@/components/typeClasses';
++import HealthSections from '@/components/HealthSections';
++import { SECTIONS } from './data';
+ 
+-export const metadata = pageMetadata('/health', 'Health', 'How Arnav Chandra approaches health: training, nutrition, sleep, and the habits behind long-term performance.');
++export const metadata = pageMetadata('/health', 'Health', 'How Arnav Chandra approaches health right now: a 6 am start, gym training, an evening wind down, nutrition and journaling.');
+ 
+-
+-interface Section {
+-  id: string;
+-  title: string;
+-  /** Prose paragraphs; the first is set larger as the lead. */
+-  body: React.ReactNode[];
+-  /** Quick facts, shown as a dotted-leader list under the prose. */
+-  facts?: [string, string][];
+-  /** A small, quiet line after everything else in the section. */
+-  note?: React.ReactNode;
+-}
+-
+-const SECTIONS: Section[] = [
+-  {
+-    id: 'training',
+-    title: 'Training',
+-    body: [
+-      <>In the summer I run a Push/Pull/Legs split 3 times a week, alternating with 3 runs. In winter I shift to 5 days of weights plus one run, following a PPL + Upper/Lower structure.</>,
+-      <>I film myself lifting when I can. Watching form on video catches things you can&apos;t feel in the moment. I also spend time researching training methodology and adjusting my program based on what I find.</>,
+-    ],
+-    facts: [
+-      ['Split', 'Push / Pull / Legs, Upper / Lower'],
+-      ['Running', '3× a week'],
+-      ['Form', 'Reviewed on video'],
+-    ],
+-    note: (
+-      <>
+-        I also shared my training on a gym TikTok for a while.{' '}
+-        <Link
+-          href="/projects/gym-tiktok"
+-          className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2"
+-          style={{ color: 'var(--fg-70)' }}
+-        >
+-          Read about it
+-        </Link>
+-        .
+-      </>
+-    ),
+-  },
+-  {
+-    id: 'nutrition',
+-    title: 'Nutrition',
+-    body: [
+-      <>I aim for around 120 g of protein a day at about 2,500 calories total. I prioritize clean, unprocessed food and don&apos;t track obsessively, but I stay mindful.</>,
+-      <>Breakfast is usually 3 eggs, bread, and fruit, sometimes with oats. I track intake occasionally using Bevel to stay calibrated without making it a daily ritual.</>,
+-    ],
+-    facts: [
+-      ['Protein', '~120 g a day'],
+-      ['Calories', '~2,500'],
+-      ['Food', 'Clean, unprocessed'],
+-      ['Breakfast', '3 eggs, bread, fruit'],
+-      ['Tracking', 'Bevel, occasionally'],
+-    ],
+-  },
+-  {
+-    id: 'sleep',
+-    title: 'Sleep',
+-    body: [
+-      <>I target 7–9 hours. I stop eating 2–4 hours before bed and take magnesium bisglycinate 1–2 hours before sleep. On heavy training days I add casein protein before bed. Screens go off 1–2 hours before sleep, and I stay off them for the first hour after waking up.</>,
+-      <>I sleep in a dark room and read before bed. Planning the next day the night before reduces the mental noise that makes it hard to wind down. Mornings start with sunlight and green tea before 11 a.m..</>,
+-    ],
+-    facts: [
+-      ['Target', '7–9 hours'],
+-      ['Screens', 'Off 1–2 hr before and after'],
+-      ['Room', 'Dark'],
+-      ['Before bed', 'Reading'],
+-      ['Morning', 'Sunlight'],
+-      ['Tea', 'Green, before 11 a.m.'],
+-    ],
+-  },
+-  {
+-    id: 'mental-health',
+-    title: 'Mental health',
+-    body: [
+-      <>Writing my newsletter is one of the best things I do for my mental state. Organizing thoughts into something coherent creates accountability that journaling alone doesn&apos;t.</>,
+-      <>Planning my days the night before reduces morning decision fatigue. Consistency in training helps more than almost anything else. When the physical side is dialed in, the mental side tends to follow.</>,
+-    ],
+-  },
+-  {
+-    id: 'supplements',
+-    title: 'Supplements',
+-    body: [],
+-    facts: [
+-      ['Omega-3', 'Daily'],
+-      ['Vitamin D3 + K2', 'Daily'],
+-      ['Creatine', '5 g daily'],
+-      ['Protein powder', 'Post-training'],
+-      ['Magnesium bisglycinate', '1–2 hr before bed'],
+-      ['Casein powder', 'Heavy training days'],
+-    ],
+-  },
+-];
+-
+ export default function HealthPage() {
+   return (
+     <div className="max-w-5xl mx-auto">
+@@ -114,8 +23,21 @@
+           className="rise mt-4 text-[clamp(1.05rem,1.8vw,1.25rem)] tracking-tight"
+           style={{ ['--d' as string]: '160ms', color: 'var(--fg-60)' } as React.CSSProperties}
+         >
+-          What I do, why I do it, and what I&apos;ve learned.
++          What I follow right now, why I do it, and what I&apos;ve learned.
+         </p>
++        <blockquote
++          className="rise mt-8 max-w-xl border-l-2 pl-5"
++          style={{ ['--d' as string]: '200ms', borderColor: 'var(--accent)' } as React.CSSProperties}
++        >
++          <p className="text-[clamp(1.1rem,1.8vw,1.3rem)] leading-snug tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
++            &ldquo;What is to give light must endure burning.&rdquo;
++          </p>
++          <footer className="mt-2 text-[0.875rem]" style={{ color: 'var(--fg-60)' }}>Viktor E. Frankl</footer>
++        </blockquote>
++        <p className="rise mt-6 max-w-xl text-[0.9375rem] leading-relaxed" style={{ ['--d' as string]: '215ms', color: 'var(--fg-60)' } as React.CSSProperties}>
++          <span className="font-semibold" style={{ color: 'var(--fg)' }}>Purpose:</span> to prove to myself what I can do while
++          increasing my health span.
++        </p>
+         <p
+           className="rise mt-6 max-w-xl text-[0.9375rem] leading-relaxed"
+           style={{ ['--d' as string]: '230ms', color: 'var(--fg-60)' } as React.CSSProperties}
+@@ -132,91 +54,17 @@
+         </p>
+       </header>
+ 
+-      <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-14">
+-        {/* Section rail: sticky on wide screens, so you can jump around the protocol. */}
+-        <nav aria-label="Sections" className="hidden self-start lg:sticky lg:top-28 lg:block">
+-          <p className={`${eyebrow} mb-4`} style={{ color: 'var(--fg-eyebrow)' }}>
+-            On this page
+-          </p>
+-          <ul className="space-y-2.5">
+-            {SECTIONS.map((s, i) => (
+-              <li key={s.id}>
+-                <a href={`#${s.id}`} className="rail-link flex items-baseline gap-3 text-[0.9375rem]" style={{ color: 'var(--fg-60)' }}>
+-                  <span className="text-[10.5px] tabular-nums" style={{ color: 'var(--accent)' }}>
+-                    {String(i + 1).padStart(2, '0')}
+-                  </span>
+-                  {s.title}
+-                </a>
+-              </li>
+-            ))}
+-          </ul>
+-        </nav>
++      <HealthSections sections={SECTIONS} />
+ 
+-        <div>
+-          {SECTIONS.map((s, i) => (
+-            <section
+-              key={s.id}
+-              id={s.id}
+-              aria-labelledby={`${s.id}-heading`}
+-              className="scroll-mt-28 border-t pb-14 pt-5"
+-              style={{ borderColor: 'var(--border-med)' }}
+-            >
+-              <div className="mb-6 flex items-baseline gap-4">
+-                <span
+-                  className="text-[clamp(1.6rem,2.6vw,2.25rem)] font-medium leading-none tracking-[-0.04em] tabular-nums"
+-                  style={{ color: 'var(--accent)' }}
+-                  aria-hidden="true"
+-                >
+-                  {String(i + 1).padStart(2, '0')}
+-                </span>
+-                <h2
+-                  id={`${s.id}-heading`}
+-                  className="text-[clamp(1.9rem,3.6vw,2.6rem)] font-medium leading-none tracking-[-0.03em]"
+-                  style={{ color: 'var(--fg)' }}
+-                >
+-                  {s.title}
+-                </h2>
+-              </div>
+-
+-              {s.body.length > 0 && (
+-                <div className="max-w-2xl space-y-4">
+-                  {s.body.map((para, j) => (
+-                    <p
+-                      key={j}
+-                      className={j === 0 ? 'text-[clamp(1.1rem,1.8vw,1.25rem)] leading-[1.55] tracking-[-0.01em]' : 'text-[0.9375rem] leading-[1.8]'}
+-                      style={{ color: j === 0 ? 'var(--fg)' : 'var(--fg-70)' }}
+-                    >
+-                      {para}
+-                    </p>
+-                  ))}
+-                </div>
+-              )}
+-
+-              {s.facts && (
+-                <dl className={`max-w-2xl ${s.body.length > 0 ? 'mt-8' : ''}`}>
+-                  {s.facts.map(([label, value]) => (
+-                    <div key={label} className="row-wrap flex items-baseline gap-4 py-2.5">
+-                      <dt className="text-[1.0625rem] tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
+-                        {label}
+-                      </dt>
+-                      <span className="min-w-6 flex-1 -translate-y-[0.3rem] border-b border-dotted" style={{ borderColor: 'var(--fg-30)' }} aria-hidden="true" />
+-                      <dd className="text-right text-[0.9375rem]" style={{ color: 'var(--fg-70)' }}>
+-                        {value}
+-                      </dd>
+-                    </div>
+-                  ))}
+-                </dl>
+-              )}
+-
+-              {s.note && (
+-                <p className="mt-6 max-w-2xl text-[0.875rem] leading-relaxed" style={{ color: 'var(--fg-60)' }}>
+-                  {s.note}
+-                </p>
+-              )}
+-            </section>
+-          ))}
+-        </div>
+-      </div>
++      <section className="mt-6 max-w-2xl border-t pt-5 pb-10" style={{ borderColor: 'var(--border-med)' }}>
++        <p className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>Archive</p>
++        <p className="mt-3 text-[0.9375rem] leading-relaxed" style={{ color: 'var(--fg-70)' }}>
++          Until October 2026 I followed a different routine: a Push / Pull / Legs split, supplements and a longer sleep plan.
++        </p>
++        <Link href="/health/archive" className="tap-44 proud-link mt-3 inline-block pb-1 text-[1.0625rem]" style={{ color: 'var(--fg)' }}>
++          See the archive <span aria-hidden="true">→</span>
++        </Link>
++      </section>
+     </div>
+   );
+ }
+--- a/src/app/health/data.tsx
++++ b/src/app/health/data.tsx
+@@ -0,0 +1,94 @@
++import type { HealthSection } from '@/components/HealthSections';
++
++// What I follow right now (from my notes, October 2026). The previous version lives at /health/archive.
++const macros = (kcal: number, protein: number, carbs: number, fat: number) => (
++  <>
++    {kcal} kcal · {protein} g protein · {carbs} g carbs · {fat} g fat
++  </>
++);
++
++const meal = (what: string, kcal: number, protein: number, carbs: number, fat: number) => (
++  <>
++    {what}
++    <br />
++    <span style={{ color: 'var(--fg-60)' }}>{macros(kcal, protein, carbs, fat)}</span>
++  </>
++);
++
++export const SECTIONS: HealthSection[] = [
++  {
++    id: 'morning',
++    title: 'Morning',
++    body: [
++      <>I get up at 6 am every day. Getting up at the same time improves sleep, because your body thrives on consistency.</>,
++      <>The first hour is a fasted study block. It is easiest to focus when your mind is fresh and looking forward to its first meal.</>,
++    ],
++    facts: [
++      ['Wake up', '6 am, every day'],
++      ['First hour', 'Study block, fasted'],
++    ],
++  },
++  {
++    id: 'training',
++    title: 'Training',
++    body: [
++      <>Truthfully, right now it is mostly the gym. School has taken over, so I have not been running, cycling or swimming, and I hate the treadmill. The bike, run and swim plans are what I follow when I am back on them.</>,
++      <>I now train upper, anterior and posterior days. It helps balance out the running and cycling.</>,
++    ],
++    factGroups: [
++      { label: 'Doing now', facts: [['Gym', 'Upper × Anterior × Posterior']] },
++      {
++        label: 'On pause',
++        facts: [
++          ['Bike, VO2 max', '5 × 130% FTP (135 W), rest at 60% FTP'],
++          ['Bike, long ride', '50 km, +10% mileage a week'],
++          ['Bike, zone 2', '1 hour at 80% FTP'],
++          ['Run, VO2 max', 'Norwegian 4×4'],
++          ['Run, long run', '15 km, +5% mileage'],
++          ['Swim', 'Laps until I get bored'],
++        ],
++      },
++    ],
++  },
++  {
++    id: 'evening',
++    title: 'Evening',
++    body: [
++      <>No screens for the hour before bed. Blue light disrupts melatonin production, which makes sleep worse.</>,
++      <>A red lamp gives me the least blue light while still letting me see. Stretching calms me down and lets my brain know we are about to sleep.</>,
++    ],
++    facts: [
++      ['Screens', 'Off 1 hour before bed'],
++      ['Lamp', 'Red light'],
++      ['Wind down', 'Lights dim over 30 minutes, red about 15 minutes before sleep (2500K)'],
++      ['Stretching', 'Before bed'],
++      ['Tomorrow', 'Planned on paper'],
++      ['Breathing', 'Boxed, when I feel stressed or not fully calm'],
++    ],
++  },
++  {
++    id: 'nutrition',
++    title: 'Nutrition',
++    body: [<>I aim for over 3,000 kcal a day.</>],
++    facts: [
++      ['Morning', meal('Overnight oats with a banana', 877, 44, 119, 28)],
++      ['Lunch', meal('Normally chicken thighs and rice', 834, 45, 110, 23)],
++      ['Dinner', meal('Salmon or chicken, sweet potatoes, rice and a glass of milk', 992, 59, 106, 37)],
++      ['Snack', meal('Peanut butter and honey sandwich with an apple', 418, 14, 67, 13)],
++    ],
++  },
++  {
++    id: 'learning',
++    title: 'Learning',
++    body: [<>I aim to read 10 pages a day, though I have not finished a book in a while. I have moved to more podcasts and articles.</>],
++    facts: [
++      ['Podcasts', 'My First Million, The Huberman Lab'],
++      ['Reading', '10 pages a day, when I am on a book'],
++    ],
++  },
++  {
++    id: 'mental-health',
++    title: 'Mental health',
++    body: [<>I journal every day, sometimes several times a day, to ground my thoughts. It actually helps a lot.</>],
++  },
++];
+--- a/src/app/health/archive/page.tsx
++++ b/src/app/health/archive/page.tsx
+@@ -0,0 +1,36 @@
++import Link from 'next/link';
++import { pageMetadata } from '@/lib/seo';
++import { eyebrow } from '@/components/typeClasses';
++import HealthSections from '@/components/HealthSections';
++import { ARCHIVE_SECTIONS } from './data';
++
++export const metadata = pageMetadata('/health/archive', 'Health archive', 'The health routine Arnav Chandra followed until October 2026: training split, nutrition, sleep and supplements.');
++
++export default function HealthArchivePage() {
++  return (
++    <div className="max-w-5xl mx-auto">
++      <header className="mb-12 sm:mb-16">
++        <Link href="/health" className="tap-44 rail-link inline-block text-[0.9375rem]" style={{ color: 'var(--fg-60)' }}>
++          <span aria-hidden="true">←</span> Back to my current routine
++        </Link>
++        <p className={`rise mt-4 ${eyebrow}`} style={{ color: 'var(--accent)' }}>
++          Archive
++        </p>
++        <h1
++          className="rise mt-3 text-[clamp(2.25rem,5.2vw,3.75rem)] font-medium leading-[0.95] tracking-[-0.04em]"
++          style={{ ['--d' as string]: '80ms', color: 'var(--fg)' } as React.CSSProperties}
++        >
++          Health, until October 2026
++        </h1>
++        <p
++          className="rise mt-5 max-w-xl text-[clamp(1.05rem,1.8vw,1.25rem)] tracking-tight"
++          style={{ ['--d' as string]: '160ms', color: 'var(--fg-60)' } as React.CSSProperties}
++        >
++          This is what I used to do, kept as it was. What I follow now is on the main health page.
++        </p>
++      </header>
++
++      <HealthSections sections={ARCHIVE_SECTIONS} />
++    </div>
++  );
++}
+--- a/src/app/health/archive/data.tsx
++++ b/src/app/health/archive/data.tsx
+@@ -0,0 +1,85 @@
++import Link from 'next/link';
++import type { HealthSection } from '@/components/HealthSections';
++
++// What /health said until October 2026, kept as it was.
++export const ARCHIVE_SECTIONS: HealthSection[] = [
++  {
++    id: 'training',
++    title: 'Training',
++    body: [
++      <>In the summer I run a Push/Pull/Legs split 3 times a week, alternating with 3 runs. In winter I shift to 5 days of weights plus one run, following a PPL + Upper/Lower structure.</>,
++      <>I film myself lifting when I can. Watching form on video catches things you can&apos;t feel in the moment. I also spend time researching training methodology and adjusting my program based on what I find.</>,
++    ],
++    facts: [
++      ['Split', 'Push / Pull / Legs, Upper / Lower'],
++      ['Running', '3× a week'],
++      ['Form', 'Reviewed on video'],
++    ],
++    note: (
++      <>
++        I also shared my training on a gym TikTok for a while.{' '}
++        <Link
++          href="/projects/gym-tiktok"
++          className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2"
++          style={{ color: 'var(--fg-70)' }}
++        >
++          Read about it
++        </Link>
++        .
++      </>
++    ),
++  },
++  {
++    id: 'nutrition',
++    title: 'Nutrition',
++    body: [
++      <>I aim for around 120 g of protein a day at about 2,500 calories total. I prioritize clean, unprocessed food and don&apos;t track obsessively, but I stay mindful.</>,
++      <>Breakfast is usually 3 eggs, bread, and fruit, sometimes with oats. I track intake occasionally using Bevel to stay calibrated without making it a daily ritual.</>,
++    ],
++    facts: [
++      ['Protein', '~120 g a day'],
++      ['Calories', '~2,500'],
++      ['Food', 'Clean, unprocessed'],
++      ['Breakfast', '3 eggs, bread, fruit'],
++      ['Tracking', 'Bevel, occasionally'],
++    ],
++  },
++  {
++    id: 'sleep',
++    title: 'Sleep',
++    body: [
++      <>I target 7–9 hours. I stop eating 2–4 hours before bed and take magnesium bisglycinate 1–2 hours before sleep. On heavy training days I add casein protein before bed. Screens go off 1–2 hours before sleep, and I stay off them for the first hour after waking up.</>,
++      <>I sleep in a dark room and read before bed. Planning the next day the night before reduces the mental noise that makes it hard to wind down. Mornings start with sunlight and green tea before 11 a.m..</>,
++    ],
++    facts: [
++      ['Target', '7–9 hours'],
++      ['Screens', 'Off 1–2 hr before and after'],
++      ['Room', 'Dark'],
++      ['Before bed', 'Reading'],
++      ['Morning', 'Sunlight'],
++      ['Tea', 'Green, before 11 a.m.'],
++    ],
++  },
++  {
++    id: 'mental-health',
++    title: 'Mental health',
++    body: [
++      <>Writing my newsletter is one of the best things I do for my mental state. Organizing thoughts into something coherent creates accountability that journaling alone doesn&apos;t.</>,
++      <>Planning my days the night before reduces morning decision fatigue. Consistency in training helps more than almost anything else. When the physical side is dialed in, the mental side tends to follow.</>,
++    ],
++  },
++  {
++    id: 'supplements',
++    title: 'Supplements',
++    body: [],
++    facts: [
++      ['Omega-3', 'Daily'],
++      ['Vitamin D3 + K2', 'Daily'],
++      ['Creatine', '5 g daily'],
++      ['Protein powder', 'Post-training'],
++      ['Magnesium bisglycinate', '1–2 hr before bed'],
++      ['Casein powder', 'Heavy training days'],
++    ],
++  },
++];
++
+--- a/src/components/HealthSections.tsx
++++ b/src/components/HealthSections.tsx
+@@ -0,0 +1,119 @@
++import type { ReactNode } from 'react';
++import { eyebrow } from '@/components/typeClasses';
++
++export interface HealthSection {
++  id: string;
++  title: string;
++  /** Prose paragraphs; the first is set larger as the lead. */
++  body: ReactNode[];
++  /** Quick facts, shown as a dotted-leader list under the prose. */
++  facts?: [string, ReactNode][];
++  /** Facts split under small labels (for example "Doing now" and "On pause"). */
++  factGroups?: { label: string; facts: [string, ReactNode][] }[];
++  /** A small, quiet line after everything else in the section. */
++  note?: ReactNode;
++}
++
++function Facts({ facts, spaced }: { facts: [string, ReactNode][]; spaced: boolean }) {
++  return (
++    <dl className={`max-w-2xl ${spaced ? 'mt-8' : ''}`}>
++      {facts.map(([label, value]) => (
++        <div key={label} className="row-wrap flex items-baseline gap-4 py-2.5">
++          <dt className="text-[1.0625rem] tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
++            {label}
++          </dt>
++          <span className="min-w-6 flex-1 -translate-y-[0.3rem] border-b border-dotted" style={{ borderColor: 'var(--fg-30)' }} aria-hidden="true" />
++          <dd className="text-right text-[0.9375rem]" style={{ color: 'var(--fg-70)' }}>
++            {value}
++          </dd>
++        </div>
++      ))}
++    </dl>
++  );
++}
++
++/** The sticky section rail plus the numbered sections. Shared by /health and /health/archive. */
++export default function HealthSections({ sections }: { sections: HealthSection[] }) {
++  return (
++    <div>
++      <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-14">
++        {/* Section rail: sticky on wide screens, so you can jump around the protocol. */}
++        <nav aria-label="Sections" className="hidden self-start lg:sticky lg:top-28 lg:block">
++          <p className={`${eyebrow} mb-4`} style={{ color: 'var(--fg-eyebrow)' }}>
++            On this page
++          </p>
++          <ul className="space-y-2.5">
++            {sections.map((s, i) => (
++              <li key={s.id}>
++                <a href={`#${s.id}`} className="rail-link flex items-baseline gap-3 text-[0.9375rem]" style={{ color: 'var(--fg-60)' }}>
++                  <span className="text-[10.5px] tabular-nums" style={{ color: 'var(--accent)' }}>
++                    {String(i + 1).padStart(2, '0')}
++                  </span>
++                  {s.title}
++                </a>
++              </li>
++            ))}
++          </ul>
++        </nav>
++
++        <div>
++          {sections.map((s, i) => (
++            <section
++              key={s.id}
++              id={s.id}
++              aria-labelledby={`${s.id}-heading`}
++              className="scroll-mt-28 border-t pb-14 pt-5"
++              style={{ borderColor: 'var(--border-med)' }}
++            >
++              <div className="mb-6 flex items-baseline gap-4">
++                <span
++                  className="text-[clamp(1.6rem,2.6vw,2.25rem)] font-medium leading-none tracking-[-0.04em] tabular-nums"
++                  style={{ color: 'var(--accent)' }}
++                  aria-hidden="true"
++                >
++                  {String(i + 1).padStart(2, '0')}
++                </span>
++                <h2
++                  id={`${s.id}-heading`}
++                  className="text-[clamp(1.9rem,3.6vw,2.6rem)] font-medium leading-none tracking-[-0.03em]"
++                  style={{ color: 'var(--fg)' }}
++                >
++                  {s.title}
++                </h2>
++              </div>
++
++              {s.body.length > 0 && (
++                <div className="max-w-2xl space-y-4">
++                  {s.body.map((para, j) => (
++                    <p
++                      key={j}
++                      className={j === 0 ? 'text-[clamp(1.1rem,1.8vw,1.25rem)] leading-[1.55] tracking-[-0.01em]' : 'text-[0.9375rem] leading-[1.8]'}
++                      style={{ color: j === 0 ? 'var(--fg)' : 'var(--fg-70)' }}
++                    >
++                      {para}
++                    </p>
++                  ))}
++                </div>
++              )}
++
++              {s.facts && <Facts facts={s.facts} spaced={s.body.length > 0} />}
++
++              {s.factGroups?.map((g, k) => (
++                <div key={g.label} className={k === 0 && s.body.length === 0 ? '' : 'mt-8'}>
++                  <p className={eyebrow} style={{ color: 'var(--fg-eyebrow)' }}>{g.label}</p>
++                  <Facts facts={g.facts} spaced={false} />
++                </div>
++              ))}
++
++              {s.note && (
++                <p className="mt-6 max-w-2xl text-[0.875rem] leading-relaxed" style={{ color: 'var(--fg-60)' }}>
++                  {s.note}
++                </p>
++              )}
++            </section>
++          ))}
++        </div>
++      </div>
++    </div>
++  );
++}
+--- a/src/app/sitemap.ts
++++ b/src/app/sitemap.ts
+@@ -10,6 +10,7 @@
+     { url: `${BASE_URL}/projects`, changeFrequency: 'monthly', priority: 0.8 },
+     { url: `${BASE_URL}/books`, changeFrequency: 'monthly', priority: 0.8 },
+     { url: `${BASE_URL}/health`, changeFrequency: 'monthly', priority: 0.7 },
++    { url: `${BASE_URL}/health/archive`, changeFrequency: 'yearly', priority: 0.3 },
+   ];
+ 
+   const projectRoutes: MetadataRoute.Sitemap = getAllProjects().map((project) => ({

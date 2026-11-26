@@ -1,0 +1,26 @@
+--- a/src/app/icon.svg
++++ b/src/app/icon.svg
+@@ -1,14 +1,15 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+-  <!-- A pencil, as large as the square allows, on a transparent background. The bone outline keeps
+-       the dark body readable on dark browser tabs; the dark body keeps it readable on light ones. -->
++  <!-- A pencil, as large as the square allows, on a transparent background. Solid white body with a thin
++       dark outline: the white shows on dark browser tabs and the outline keeps it readable on light ones. -->
+   <g transform="rotate(45 32 32)" stroke-linejoin="round">
+-    <g fill="#EEE9DF" stroke="#EEE9DF" stroke-width="5">
++    <g fill="#121211" stroke="#121211" stroke-width="5">
+       <rect x="24.5" y="-2" width="15" height="10" rx="3"/>
+       <rect x="24.5" y="10" width="15" height="38"/>
+       <path d="M24.5 48h15L32 66z"/>
+     </g>
+     <rect x="24.5" y="-2" width="15" height="10" rx="3" fill="#3F86A8"/>
+-    <rect x="24.5" y="10" width="15" height="38" fill="#121211"/>
+-    <path d="M24.5 48h15L32 66z" fill="#121211"/>
++    <rect x="24.5" y="10" width="15" height="38" fill="#FFFFFF"/>
++    <path d="M24.5 48h15L32 66z" fill="#FFFFFF"/>
++    <path d="M30 58.5h4L32 66z" fill="#121211"/>
+   </g>
+ </svg>
+Binary files a/src/app/icon.png and b/src/app/icon.png differ
+Binary files a/src/app/apple-icon.png and b/src/app/apple-icon.png differ
+Binary files a/src/app/favicon.ico and b/src/app/favicon.ico differ

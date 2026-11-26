@@ -1,0 +1,54 @@
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -203,8 +203,8 @@
+ 
+       {/* ── Now ────────────────────────────────── */}
+       <section className={`${row} mb-14`} aria-labelledby="plate-heading">
+-        <div className="mb-4 sm:mb-0 sm:pt-[0.55rem]">
+-          <h2 id="plate-heading" className={`${eyebrow} flex items-center gap-2`} style={{ color: 'var(--fg-eyebrow)' }}>
++        <div className="mb-4 sm:mb-0 sm:pt-[0.55rem] sm:text-center">
++          <h2 id="plate-heading" className={`${eyebrow} flex items-center gap-2 sm:justify-center`} style={{ color: 'var(--fg-eyebrow)' }}>
+             <span className="inline-flex h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent)' }} aria-hidden="true" />
+             Now
+           </h2>
+@@ -213,14 +213,16 @@
+           </p>
+           {reading && (
+             <Link href="/books" className="book-lift mx-auto mt-8 hidden w-[9.5rem] text-center sm:block" aria-label={`Currently reading ${reading.frontmatter.title} by ${reading.frontmatter.author}`}>
+-              <Image
+-                src={reading.frontmatter.cover}
+-                alt=""
+-                width={228}
+-                height={342}
+-                sizes="114px"
+-                className="mx-auto h-[171px] w-[114px] object-cover"
+-              />
++              <span className="book-lift__cover mx-auto block w-[114px]">
++                <Image
++                  src={reading.frontmatter.cover}
++                  alt=""
++                  width={228}
++                  height={342}
++                  sizes="114px"
++                  className="mx-auto h-[171px] w-[114px] object-cover"
++                />
++              </span>
+               <span className="mt-4 block text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>Reading</span>
+               <span className="proud-link mt-1.5 inline text-[0.9375rem] leading-snug tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>{reading.frontmatter.title}</span>
+               <span className="mt-1 block text-[0.8125rem]" style={{ color: 'var(--fg-dim)' }}>{reading.frontmatter.author}</span>
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -971,10 +971,11 @@
+ @media (prefers-reduced-motion: reduce) { .copy-callout.is-on, .copy-shake { animation: none; } }
+ html.reduce-motion .copy-callout.is-on, html.reduce-motion .copy-shake { animation: none; }
+ 
+-/* Home "Now" book: lifts off the page when hovered or focused, the offset shadow growing with it. */
++/* Home "Now" book: the cover lifts off the page when the cover itself is hovered (or the link is focused),
++   the offset shadow growing with it. Only the image reacts, not the text under it. */
+ .book-lift img { border: 1px solid var(--border-med); box-shadow: 4px 4px 0 var(--border-med); transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out); }
+ @media (hover: hover) and (pointer: fine) {
+-  .book-lift:hover img { transform: translateY(-8px); box-shadow: 8px 10px 0 var(--border-med); }
++  .book-lift__cover:hover img { transform: translateY(-8px); box-shadow: 8px 10px 0 var(--border-med); }
+ }
+ .book-lift:focus-visible img { transform: translateY(-8px); box-shadow: 8px 10px 0 var(--border-med); }
+ @media (prefers-reduced-motion: reduce) { .book-lift img { transition: none; } }

@@ -1,0 +1,46 @@
+--- a/src/components/ContactModal.tsx
++++ b/src/components/ContactModal.tsx
+@@ -38,15 +38,27 @@
+   // it while open, and hand focus back to whatever opened it on close —
+   // without this, keyboard focus stays on (or drifts behind) the trigger,
+   // and Tab can walk straight out into the dimmed page underneath.
++  // Safari does not focus a button when it is clicked, so document.activeElement
++  // is <body> at open time there. Remember what was last pressed instead.
++  const lastPressedRef = useRef<HTMLElement | null>(null);
+   useEffect(() => {
++    const onDown = (e: PointerEvent) => {
++      lastPressedRef.current = (e.target as HTMLElement | null)?.closest<HTMLElement>('button, a, [role="button"]') ?? null;
++    };
++    document.addEventListener('pointerdown', onDown, true);
++    return () => document.removeEventListener('pointerdown', onDown, true);
++  }, []);
++
++  useEffect(() => {
+     if (isOpen) {
+-      triggerRef.current = document.activeElement as HTMLElement | null;
++      const active = document.activeElement as HTMLElement | null;
++      triggerRef.current = active && active !== document.body ? active : lastPressedRef.current;
+     } else {
+       const trigger = triggerRef.current;
+       // The mobile menu's "Get in touch" button is gone by now, so hand focus
+       // to the menu button instead of dropping it on <body>.
+       if (trigger && trigger.isConnected) trigger.focus();
+-      else document.querySelector<HTMLElement>('button[aria-label="Open menu"]')?.focus();
++      else document.querySelector<HTMLElement>('button[aria-controls="mobile-menu-panel"]')?.focus();
+       triggerRef.current = null;
+     }
+   }, [isOpen]);
+--- a/src/components/MobileNav.tsx
++++ b/src/components/MobileNav.tsx
+@@ -86,6 +86,11 @@
+         background: 'var(--bg)',
+         borderBottom: '1px solid var(--border-med)',
+         padding:    '12px 20px 24px',
++        // A phone held sideways is ~390px tall: without a cap the sheet runs
++        // off the bottom and its last link cannot be reached.
++        maxHeight:  'calc(100dvh - 3.5rem)',
++        overflowY:  'auto',
++        overscrollBehavior: 'contain',
+         ...animStyle,
+       }}
+     >

@@ -1,0 +1,82 @@
+--- a/src/app/projects/[slug]/page.tsx
++++ b/src/app/projects/[slug]/page.tsx
+@@ -6,6 +6,8 @@
+ import ContactActions from '@/components/ContactActions';
+ import { notFound } from 'next/navigation';
+ import TruckButton from '@/components/TruckButton';
++import StarButton from '@/components/StarButton';
++import { STAR_BUTTONS } from '@/lib/starButtons';
+ import { FaFileLines, FaArrowUpRightFromSquare } from 'react-icons/fa6';
+ import ProjectLedger from '@/components/ProjectLedger';
+ import BackLink from '@/components/BackLink';
+@@ -256,6 +258,10 @@
+   if (!project) notFound();
+ 
+   const { title, date, description, links, category: categoryLabel, artifactType, tools, demoHref, demoLabel, demoNote } = project.frontmatter;
++  const star = STAR_BUTTONS[slug];
++  const starLink = star ? links?.find((l) => l.label === star.linkLabel) : undefined;
++  // Drop the star button's own link from the list unless it is a live embed (a PDF card just repeats the button).
++  const mediaLinks = starLink && (!isEmbeddable(starLink.url) || isPdf(starLink.url)) ? links?.filter((l) => l !== starLink) : links;
+ 
+   // The write-up ends with a "**Outcome:** ..." line. It is the sentence a
+   // reader most wants, so it is shown under the description instead of at the
+@@ -323,15 +329,26 @@
+         </div>
+       )}
+ 
+-      {/* Media: embeddable links (YouTube, Google Drive, Figma) first, then button links */}
+-      {links && links.length > 0 && (
++      {/* The other star projects get the same treatment as the truck: one object-style button
++          for the main thing to open. Links that are already an embed stay as embeds below;
++          a plain PDF or button link is replaced by the star button. */}
++      {star && starLink && (
++        <div className="mb-6 -ml-2">
++          <StarButton variant={star.variant} href={starLink.url} external>
++            {star.label}
++          </StarButton>
++        </div>
++      )}
++
++      {/* Media: embeddable links (YouTube, Google Drive, Figma) first, then button links */}
++      {mediaLinks && mediaLinks.length > 0 && (
+         <div className="mb-10">
+-          {links.filter((l) => isEmbeddable(l.url)).map((l) => (
++          {mediaLinks.filter((l) => isEmbeddable(l.url)).map((l) => (
+             <MediaEmbed key={l.url} url={l.url} label={l.label} />
+           ))}
+-          {links.filter((l) => !isEmbeddable(l.url)).length > 0 && (
++          {mediaLinks.filter((l) => !isEmbeddable(l.url)).length > 0 && (
+             <div className="flex flex-wrap gap-2">
+-              {links
++              {mediaLinks
+                 .filter((l) => !isEmbeddable(l.url))
+                 .map((l) => (
+                   <MediaEmbed key={l.url} url={l.url} label={l.label} />
+--- a/src/lib/starButtons.ts
++++ b/src/lib/starButtons.ts
+@@ -0,0 +1,14 @@
++import type { StarVariant } from '@/components/StarButton';
++
++/**
++ * The star projects get an object-style "view project" button (see StarButton.tsx)
++ * at the top of their page. `linkLabel` picks which entry of the project's `links`
++ * the button opens, so the URL stays in the MDX and is not repeated here.
++ */
++export const STAR_BUTTONS: Record<string, { variant: StarVariant; label: string; linkLabel: string }> = {
++  'screens-and-sleep-report': { variant: 'sleep', label: 'Read the report', linkLabel: 'Read the Full Report' },
++  'mindset-app': { variant: 'mind', label: 'View the prototype', linkLabel: 'Figma Prototype' },
++  insusense: { variant: 'insu', label: 'See the pitch deck', linkLabel: 'Pitch Deck' },
++  anywear: { variant: 'wear', label: 'See the pitch', linkLabel: 'Pitch Deck' },
++  'mindset-matters-newsletter': { variant: 'mail', label: 'Read the newsletter', linkLabel: 'Read on Substack' },
++};
+--- a/src/app/dev-preview/star-buttons/page.tsx
++++ b/src/app/dev-preview/star-buttons/page.tsx
+@@ -26,7 +26,7 @@
+   {
+     title: 'InsuSense',
+     why: 'An insulin pen, with the label on the barrel. On hover the plunger pushes in and a drop forms at the needle.',
+-    label: 'See the prototype',
++    label: 'See the pitch deck',
+     variant: 'insu',
+     href: '/projects/insusense',
+     how: 'Plunger pushes, a drop falls',

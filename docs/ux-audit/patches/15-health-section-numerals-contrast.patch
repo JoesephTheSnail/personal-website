@@ -1,0 +1,11 @@
+--- a/src/app/health/page.tsx
++++ b/src/app/health/page.tsx
+@@ -168,7 +168,7 @@
+               <div className="mb-6 flex items-baseline gap-4">
+                 <span
+                   className="text-[clamp(1.6rem,2.6vw,2.25rem)] font-medium leading-none tracking-[-0.04em] tabular-nums"
+-                  style={{ color: 'var(--fg-30)' }}
++                  style={{ color: 'var(--fg-45)' }}
+                   aria-hidden="true"
+                 >
+                   {String(i + 1).padStart(2, '0')}

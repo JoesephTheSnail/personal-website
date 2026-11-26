@@ -1,0 +1,80 @@
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -38,7 +38,12 @@
+ 
+ /* ── Navigation and section rails: plain text links that nudge on hover ── */
+ .rail-link { transition: color 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+-.rail-link:hover, .rail-link:focus-visible { color: var(--accent) !important; transform: translateX(3px); }
++.rail-link:focus-visible { color: var(--accent) !important; transform: translateX(3px); }
++/* Hover motion is for a real mouse only: a tap fires :hover on touch and would
++   leave the link nudged until the next tap elsewhere. Focus stays ungated. */
++@media (hover: hover) and (pointer: fine) {
++  .rail-link:hover { color: var(--accent) !important; transform: translateX(3px); }
++}
+ html.reduce-motion .rail-link { transition: none; transform: none !important; }
+ 
+ /* Visually hidden until it has keyboard focus, so sighted mouse users never
+@@ -89,7 +94,10 @@
+ }
+ 
+ .linkedin-link { transition: color 0.18s ease, transform 0.18s ease; display: inline-flex; }
+-.linkedin-link:hover, .linkedin-link:focus-visible { color: var(--accent); transform: translateY(-1px); }
++.linkedin-link:focus-visible { color: var(--accent); transform: translateY(-1px); }
++@media (hover: hover) and (pointer: fine) {
++  .linkedin-link:hover { color: var(--accent); transform: translateY(-1px); }
++}
+ 
+ 
+ .sidebar-input::placeholder { color: var(--fg-45); }
+@@ -108,7 +116,10 @@
+ /* Covers lift a few pixels and take a petrol outline on hover; the anchor's
+    group state drives it so the whole cover is the hit area. */
+ .cover-item { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease; }
+-.group:hover .cover-item, .group:focus-visible .cover-item { transform: translateY(-5px); box-shadow: 0 0 0 1px var(--accent); }
++.group:focus-visible .cover-item { transform: translateY(-5px); box-shadow: 0 0 0 1px var(--accent); }
++@media (hover: hover) and (pointer: fine) {
++  .group:hover .cover-item { transform: translateY(-5px); box-shadow: 0 0 0 1px var(--accent); }
++}
+ html.reduce-motion .cover-item { transition: none; transform: none !important; }
+ 
+ 
+@@ -583,11 +594,15 @@
+ 
+ /* ── Home: index rows with dotted leaders ── */
+ .index-row .index-label { transition: color 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); display: inline-block; }
+-.index-row:hover .index-label,
+ .index-row:focus-visible .index-label { color: var(--accent); transform: translateX(4px); }
++@media (hover: hover) and (pointer: fine) {
++  .index-row:hover .index-label { color: var(--accent); transform: translateX(4px); }
++}
+ .index-row .index-leader { border-bottom: 1px dotted var(--fg-30); transition: border-color 0.2s ease; }
+-.index-row:hover .index-leader,
+ .index-row:focus-visible .index-leader { border-color: var(--accent); }
++@media (hover: hover) and (pointer: fine) {
++  .index-row:hover .index-leader { border-color: var(--accent); }
++}
+ html.reduce-motion .index-row .index-label { transition: none; transform: none !important; }
+ 
+ /* ── Touch devices ──
+@@ -646,3 +661,10 @@
+ html.reduce-motion .ledger-preview { transform: translate(-50%, -50%) !important; }
+ /* Trio images: no hover zoom. */
+ html.reduce-motion .proud-card img { transform: none !important; }
++
++/* Home trio: the image zooms slightly on hover, mouse only (see the note on
++   .rail-link). Replaces Tailwind's ungated group-hover utility. */
++.proud-zoom { transition: transform 0.4s ease-out; }
++@media (hover: hover) and (pointer: fine) {
++  .proud-card:hover .proud-zoom { transform: scale(1.035); }
++}
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -188,7 +188,7 @@
+                   alt={item.alt}
+                   fill
+                   sizes="(min-width: 1024px) 280px, (min-width: 640px) 30vw, 100vw"
+-                  className="object-cover transition-transform duration-[400ms] ease-out group-hover:scale-[1.035]"
++                  className="proud-zoom object-cover"
+                 />
+               </div>
+               <h3

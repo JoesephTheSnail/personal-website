@@ -1,0 +1,69 @@
+--- a/src/app/projects/[slug]/page.tsx
++++ b/src/app/projects/[slug]/page.tsx
+@@ -17,6 +17,11 @@
+   return [...projectParams, ...categoryParams];
+ }
+ 
++// A page's own `openGraph` replaces the layout's wholesale (Next does not merge
++// them), so the share image has to be restated here or links to a project or
++// category page preview with no image on LinkedIn, Slack and iMessage.
++const SHARE_IMAGE = { url: '/opengraph-image', width: 1200, height: 630, alt: 'Arnav Chandra' };
++
+ export async function generateMetadata({ params }: Props) {
+   const { slug } = await params;
+ 
+@@ -29,7 +34,8 @@
+       title,
+       description,
+       alternates: { canonical: url },
+-      openGraph: { title: `${title} | Arnav Chandra`, description, url, type: 'website' },
++      openGraph: { title: `${title} | Arnav Chandra`, description, url, type: 'website', siteName: 'Arnav Chandra', images: [SHARE_IMAGE] },
++      twitter: { card: 'summary_large_image', title: `${title} | Arnav Chandra`, description, images: [SHARE_IMAGE.url] },
+     };
+   }
+ 
+@@ -45,8 +51,8 @@
+     title: pageTitle,
+     description,
+     alternates: { canonical: url },
+-    openGraph: { title: fullTitle, description, url, type: 'article' },
+-    twitter: { card: 'summary_large_image', title: fullTitle, description },
++    openGraph: { title: fullTitle, description, url, type: 'article', siteName: 'Arnav Chandra', images: [SHARE_IMAGE] },
++    twitter: { card: 'summary_large_image', title: fullTitle, description, images: [SHARE_IMAGE.url] },
+   };
+ }
+ 
+--- a/src/app/sitemap.ts
++++ b/src/app/sitemap.ts
+@@ -1,5 +1,6 @@
+ import type { MetadataRoute } from 'next';
+ import { getAllProjects } from '@/lib/projects';
++import { CATEGORIES } from '@/lib/categoryMeta';
+ 
+ const BASE_URL = 'https://arnavchandra.com';
+ 
+@@ -17,5 +18,12 @@
+     priority: 0.6,
+   }));
+ 
+-  return [...staticRoutes, ...projectRoutes];
++  // The discipline pages (/projects/creative etc.) are real, indexable pages.
++  const categoryRoutes: MetadataRoute.Sitemap = CATEGORIES.map((c) => ({
++    url: `${BASE_URL}/projects/${c.slug}`,
++    changeFrequency: 'monthly',
++    priority: 0.6,
++  }));
++
++  return [...staticRoutes, ...categoryRoutes, ...projectRoutes];
+ }
+--- a/content/projects/carbon-capture-model.mdx
++++ b/content/projects/carbon-capture-model.mdx
+@@ -12,7 +12,7 @@
+ demoNote: "Works with touch or a mouse. On a phone, turn it sideways."
+ ---
+ 
+-In Grade 9 I drew a unit that bolts onto a diesel truck and catches CO₂ before it leaves the tailpipe. I never checked whether it would actually help. Click <a href="https://medium.com/@arnav0/eco-trucks-3c9d5dc10f63" target="_blank" rel="noopener noreferrer">here</a> to read the original Grade 9 version.
++In Grade 9 I drew a unit that bolts onto a diesel truck and catches CO₂ before it leaves the tailpipe. I never checked whether it would actually help. Click <a href="https://medium.com/@arnav0/eco-trucks-3c9d5dc10f63" target="_blank" rel="noopener noreferrer" aria-label="here, to read the original Grade 9 version (opens Medium)">here</a> to read the original Grade 9 version.
+ 
+ So I went back and worked it out properly.
+ 

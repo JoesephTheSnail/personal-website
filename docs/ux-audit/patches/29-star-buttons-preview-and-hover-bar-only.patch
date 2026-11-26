@@ -1,0 +1,294 @@
+--- a/src/components/StarButton.tsx
++++ b/src/components/StarButton.tsx
+@@ -0,0 +1,103 @@
++import Link from 'next/link';
++
++export type StarVariant = 'sleep' | 'mind' | 'insu' | 'wear' | 'mail';
++
++/**
++ * The "view project" button for the star projects: a labelled petrol body with
++ * a small themed object beside it, in the spirit of the truck on the carbon
++ * capture page but in the site palette. The label is the only thing a screen
++ * reader gets; the art is decoration (aria-hidden). Motion lives in CSS
++ * (`.star-cta` in globals.css), plays on hover, focus and press only, and is
++ * off under reduced motion.
++ */
++export default function StarButton({
++  href,
++  variant,
++  children,
++  external = false,
++}: {
++  href: string;
++  variant: StarVariant;
++  children: React.ReactNode;
++  external?: boolean;
++}) {
++  const inner = (
++    <>
++      <span className="star-cta__body">
++        {children} <span className="star-cta__arrow" aria-hidden="true">{external ? '↗' : '→'}</span>
++      </span>
++      <span className="star-cta__art" aria-hidden="true">
++        <Art variant={variant} />
++      </span>
++    </>
++  );
++  if (external || href.startsWith('#')) {
++    return (
++      <a
++        href={href}
++        className="star-cta"
++        data-variant={variant}
++        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
++      >
++        {inner}
++      </a>
++    );
++  }
++  return (
++    <Link href={href} className="star-cta" data-variant={variant}>
++      {inner}
++    </Link>
++  );
++}
++
++function Art({ variant }: { variant: StarVariant }) {
++  switch (variant) {
++    case 'sleep':
++      return (
++        <svg viewBox="0 0 76 56">
++          <rect className="sc-line" x="14" y="8" width="22" height="40" rx="3" />
++          <rect className="sc-petrol sc-screen" x="17" y="12" width="16" height="30" rx="1.5" />
++          <g className="sc-moon">
++            <path className="sc-bone" d="M58 14a11 11 0 1 0 6 20 9 9 0 0 1-6-20z" />
++          </g>
++          <circle className="sc-bone sc-star" cx="50" cy="12" r="1.3" />
++          <circle className="sc-bone sc-star" cx="66" cy="22" r="1.1" />
++          <circle className="sc-bone sc-star" cx="64" cy="40" r="1.2" />
++        </svg>
++      );
++    case 'mind':
++      return (
++        <svg viewBox="0 0 76 56">
++          <rect className="sc-line" x="26" y="6" width="24" height="44" rx="4" />
++          <circle className="sc-petrol sc-circle" cx="38" cy="28" r="9" />
++          <line className="sc-line" x1="34" y1="44" x2="42" y2="44" />
++        </svg>
++      );
++    case 'insu':
++      return (
++        <svg viewBox="0 0 76 56">
++          <polyline className="sc-line sc-trace" points="6,34 18,34 24,34 28,18 34,44 40,26 46,34 58,34 66,34" />
++          <path className="sc-petrol sc-drop" d="M66 36c3 4 4 6 4 8a4 4 0 0 1-8 0c0-2 1-4 4-8z" />
++        </svg>
++      );
++    case 'wear':
++      return (
++        <svg viewBox="0 0 76 56">
++          <line className="sc-line" x1="8" y1="8" x2="68" y2="8" />
++          <g className="sc-hanger">
++            <path className="sc-line" d="M38 8v4a4 4 0 1 0-4 4" />
++            <path className="sc-line" d="M38 18 14 38h48z" />
++          </g>
++        </svg>
++      );
++    case 'mail':
++      return (
++        <svg viewBox="0 0 76 56">
++          <rect className="sc-bone sc-letter" x="24" y="14" width="28" height="24" rx="1.5" />
++          <rect className="sc-line sc-envelope" x="16" y="22" width="44" height="26" rx="2" />
++          <polyline className="sc-line sc-flap-closed" points="16,22 38,38 60,22" />
++          <polyline className="sc-line sc-flap-open" points="16,22 38,10 60,22" />
++        </svg>
++      );
++  }
++}
+--- a/src/app/dev-preview/star-buttons/page.tsx
++++ b/src/app/dev-preview/star-buttons/page.tsx
+@@ -0,0 +1,88 @@
++import StarButton, { type StarVariant } from '@/components/StarButton';
++import TruckButton from '@/components/TruckButton';
++import { LINKS } from '@/lib/links';
++import { eyebrow } from '@/components/typeClasses';
++
++// Preview of every star project's "view project" button in one place. Not linked
++// from the site and marked noindex (see ../layout.tsx). Tick the box to see all
++// the hover states at once.
++const ITEMS: { title: string; why: string; label: string; variant: StarVariant; href: string; external?: boolean; how: string }[] = [
++  {
++    title: 'Pre-Sleep Screen Restriction',
++    why: 'The finding is "30 minutes without a screen". The lit phone goes dark and a moon rises.',
++    label: 'Read the report',
++    variant: 'sleep',
++    href: '/projects/screens-and-sleep-report',
++    how: 'Screen dims, moon rises, stars twinkle',
++  },
++  {
++    title: 'MindSet',
++    why: 'The app has breathing exercises, so a circle inside a phone breathes slowly in and out.',
++    label: 'View the prototype',
++    variant: 'mind',
++    href: '/projects/mindset-app',
++    how: 'The circle breathes (4s in and out)',
++  },
++  {
++    title: 'InsuSense',
++    why: 'It reads glucose and doses insulin: a glucose trace draws itself and one drop falls.',
++    label: 'See the prototype',
++    variant: 'insu',
++    href: '/projects/insusense',
++    how: 'Trace draws, drop falls (2.4s loop)',
++  },
++  {
++    title: 'AnyWear',
++    why: 'Clothing rental: a hanger swings gently, like a garment about to be taken off the rail.',
++    label: 'See the pitch',
++    variant: 'wear',
++    href: '/projects/anywear',
++    how: 'Hanger swings side to side',
++  },
++  {
++    title: 'Mindset Matters',
++    why: 'A monthly newsletter: an envelope opens and the letter slides up.',
++    label: 'Read the newsletter',
++    variant: 'mail',
++    href: LINKS.substack,
++    external: true,
++    how: 'Flap opens, letter slides up',
++  },
++];
++
++export default function StarButtonsPreview() {
++  return (
++    <div className="native-cursor star-gallery mx-auto max-w-5xl px-6 pb-24 pt-24 sm:px-10">
++      <p className={eyebrow} style={{ color: 'var(--accent)' }}>Preview, not on the site</p>
++      <h1 className="mt-3 text-[clamp(2.25rem,5.2vw,3.5rem)] font-medium leading-[0.98] tracking-[-0.04em]" style={{ color: 'var(--fg)' }}>
++        Star project buttons
++      </h1>
++      <p className="mt-4 max-w-xl text-[1.0625rem] leading-relaxed" style={{ color: 'var(--fg-60)' }}>
++        One small themed object per star project, in the spirit of the truck. Hover or tab to a button, or tick the box to
++        show every hover state at once. The truck at the bottom is the existing one for reference.
++      </p>
++
++      <label className="mt-8 inline-flex cursor-pointer items-center gap-3 text-[0.9375rem]" style={{ color: 'var(--fg)' }}>
++        <input type="checkbox" className="star-force h-4 w-4 accent-[var(--accent)]" /> Show hover state
++      </label>
++
++      <div className="mt-10 grid gap-x-12 sm:grid-cols-2">
++        {ITEMS.map((item) => (
++          <section key={item.title} className="border-t py-7" style={{ borderColor: 'var(--border-med)' }}>
++            <h2 className="text-[1.125rem] tracking-[-0.015em]" style={{ color: 'var(--fg)' }}>{item.title}</h2>
++            <p className="mb-5 mt-1 text-[0.875rem] leading-relaxed" style={{ color: 'var(--fg-60)' }}>{item.why}</p>
++            <StarButton href={item.href} variant={item.variant} external={item.external}>{item.label}</StarButton>
++            <p className="mt-4 text-[10.5px] uppercase tracking-[0.14em]" style={{ color: 'var(--fg-60)' }}>Hover: {item.how}</p>
++          </section>
++        ))}
++        <section className="border-t py-7" style={{ borderColor: 'var(--border-med)' }}>
++          <h2 className="text-[1.125rem] tracking-[-0.015em]" style={{ color: 'var(--fg)' }}>Truck Exhaust Carbon Capture</h2>
++          <p className="mb-5 mt-1 text-[0.875rem] leading-relaxed" style={{ color: 'var(--fg-60)' }}>
++            The reference, already live on its project page. Wheels spin and exhaust puffs rise on hover.
++          </p>
++          <TruckButton href="/projects/carbon-capture-model/demo">Explore the 3D model</TruckButton>
++        </section>
++      </div>
++    </div>
++  );
++}
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -582,20 +582,13 @@
+ .proud-card:focus-visible .proud-link { color: var(--accent) !important; }
+ html.reduce-motion .proud-link { transition: none; }
+ /* Feedback for the underlined actions ("Get in touch", the email in the dialog):
+-   the text takes the petrol accent, the underline thickens and the arrow moves
+-   3px. Filters use .proud-link only to mark the active one, so they are left out.
+-   Hover is for a real mouse; keyboard focus gets the same cue. */
+-.proud-link > span[aria-hidden='true'] { display: inline-block; transition: transform 0.25s var(--ease-out); }
+-.proud-link:not(.ledger-filter):focus-visible { color: var(--accent) !important; background-size: 100% 3px; }
+-.proud-link:not(.ledger-filter):focus-visible > span[aria-hidden='true'] { transform: translateX(3px); }
++   the underline bar grows from 2px to 4px and nothing else changes. Filters use
++   .proud-link only to mark the active one, so they are left out. Hover is for a
++   real mouse; keyboard focus gets the same cue. */
++.proud-link:not(.ledger-filter):focus-visible { background-size: 100% 4px; }
+ @media (hover: hover) and (pointer: fine) {
+-  .proud-link:not(.ledger-filter):hover { color: var(--accent) !important; background-size: 100% 3px; }
+-  .proud-link:not(.ledger-filter):hover > span[aria-hidden='true'] { transform: translateX(3px); }
++  .proud-link:not(.ledger-filter):hover { background-size: 100% 4px; }
+ }
+-html.reduce-motion .proud-link > span[aria-hidden='true'] { transition: none; transform: none !important; }
+-@media (prefers-reduced-motion: reduce) {
+-  .proud-link > span[aria-hidden='true'] { transition: none; transform: none !important; }
+-}
+ 
+ /* ── Entrance: one gentle rise, staggered by --d ──
+    It replays on every page navigation, the most frequent thing a visitor does,
+@@ -707,3 +700,68 @@
+ }
+ html.reduce-motion .list-swap { animation-name: fade-in !important; }
+ html.reduce-motion .menu-toggle { transform: none !important; }
++
++/* ── Star project buttons (see StarButton.tsx) ──
++   A labelled petrol body plus a graphite tile holding one small themed object.
++   Nothing moves at rest. Motion plays on hover (mouse only), keyboard focus and
++   press, and is off under reduced motion. */
++.star-cta { display: inline-flex; align-items: stretch; height: 56px; color: #121211; text-decoration: none; outline-offset: 4px; }
++.star-cta__body { display: flex; align-items: center; gap: 0; padding: 0 22px; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; background: var(--accent); border-radius: 6px 0 0 6px; transition: background-color 0.2s ease; }
++.star-cta__arrow { margin-left: 8px; }
++.star-cta__art { width: 76px; background: var(--sidebar-bg); border: 1px solid var(--border-med); border-left: 0; border-radius: 0 6px 6px 0; overflow: hidden; display: block; }
++.star-cta__art svg { width: 100%; height: 100%; display: block; overflow: visible; }
++.star-cta .sc-line { fill: none; stroke: var(--fg); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
++.star-cta .sc-bone { fill: var(--fg); }
++.star-cta .sc-petrol { fill: var(--accent); }
++.star-cta .sc-envelope { fill: var(--sidebar-bg); }
++.star-cta:focus-visible .star-cta__body { background: #74B6D3; }
++@media (hover: hover) and (pointer: fine) { .star-cta:hover .star-cta__body { background: #74B6D3; } }
++
++/* Pre-Sleep: the lit phone goes dark, a moon rises, stars twinkle */
++.star-cta[data-variant='sleep'] .sc-screen { transition: opacity 0.5s ease; }
++.star-cta[data-variant='sleep'] .sc-moon { transform: translateY(-34px); transition: transform 0.6s var(--ease-out); }
++.star-cta[data-variant='sleep'] .sc-star { opacity: 0; transition: opacity 0.4s ease 0.3s; }
++.star-cta[data-variant='sleep']:focus-visible .sc-screen, .star-cta[data-variant='sleep']:active .sc-screen, .star-gallery:has(.star-force:checked) .star-cta[data-variant='sleep'] .sc-screen { opacity: 0.12; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='sleep']:hover .sc-screen { opacity: 0.12; } }
++.star-cta[data-variant='sleep']:focus-visible .sc-moon, .star-cta[data-variant='sleep']:active .sc-moon, .star-gallery:has(.star-force:checked) .star-cta[data-variant='sleep'] .sc-moon { transform: translateY(0); }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='sleep']:hover .sc-moon { transform: translateY(0); } }
++.star-cta[data-variant='sleep']:focus-visible .sc-star, .star-cta[data-variant='sleep']:active .sc-star, .star-gallery:has(.star-force:checked) .star-cta[data-variant='sleep'] .sc-star { opacity: 1; animation: sc-twinkle 1.6s ease-in-out infinite; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='sleep']:hover .sc-star { opacity: 1; animation: sc-twinkle 1.6s ease-in-out infinite; } }
++@keyframes sc-twinkle { 50% { opacity: 0.35; } }
++
++/* MindSet: a circle in a phone breathes slowly in and out */
++.star-cta[data-variant='mind'] .sc-circle { transform-origin: 38px 28px; transform: scale(0.55); }
++.star-cta[data-variant='mind']:focus-visible .sc-circle, .star-cta[data-variant='mind']:active .sc-circle, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mind'] .sc-circle { animation: sc-breathe 4s ease-in-out infinite; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mind']:hover .sc-circle { animation: sc-breathe 4s ease-in-out infinite; } }
++@keyframes sc-breathe { 0%, 100% { transform: scale(0.55); } 50% { transform: scale(1.05); } }
++
++/* InsuSense: a glucose trace draws itself, then a drop falls */
++.star-cta[data-variant='insu'] .sc-trace { stroke-dasharray: 120; stroke-dashoffset: 120; }
++.star-cta[data-variant='insu'] .sc-drop { opacity: 0; }
++.star-cta[data-variant='insu']:focus-visible .sc-trace, .star-cta[data-variant='insu']:active .sc-trace, .star-gallery:has(.star-force:checked) .star-cta[data-variant='insu'] .sc-trace { animation: sc-draw 2.4s ease-in-out infinite; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='insu']:hover .sc-trace { animation: sc-draw 2.4s ease-in-out infinite; } }
++.star-cta[data-variant='insu']:focus-visible .sc-drop, .star-cta[data-variant='insu']:active .sc-drop, .star-gallery:has(.star-force:checked) .star-cta[data-variant='insu'] .sc-drop { animation: sc-drip 2.4s ease-in infinite; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='insu']:hover .sc-drop { animation: sc-drip 2.4s ease-in infinite; } }
++@keyframes sc-draw { 0% { stroke-dashoffset: 120; } 55%, 100% { stroke-dashoffset: 0; } }
++@keyframes sc-drip { 0%, 55% { opacity: 0; transform: translateY(-4px); } 65% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
++
++/* AnyWear: a hanger swings */
++.star-cta[data-variant='wear'] .sc-hanger { transform-origin: 38px 8px; }
++.star-cta[data-variant='wear']:focus-visible .sc-hanger, .star-cta[data-variant='wear']:active .sc-hanger, .star-gallery:has(.star-force:checked) .star-cta[data-variant='wear'] .sc-hanger { animation: sc-swing 1.4s ease-in-out infinite alternate; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='wear']:hover .sc-hanger { animation: sc-swing 1.4s ease-in-out infinite alternate; } }
++@keyframes sc-swing { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
++
++/* Mindset Matters: the envelope opens and the letter slides up */
++.star-cta[data-variant='mail'] .sc-flap-open { opacity: 0; }
++.star-cta[data-variant='mail'] .sc-letter { transform: translateY(6px); transition: transform 0.5s var(--ease-out); }
++.star-cta[data-variant='mail']:focus-visible .sc-flap-closed, .star-cta[data-variant='mail']:active .sc-flap-closed, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mail'] .sc-flap-closed { opacity: 0; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mail']:hover .sc-flap-closed { opacity: 0; } }
++.star-cta[data-variant='mail']:focus-visible .sc-flap-open, .star-cta[data-variant='mail']:active .sc-flap-open, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mail'] .sc-flap-open { opacity: 1; }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mail']:hover .sc-flap-open { opacity: 1; } }
++.star-cta[data-variant='mail']:focus-visible .sc-letter, .star-cta[data-variant='mail']:active .sc-letter, .star-gallery:has(.star-force:checked) .star-cta[data-variant='mail'] .sc-letter { transform: translateY(-8px); }
++@media (hover: hover) and (pointer: fine) { .star-cta[data-variant='mail']:hover .sc-letter { transform: translateY(-8px); } }
++
++@media (prefers-reduced-motion: reduce) {
++  .star-cta, .star-cta * { animation: none !important; transition: none !important; }
++}
++html.reduce-motion .star-cta, html.reduce-motion .star-cta * { animation: none !important; transition: none !important; }

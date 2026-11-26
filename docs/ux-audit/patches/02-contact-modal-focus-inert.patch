@@ -1,0 +1,98 @@
+--- a/src/components/ContactModal.tsx
++++ b/src/components/ContactModal.tsx
+@@ -41,16 +41,40 @@
+   useEffect(() => {
+     if (isOpen) {
+       triggerRef.current = document.activeElement as HTMLElement | null;
+-      requestAnimationFrame(() => {
+-        panelRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
+-      });
+     } else {
+-      triggerRef.current?.focus();
++      const trigger = triggerRef.current;
++      // The mobile menu's "Get in touch" button is gone by now, so hand focus
++      // to the menu button instead of dropping it on <body>.
++      if (trigger && trigger.isConnected) trigger.focus();
++      else document.querySelector<HTMLElement>('button[aria-label="Open menu"]')?.focus();
+       triggerRef.current = null;
+     }
+   }, [isOpen]);
+ 
++  // Focus moves in only once the panel exists. It is rendered a commit after
++  // `isOpen` flips, so focusing from the effect above found no panel on
++  // Chromium and left focus on the trigger behind the dialog.
+   useEffect(() => {
++    if (isOpen && mounted) {
++      panelRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
++    }
++  }, [isOpen, mounted]);
++
++  // Everything behind the dialog is made inert while it is open: Tab, screen
++  // reader browsing and clicks cannot reach the page underneath. The Tab
++  // wrap below then only has to handle the dialog's own first and last stops.
++  useEffect(() => {
++    if (!isOpen || !mounted) return;
++    const inerted: Element[] = [];
++    for (const el of Array.from(document.body.children)) {
++      if (el.hasAttribute('data-contact-modal') || el.tagName === 'SCRIPT' || el.hasAttribute('inert')) continue;
++      el.setAttribute('inert', '');
++      inerted.push(el);
++    }
++    return () => inerted.forEach((el) => el.removeAttribute('inert'));
++  }, [isOpen, mounted]);
++
++  useEffect(() => {
+     if (!isOpen) return;
+     const handler = (e: KeyboardEvent) => {
+       if (e.key !== 'Tab' || !panelRef.current) return;
+@@ -78,11 +102,14 @@
+   };
+ 
+   useEffect(() => {
++    // Only while open: without this guard every Escape press anywhere on the
++    // site played the close sound and called onClose.
++    if (!isOpen) return;
+     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+     window.addEventListener('keydown', handler);
+     return () => window.removeEventListener('keydown', handler);
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+-  }, [onClose]);
++  }, [isOpen, onClose]);
+ 
+   useEffect(() => {
+     if (!isOpen) return;
+@@ -111,6 +138,7 @@
+ 
+   return (
+     <div
++      data-contact-modal
+       className="contact-modal-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
+       style={{
+         background: `rgba(10,10,9,${visible ? '0.82' : '0'})`,
+@@ -143,7 +171,7 @@
+             type="button"
+             onClick={handleClose}
+             data-modal-initial-focus
+-            className="rail-link text-[10.5px] uppercase tracking-[0.14em]"
++            className="tap-44 rail-link text-[10.5px] uppercase tracking-[0.14em]"
+             style={{ color: 'var(--fg-60)' }}
+           >
+             Close
+@@ -165,7 +193,7 @@
+         <div className="mt-9">
+           <a
+             href={`mailto:${EMAIL}`}
+-            className="proud-link inline-block pb-1 text-[clamp(1.1rem,3.4vw,1.5rem)] tracking-[-0.02em] [overflow-wrap:anywhere]"
++            className="tap-44 proud-link inline-block pb-1 text-[clamp(1.1rem,3.4vw,1.5rem)] tracking-[-0.02em] [overflow-wrap:anywhere]"
+             style={{ color: 'var(--fg)' }}
+           >
+             {EMAIL}
+@@ -173,7 +201,7 @@
+           <button
+             type="button"
+             onClick={copyEmail}
+-            className="rail-link ml-5 text-[10.5px] uppercase tracking-[0.14em]"
++            className="tap-44 rail-link ml-5 text-[10.5px] uppercase tracking-[0.14em]"
+             style={{ color: copied ? 'var(--accent)' : 'var(--fg-60)' }}
+             aria-live="polite"
+           >
