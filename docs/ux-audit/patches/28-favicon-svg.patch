@@ -1,9 +1,0 @@
---- a/src/app/icon.svg
-+++ b/src/app/icon.svg
-@@ -0,0 +1,6 @@
-+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-+  <!-- Graphite tile, the petrol offset block from the home portrait, and a bold bone "A" in front. -->
-+  <rect width="64" height="64" rx="10" fill="#121211"/>
-+  <rect x="30" y="30" width="28" height="28" fill="#5BA3C2"/>
-+  <path fill="#EEE9DF" fill-rule="evenodd" d="M8 55 L26 9 H35 L53 55 H43 L39.5 45 H24.5 L21 55 Z M27.5 36 H36.5 L32 23.5 Z"/>
-+</svg>
