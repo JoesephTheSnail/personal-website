@@ -384,6 +384,8 @@ em, i, cite, dfn, var, address, blockquote { font-style: normal; }
 @media (prefers-reduced-motion: reduce) {
   [data-cc-anim] { animation: none !important; }
 }
+/* The same switch-off for the site's own "Reduce motion" setting (a class on <html>). */
+html.reduce-motion [data-cc-anim] { animation: none !important; }
 
 /* ── Truck button (project pages with a 3D demo) ──────────────────────────
    Built to look identical with Chrome's forced dark mode on or off. That mode
@@ -876,6 +878,11 @@ html.reduce-motion .star-cta, html.reduce-motion .star-cta *, html.reduce-motion
 /* ── 404: a full-screen game. The lights are out and the cursor or finger is the flashlight (LostInTheDark.tsx) ── */
 html.is-404 { overflow: hidden; }
 html.is-404 [data-site-chrome] { display: none !important; }
+/* The is-404 class is added by an effect, after hydration. These `:has()` twins match as soon as the
+   server-rendered room is in the page, so the sidebar and mobile bar (z-40, above the room at z-30)
+   never flash over the 404 first. */
+html:has(.dark-room) { overflow: hidden; }
+html:has(.dark-room) [data-site-chrome] { display: none !important; }
 .dark-room {
   --lx: 50vw; --ly: 30vh; --lr: clamp(150px, 34vmin, 300px);
   position: fixed; inset: 0; z-index: 30; display: grid; grid-template-rows: minmax(0, 1fr) auto;

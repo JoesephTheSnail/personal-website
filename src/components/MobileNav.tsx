@@ -50,7 +50,11 @@ export default function MobileNav({ onContactClick }: Props) {
     if (menuState !== 'open') return;
     const handler = (e: MouseEvent) => {
       const menu = document.getElementById('mobile-menu-panel');
-      if (menu && !menu.contains(e.target as Node)) close();
+      const target = e.target as Element | null;
+      // The menu button closes the menu itself on click. Closing on its mousedown
+      // too left the click to see a "closing" menu and reopen it.
+      if (target?.closest?.('button[aria-controls="mobile-menu-panel"]')) return;
+      if (menu && !menu.contains(target as Node)) close();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

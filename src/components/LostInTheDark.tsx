@@ -130,16 +130,33 @@ export default function LostInTheDark() {
 
   // Every thing reacts when poked. Exits play their show first (the boomerang spins away, the door swings
   // open and floods the room with light) and only then navigate; with reduced motion they go straight away.
+  // Pending timers are cancelled when the page goes away, and when the visitor picks one of the real links in
+  // the panel. Otherwise an exit's delayed navigation would still fire afterwards and pull them back to Home
+  // (or back a page).
+  const timers = useRef<number[]>([]);
+  const clearTimers = () => {
+    timers.current.forEach((id) => window.clearTimeout(id));
+    timers.current = [];
+  };
+  useEffect(() => clearTimers, []);
+  const later = (fn: () => void, ms: number) => {
+    timers.current.push(window.setTimeout(fn, ms));
+  };
+  const chooseLink = () => {
+    clearTimers();
+    setDoing(null);
+  };
+
   const find = (t: Thing) => {
     if (doing) return;
     setCaption(t.caption);
     const still = motionOff();
     if (!still) {
       setDoing(t.id);
-      setTimeout(() => setDoing(null), t.exit ? 2000 : 1000);
+      later(() => setDoing(null), t.exit ? 2000 : 1000);
     }
     if (t.exit) {
-      setTimeout(() => (t.exit === 'home' ? router.push('/') : goBack()), still ? 0 : 950);
+      later(() => (t.exit === 'home' ? router.push('/') : goBack()), still ? 0 : 950);
       return;
     }
     setFound((f) => (f.includes(t.id) ? f : [...f, t.id]));
@@ -185,7 +202,7 @@ export default function LostInTheDark() {
           <span className="dark-path">{pathname || 'This page'}</span> is not here. We looked everywhere, in the dark, with a
           flashlight, which is not the same as looking properly.
         </p>
-        <nav className="dark-exits" aria-label="Pages that exist">
+        <nav className="dark-exits" aria-label="Pages that exist" onClickCapture={chooseLink}>
           {canGoBack && (
             <button type="button" className="rail-link tap-44" onClick={goBack}>Back</button>
           )}

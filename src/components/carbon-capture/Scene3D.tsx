@@ -1105,10 +1105,30 @@ function Label({
   );
   // Clicking the label's text or its dot selects the part, same as clicking the part
   // itself. labelSelect is wired up by Rig (labels sit outside the part components).
-  const labelHandlers = useMemo(
-    () => (hoverId ? clickable(hoverId, (id) => labelSelect.fn?.(id)) : undefined),
-    [hoverId],
-  );
+  // A label that has faded out (viewed from behind, or zoomed far out) is still
+  // in the scene's raycast list, so without a guard its invisible text would
+  // swallow hover and clicks meant for whatever sits behind it. Events are only
+  // taken while the label is actually readable; otherwise they fall through.
+  const labelHandlers = useMemo(() => {
+    if (!hoverId) return undefined;
+    const base = clickable(hoverId, (id) => labelSelect.fn?.(id));
+    let over = false; // pointer-out is only forwarded for an over we took
+    return {
+      onClick: (e: ThreeEvent<MouseEvent>) => {
+        if (visAmt.current > 0.3) base.onClick(e);
+      },
+      onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+        if (visAmt.current <= 0.3) return;
+        over = true;
+        base.onPointerOver(e);
+      },
+      onPointerOut: () => {
+        if (!over) return;
+        over = false;
+        base.onPointerOut();
+      },
+    };
+  }, [hoverId]);
   const matShaftDark = useRef<THREE.MeshBasicMaterial>(null);
   const matShaftFill = useRef<THREE.MeshBasicMaterial>(null);
   const matHalo = useRef<THREE.MeshBasicMaterial>(null);
@@ -1273,7 +1293,9 @@ function Label({
         // the dot rides the end of the line and pops in as it arrives
         arrowS.copy(arrowQ);
         const dotScale = THREE.MathUtils.smoothstep(draw, 0.7, 1) * (1 + 0.35 * hoverAmt.current);
-        const cueBoost = cueState.id === hoverId ? (0.3 * cueState.breath) / CUE_PEAK : 0;        writeDisc(leader.halo, arrowS, arrowRight, arrowUp, 15 * worldPerPx * dotScale);
+        // the halo breathes with the part when this label's part is the one being suggested
+        const cueBoost = cueState.id === hoverId ? (0.3 * cueState.breath) / CUE_PEAK : 0;
+        writeDisc(leader.halo, arrowS, arrowRight, arrowUp, 15 * worldPerPx * dotScale);
         writeDisc(leader.dotDark, arrowS, arrowRight, arrowUp, 7.6 * worldPerPx * dotScale);
         writeDisc(leader.dotFill, arrowS, arrowRight, arrowUp, 5.4 * worldPerPx * dotScale);
         // Click target: an invisible disc that looks exactly like a 26px circle
@@ -3615,9 +3637,10 @@ function Rig({
   // and clutter close shots of totally unrelated equipment (most visibly on
   // "teg", whose camera happens to sit near the module).
   const exhaustVisibleRef = useRef(1);
-  // names for the exhaust stack and the module itself, both on the capture
-  // module stop only (the overview is deliberately free of labels and click
-  // goals). The inlet's own label keeps exhaustVisibleRef.
+  // names for the exhaust stack, the exhaust inlet and the module itself, all
+  // on the capture module stop only (the overview is deliberately free of
+  // labels and click goals). exhaustVisibleRef still drives the duct and its
+  // flow trail on the wider set of stops above.
   useEffect(() => {
     labelSelect.fn = onSelectPart;
     return () => {
@@ -5004,15 +5027,21 @@ export default function Scene3D() {
     cueState.id = cueTarget;
   }, [cueTarget]);
   useEffect(() => {
-    // reduced motion: the cue becomes a steady faint glow instead of a breath
+    // reduced motion: the cue becomes a steady faint glow instead of a breath.
+    // Both the OS setting and the site's own "Reduce motion" switch (a class on
+    // <html>, see useAccessibilityPrefs) count.
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const root = document.documentElement;
     const apply = () => {
-      cueState.reduced = !!mq?.matches;
+      cueState.reduced = !!mq?.matches || root.classList.contains('reduce-motion');
     };
     apply();
     mq?.addEventListener?.('change', apply);
+    const classWatcher = new MutationObserver(apply);
+    classWatcher.observe(root, { attributes: true, attributeFilter: ['class'] });
     return () => {
       mq?.removeEventListener?.('change', apply);
+      classWatcher.disconnect();
       cueState.id = null;
       exploredParts.clear();
     };
