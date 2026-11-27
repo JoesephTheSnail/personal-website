@@ -1,4 +1,5 @@
 import type { HealthSection } from '@/components/HealthSections';
+import { LINKS } from '@/lib/links';
 
 // What I follow right now (from my notes, October 2026). The previous version lives at /health/archive.
 const macros = (kcal: number, protein: number, carbs: number, fat: number) => (
@@ -49,6 +50,21 @@ export const SECTIONS: HealthSection[] = [
         ],
       },
     ],
+    note: (
+      <>
+        I share my training on a gym TikTok,{' '}
+        <a
+          href={LINKS.tiktok}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4 decoration-[var(--accent)] hover:decoration-2"
+          style={{ color: 'var(--fg-70)' }}
+        >
+          @arnav.gym<span className="sr-only"> (opens in a new tab)</span> <span aria-hidden="true">↗</span>
+        </a>
+        .
+      </>
+    ),
   },
   {
     id: 'evening',

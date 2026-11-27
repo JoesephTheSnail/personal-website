@@ -111,22 +111,24 @@ export default function BooksPage() {
       {/* ── Want to read: deliberately quiet. Small, muted covers, no ratings. ── */}
       {wantToRead.length > 0 && (
         <section className="grid gap-x-6 border-t pt-5 pb-10 sm:grid-cols-[7rem_1fr]" style={{ borderColor: 'var(--border-med)' }}>
-          <h2 className={`${eyebrow} mb-5 sm:mb-0`} style={{ color: 'var(--fg-eyebrow)' }}>
+          <h2 className={`${eyebrow} mb-6 sm:mb-0`} style={{ color: 'var(--fg-eyebrow)' }}>
             Want to read
           </h2>
-          <ul className="flex flex-wrap gap-x-6 gap-y-6">
+          {/* Phones: three to a row with room to breathe (covers fill their column, titles can wrap to three
+              lines). From sm up they go back to the compact wrapping row of small covers. */}
+          <ul className="grid grid-cols-3 gap-x-4 gap-y-9 sm:flex sm:flex-wrap sm:gap-x-6 sm:gap-y-6">
             {wantToRead.map((b) => (
-              <li key={b.slug} className="w-[72px]">
+              <li key={b.slug} className="min-w-0 sm:w-[72px]">
                 <div
-                  className="relative h-[108px] w-[72px] overflow-hidden opacity-70 transition-opacity duration-200 hover:opacity-100"
+                  className="relative aspect-[2/3] w-full overflow-hidden opacity-70 transition-opacity duration-200 hover:opacity-100 sm:h-[108px] sm:w-[72px] sm:aspect-auto"
                   style={{ border: '1px solid var(--border-med)' }}
                 >
-                  <Image src={b.frontmatter.cover} alt={`Cover of ${b.frontmatter.title}`} fill className="object-cover" sizes="72px" />
+                  <Image src={b.frontmatter.cover} alt={`Cover of ${b.frontmatter.title}`} fill className="object-cover" sizes="(min-width: 640px) 72px, 28vw" />
                 </div>
-                <p className="mt-2 text-[11.5px] leading-snug" style={{ color: 'var(--fg-70)' }}>
+                <p className="mt-3 text-[0.8125rem] leading-snug sm:mt-2 sm:text-[11.5px]" style={{ color: 'var(--fg-70)' }}>
                   {b.frontmatter.title}
                 </p>
-                <p className="mt-0.5 text-[10.5px] leading-snug" style={{ color: 'var(--fg-45)' }}>
+                <p className="mt-1 text-[0.75rem] leading-snug sm:mt-0.5 sm:text-[10.5px]" style={{ color: 'var(--fg-45)' }}>
                   {b.frontmatter.author}
                 </p>
               </li>

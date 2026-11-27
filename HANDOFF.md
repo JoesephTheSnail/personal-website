@@ -4,7 +4,7 @@
 
 ## Goal
 
-Overhaul arnavchandra.com so it looks professionally designed, not templated. Everything is tested on localhost (`npm run dev`, port 3000), reviewed by the user, and **nothing is committed or pushed until they say so**. Every page follows the same process: research real portfolio sites in the Browser pane, work out why each works, combine the best parts (see memory). Home, Projects, Books and Health are built; next up is review, then the remaining pages.
+Overhaul arnavchandra.com so it looks professionally designed, not templated. Test on localhost (`npm run dev`); **commit or push only when the user says so**. Each page: research real sites in the Browser pane, combine the best parts (see memory). Home, Projects, Books and Health are built.
 
 ## Current State
 
@@ -17,30 +17,33 @@ Overhaul arnavchandra.com so it looks professionally designed, not templated. Ev
 - **Highlights:** inline `**phrase**` in descriptions (`src/lib/highlight.ts`); `getAllProjects()` returns `description` and `descriptionRich`; only `ProjectLedger.tsx` renders it.
 - **Projects ("the ledger"):** `ProjectLedger.tsx`: discipline filter, year-grouped dotted rows, 5 s hover preview from the `ART` map, `featured: true` stars. `/projects/[category]` reuses it.
 - **Books:** cover strip (`BookCoverScroll.tsx`) kept, ruled rows, genre toggles, no book counts. **Health:** sticky section rail, dotted-leader quick facts.
-- **Newsletter-derived projects:** `tiny-hearts.mdx`, `school-livestream.mdx`, `thawless-poem.mdx`. Photos only on the project page (`public/projects/`).
-- **Content:** new About copy, sleep-study PDF, `gym-tiktok.mdx` (account is live).
 - **Navigation** (`TopNav.tsx`, `MobileNav.tsx`, `navItems.ts`): hairline sidebar, numbered text links; `ContactModal.tsx` is an editorial sheet.
 
-## Newer work (this session, all uncommitted)
+- **Star project buttons:** `src/components/StarButton.tsx` (bed, cloud+sun, insulin pen, price tag, envelope), styles in `globals.css` (`.star-cta`), mapping in `src/lib/starButtons.ts`. The truck stays on carbon capture.
+- **Favicon:** `src/app/icon.svg` is a large pencil on a transparent background with a bone outline (so it reads on dark and light tabs). The Apple icon puts it on solid dark. `icon.png`, `apple-icon.png` and `favicon.ico` are generated from it.
 
-- **UX audit** in `docs/ux-audit/` (`AUDIT_REPORT.md`, `QUESTIONS_FOR_ARNAV.md`, numbered `patches/`, `scripts/`). Measure on a production build (`npm run build && npm start -p 3002`), not dev.
-- **Star project buttons:** `src/components/StarButton.tsx` (bed, cloud+sun, insulin pen, price tag, envelope), styles in `globals.css` (`.star-cta`), mapping in `src/lib/starButtons.ts`, preview at `/dev-preview/star-buttons` (noindex). The truck stays on carbon capture.
-- **Favicon:** `src/app/icon.svg` is a large pencil on a transparent background with a bone outline (so it reads on dark and light tabs). The Apple icon puts it on solid dark. `icon.png`, `apple-icon.png`, `favicon.ico` come from `docs/ux-audit/scripts/favicon.mjs`.
+## Latest round (uncommitted)
+
+- **Sound** is on by default; "Mute sounds" lives in the accessibility menus. One setting (`src/lib/soundPref.ts`) shared by the site sounds and the 3D demo speaker button.
+- **Reduce motion** no longer swaps animation names or removes `.rise` (that made the page blank and replay when switched off); it zeroes durations and slide distances instead. Keep it that way.
+- **Phone:** hamburger left of the name; hero actions hidden below `sm`; book rows put the cover beside the title block; Want to read is a 3-column grid.
+- **Archive:** `src/app/health/archive/data.tsx` holds `ARCHIVES` (newest first). Add an entry and the index, `[slug]` page, numbering, older/newer links and sitemap follow. TikTok moved from the contact dialog to the Health page.
+- Open questions for the user: carbon capture Outcome wording, closing-line specifics.
 
 ## SEO
 
-Done: per-page titles, descriptions and canonicals; a unique share image per project and discipline page (`src/app/projects/[slug]/opengraph-image.tsx`, `twitter-image.tsx`); Person, WebSite, CreativeWork and BreadcrumbList JSON-LD; complete sitemap; `robots.txt` blocks `/api/` and `/dev-preview/`; `seoTitle` frontmatter for long titles (`src/lib/projects.ts`); descriptive link text on the carbon capture page; `dev-preview/` 404s on Vercel.
+Done: titles, descriptions, canonicals; per-project share images (`src/app/projects/[slug]/opengraph-image.tsx`); JSON-LD; sitemap; `robots.txt` blocks `/api/`; `seoTitle` frontmatter for long titles (`src/lib/projects.ts`).
 
-Also done: `/feed.xml` RSS and `/.well-known/security.txt`. Still to do: submit the sitemap in Search Console after deploying; re-run `docs/ux-audit/scripts/seo.mjs` and `lighthouse.mjs` after content changes; `gmo-bananas` and `tiny-hearts` descriptions are a little short (about 62 and 65 characters); unhide `/fitness` only with a real canonical and an `<h1>`.
+Also done: `/feed.xml`, `/.well-known/security.txt`. To do: submit the sitemap after deploying; unhide `/fitness` only with a real canonical and an `<h1>`. The user does not care much about SEO.
 
 ## Unconfirmed (not yet checked)
 
-- No `npm run build` since the latest edits; check the `ProjectLedger.tsx` preview fade after a 5 s dwell.
+- No `npm run build` since the latest edits; check the `ProjectLedger.tsx` preview fade.
 - iPhone Safari untested (no Xcode).
 
 ## Modified Files
 
-Run `git status`. Untracked scratch to ignore: `findings.md`, `fixes.md`, `src/app/dev-preview/`.
+Run `git status`. Latest round: `src/lib/soundPref.ts`, `useAccessibilityPrefs.ts`, `AccessibilityMenu.tsx`, `MobileNav.tsx`, `TopNav.tsx`, `BooksList.tsx`, `books/page.tsx`, `app/page.tsx`, `health/archive/*`, `globals.css`.
 
 ## Failed Attempts and Gotchas
 
@@ -51,8 +54,8 @@ Run `git status`. Untracked scratch to ignore: `findings.md`, `fixes.md`, `src/a
 
 ## Immediate Next Steps
 
-1. Next ideas from the deep dive (`docs/ux-audit/AUDIT_REPORT.md` section 27): CSP/HSTS in `vercel.json`, and a CV download (needs the user's PDF in `public/`).
+1. Next ideas: CSP/HSTS in `vercel.json`, and a CV download (needs the user's PDF in `public/`).
 2. Don't build a page transition (view transitions froze the site). Truck button, demo pulses and fitness colours stay as they are.
 3. Health content is in `src/app/health/data.tsx` (current, from the user's Notion notes, October 2026) and `src/app/health/archive/data.tsx` (the old page, at `/health/archive`). The 404 is a full-screen flashlight game (`src/components/LostInTheDark.tsx`, styles under "404" in `globals.css`). `SiteWrapper.tsx` also adds `big-text` to `<html>` for large text; keep `.row-wrap` rows for any new title-plus-label rows.
-4. Project order lives in `src/lib/projectOrder.ts` (list and Next project share it; tested). The home "Now" column shows the book with `status: reading`. Before any commit: leave out `docs/ux-audit/` (untracked; screenshots are gitignored). `npm run lint` runs `tsc --noEmit`.
+4. Project order lives in `src/lib/projectOrder.ts` (list and Next project share it; tested). The home "Now" column shows the book with `status: reading`. `npm run lint` runs `tsc --noEmit`.
 5. Commit only on the user's go-ahead.

@@ -33,7 +33,10 @@ function Facts({ facts, spaced }: { facts: [string, ReactNode][]; spaced: boolea
 }
 
 /** The sticky section rail plus the numbered sections. Shared by /health and /health/archive. */
-export default function HealthSections({ sections }: { sections: HealthSection[] }) {
+export default function HealthSections({ sections, archived = false }: { sections: HealthSection[]; archived?: boolean }) {
+  // Petrol means "current" on this site. Archived versions use the quiet neutral instead, and dashed rules
+  // (the print convention for "kept, not live"), so they never pass for the routine I follow now.
+  const numeral = archived ? 'var(--fg-45)' : 'var(--accent)';
   return (
     <div>
       <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-14">
@@ -46,7 +49,7 @@ export default function HealthSections({ sections }: { sections: HealthSection[]
             {sections.map((s, i) => (
               <li key={s.id}>
                 <a href={`#${s.id}`} className="rail-link flex items-baseline gap-3 text-[0.9375rem]" style={{ color: 'var(--fg-60)' }}>
-                  <span className="text-[10.5px] tabular-nums" style={{ color: 'var(--accent)' }}>
+                  <span className="text-[10.5px] tabular-nums" style={{ color: numeral }}>
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   {s.title}
@@ -62,13 +65,13 @@ export default function HealthSections({ sections }: { sections: HealthSection[]
               key={s.id}
               id={s.id}
               aria-labelledby={`${s.id}-heading`}
-              className="scroll-mt-28 border-t pb-14 pt-5"
+              className={`scroll-mt-28 border-t pb-14 pt-5 ${archived ? 'border-dashed' : ''}`}
               style={{ borderColor: 'var(--border-med)' }}
             >
               <div className="mb-6 flex items-baseline gap-4">
                 <span
                   className="text-[clamp(1.6rem,2.6vw,2.25rem)] font-medium leading-none tracking-[-0.04em] tabular-nums"
-                  style={{ color: 'var(--accent)' }}
+                  style={{ color: numeral }}
                   aria-hidden="true"
                 >
                   {String(i + 1).padStart(2, '0')}

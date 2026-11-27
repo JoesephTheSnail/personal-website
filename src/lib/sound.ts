@@ -7,6 +7,8 @@
 // all at a peak gain of about 0.05 so they sit under normal system volume as
 // texture rather than a beep.
 
+import { isSoundMuted } from './soundPref';
+
 let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext | null {
@@ -21,6 +23,7 @@ function getCtx(): AudioContext | null {
 }
 
 function tone(freq: number, startOffset: number, duration: number, peakGain: number, type: OscillatorType = 'sine', attack = 0.006) {
+  if (isSoundMuted()) return;
   const c = getCtx();
   if (!c) return;
   const osc = c.createOscillator();
@@ -67,6 +70,7 @@ function getNoiseBuffer(c: AudioContext): AudioBuffer {
 
 /** One detent of a scroll wheel as the pointer crosses a project row: a dry, ~18ms filtered noise tick. Bandpassed to keep the small-plastic-mechanism character and highpassed so it never thuds. Same sound as the original site's project grid. */
 export function playHover(index = 0) {
+  if (isSoundMuted()) return;
   const c = getCtx();
   if (!c) return;
 

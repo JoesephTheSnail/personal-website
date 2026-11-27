@@ -18,7 +18,7 @@ export default function MobileNav({ onContactClick }: Props) {
   const [openKey, setOpenKey]     = useState(0);
   const [mounted, setMounted]     = useState(false);
   const pathname   = usePathname();
-  const { reduceMotion, reduceTransparency, toggleMotion, toggleTransparency } = useAccessibilityPrefs();
+  const { reduceMotion, reduceTransparency, muteSound, toggleMotion, toggleTransparency, toggleSound } = useAccessibilityPrefs();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -149,7 +149,7 @@ export default function MobileNav({ onContactClick }: Props) {
       </div>
 
       {/* Below 1024px the floating accessibility button is hidden (it sat on
-          top of the text), so the same two settings live here. */}
+          top of the text), so the same settings live here. */}
       <div
         role="group"
         aria-label="Accessibility options"
@@ -167,12 +167,13 @@ export default function MobileNav({ onContactClick }: Props) {
           {[
             { label: 'Reduce motion', on: reduceMotion, toggle: toggleMotion },
             { label: 'Reduce transparency', on: reduceTransparency, toggle: toggleTransparency },
+            { label: 'Mute sounds', on: muteSound, toggle: toggleSound },
           ].map(({ label, on, toggle }) => (
             <button
               key={label}
               type="button"
               aria-pressed={on}
-              onClick={() => { playTick(); toggle(); }}
+              onClick={() => { toggle(); playTick(); }}
               className={`tap-44 ledger-filter pb-1 text-[0.9375rem] ${on ? 'proud-link' : ''}`}
               style={{ color: on ? 'var(--fg)' : 'var(--fg-60)' }}
             >
@@ -199,7 +200,7 @@ export default function MobileNav({ onContactClick }: Props) {
         }}
         className="menu-toggle p-[13px] -m-[9px] transition-[transform,color] duration-200"
         style={{
-          color:     'var(--fg-50)',
+          color:     'var(--fg-70)',
           transform: open ? 'rotate(90deg) scale(0.9)' : 'rotate(0deg) scale(1)',
         }}
         aria-label={open ? 'Close menu' : 'Open menu'}

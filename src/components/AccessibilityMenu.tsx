@@ -12,7 +12,7 @@ import { playPop, playTick } from '@/lib/sound';
 // breakpoint.
 export default function AccessibilityMenu() {
   const [open, setOpen] = useState(false);
-  const { reduceMotion, reduceTransparency, toggleMotion, toggleTransparency } = useAccessibilityPrefs();
+  const { reduceMotion, reduceTransparency, muteSound, toggleMotion, toggleTransparency, toggleSound } = useAccessibilityPrefs();
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -56,7 +56,7 @@ export default function AccessibilityMenu() {
         <div className="a11y-menu a11y-menu--corner" role="group" aria-label="Accessibility options">
           <button
             aria-pressed={reduceMotion}
-            onClick={() => { playTick(); toggleMotion(); }}
+            onClick={() => { toggleMotion(); playTick(); }}
             className="a11y-menu__item"
           >
             <span>Reduce motion</span>
@@ -64,11 +64,20 @@ export default function AccessibilityMenu() {
           </button>
           <button
             aria-pressed={reduceTransparency}
-            onClick={() => { playTick(); toggleTransparency(); }}
+            onClick={() => { toggleTransparency(); playTick(); }}
             className="a11y-menu__item"
           >
             <span>Reduce transparency</span>
             <span className={`a11y-switch ${reduceTransparency ? 'a11y-switch--on' : ''}`} aria-hidden="true" />
+          </button>
+          {/* The tick comes after the switch, so it is silent when muting and a small confirmation when sound returns. */}
+          <button
+            aria-pressed={muteSound}
+            onClick={() => { toggleSound(); playTick(); }}
+            className="a11y-menu__item"
+          >
+            <span>Mute sounds</span>
+            <span className={`a11y-switch ${muteSound ? 'a11y-switch--on' : ''}`} aria-hidden="true" />
           </button>
         </div>
       )}

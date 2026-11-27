@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import type { HealthSection } from '@/components/HealthSections';
 
-// What /health said until October 2026, kept as it was.
-export const ARCHIVE_SECTIONS: HealthSection[] = [
+const UNTIL_OCTOBER_2026: HealthSection[] = [
   {
     id: 'training',
     title: 'Training',
@@ -83,3 +82,35 @@ export const ARCHIVE_SECTIONS: HealthSection[] = [
   },
 ];
 
+
+/**
+ * One archived version of the health routine: what /health said until `ended`, kept as it was.
+ *
+ * To archive the next version: copy the current SECTIONS from ../data.tsx into a new const above,
+ * add an entry to the TOP of ARCHIVES (newest first), then write the new routine in ../data.tsx.
+ * The index (/health/archive), each version's page (/health/archive/<slug>), the numbering,
+ * the "older / newer" links and the sitemap all follow from this list.
+ */
+export interface HealthArchive {
+  /** URL segment: /health/archive/<slug>. Never change it once published. */
+  slug: string;
+  /** What this version was, in a line. */
+  title: string;
+  /** When it stopped being the routine, for display: "October 2026". */
+  ended: string;
+  /** One or two sentences for the index. */
+  summary: string;
+  sections: HealthSection[];
+}
+
+export const ARCHIVES: HealthArchive[] = [
+  {
+    slug: 'until-october-2026',
+    title: 'Push / Pull / Legs, supplements and a longer sleep plan',
+    ended: 'October 2026',
+    summary: 'A Push / Pull / Legs split with runs, a sleep plan built around 7 to 9 hours, and a daily supplement stack.',
+    sections: UNTIL_OCTOBER_2026,
+  },
+];
+
+export const getArchive = (slug: string) => ARCHIVES.find((a) => a.slug === slug);
