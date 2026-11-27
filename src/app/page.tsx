@@ -30,10 +30,10 @@ const PROUDEST = [
   },
   {
     slug: 'mindset-app',
-    title: 'MindSet Wellness App',
-    cta: 'View app',
+    title: 'MindSet Wellness Prototype',
+    cta: 'View prototype',
     image: '/home/mindset.jpg',
-    alt: 'Two screens from the MindSet app prototype on a petrol blue background.',
+    alt: 'Two screens from the MindSet Figma prototype on a petrol blue background.',
   },
 ];
 
@@ -61,6 +61,8 @@ const row = 'sm:grid sm:grid-cols-[216px_1fr] sm:gap-x-14';
 
 export default function HomePage() {
   const projects = getAllProjects();
+  // Counted, so the About paragraph stays in step with the Projects page.
+  const publishedCount = projects.filter((p) => p.frontmatter.status === 'published').length;
   // The book being read right now (status: reading), shown under "Now" so the label has a second line of truth.
   const reading = getAllBooks().find((b) => b.frontmatter.status === 'reading');
   const proudest = PROUDEST.map((item) => {
@@ -116,10 +118,9 @@ export default function HomePage() {
                 <FaLinkedin size={19} />
               </a>
             </p>
-            {/* The two actions that also close the page, repeated here so a
-                phone visitor sees them on the first screen without opening
-                the menu. Same links, same wording. */}
-            <div className="rise mt-6 flex flex-wrap items-baseline gap-x-8 gap-y-3" style={delay(290)}>
+            {/* The two actions that also close the page. On phones they live only at the
+                bottom (the menu has Get in touch too); wider screens keep them here. */}
+            <div className="rise mt-6 hidden flex-wrap items-baseline gap-x-8 gap-y-3 sm:flex" style={delay(290)}>
               <ContactActions size="md" />
             </div>
           </div>
@@ -131,15 +132,15 @@ export default function HomePage() {
         <h2 className={`${eyebrow} mb-4 sm:mb-0 sm:pt-[0.55rem]`} style={{ color: 'var(--fg-eyebrow)' }}>About</h2>
         <div className="space-y-5">
           <p className="text-[clamp(1.15rem,2vw,1.35rem)] leading-[1.55] tracking-[-0.01em]" style={{ color: 'var(--fg)' }}>
-            I&apos;m a high school student from Toronto. Got into health and technology early,
-            and it really hooked me. My first real project was
-            MindSet, a mental wellness app for teenagers, built before I really knew what I was
-            doing.
+            I&apos;m a high school student from Toronto who builds at the edge of health and technology.
+            It started with MindSet, a mental wellness app for teenagers that I designed as a Figma
+            prototype. It was my first real project, and I made it before I really knew how.
           </p>
           <p className="text-[0.9375rem] leading-[1.8]" style={{ color: 'var(--fg-70)' }}>
-            Right now I&apos;m focused on carbon capture and building 3D models, and I write Mindset
-            Matters, a monthly newsletter on mindset and growth. I&apos;ve shipped over a dozen
-            projects along the way.
+            Since then I&apos;ve made {publishedCount} passion projects: an 85-night study of how screens
+            before bed affect sleep, pitch decks, a short film shot on an iPhone, and more. Right now
+            I&apos;m focused on carbon capture and building 3D models, and I write Mindset Matters, a
+            monthly newsletter on mindset and growth.
           </p>
           <p className="text-[0.9375rem] leading-[1.8]" style={{ color: 'var(--fg-70)' }}>
             Most of what I care about comes down to health, technology, and how people
@@ -254,8 +255,9 @@ export default function HomePage() {
           className="max-w-2xl text-[clamp(1.5rem,3.2vw,2.15rem)] leading-[1.2] tracking-[-0.025em] mb-8"
           style={{ color: 'var(--fg)' }}
         >
-          If any of this sounds interesting, or you just want to talk health, technology, or ideas,{' '}
-          <span style={{ color: 'var(--accent)' }}>I&apos;d love to hear from you.</span>
+          If you&apos;re working on something in health or technology, or you just want to compare notes on
+          sleep, carbon capture, or building in public,{' '}
+          <span style={{ color: 'var(--accent)' }}>I&apos;d like to hear about it.</span>
         </p>
         <div className="flex flex-wrap items-baseline gap-x-10 gap-y-4">
           <ContactActions />

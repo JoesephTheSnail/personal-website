@@ -32,7 +32,6 @@ const links = [
   { label: 'LinkedIn',    note: 'Profile',   href: LINKS.linkedin },
   { label: 'Substack',    note: 'Newsletter', href: LINKS.substack },
   { label: 'Medium',      note: 'Writing',   href: LINKS.medium },
-  { label: 'TikTok',      note: 'Fitness',   href: LINKS.tiktok },
 ];
 
 interface Props { isOpen: boolean; onClose: () => void; }

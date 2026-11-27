@@ -149,18 +149,19 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
           <article
             key={book.slug}
             id={book.slug}
-            className="grid scroll-mt-28 gap-x-6 gap-y-4 border-t py-8 sm:grid-cols-[7rem_1fr]"
+            // Phones: the cover sits beside the title block (title, author, genre, date read, rating) and the
+            // notes run full width underneath. From sm up the cover is the label column; from lg the notes
+            // move beside the title block so the row uses its full width.
+            className="grid scroll-mt-28 grid-cols-[72px_minmax(0,1fr)] gap-x-4 gap-y-5 border-t py-8 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-x-6 lg:grid-cols-[7rem_minmax(0,19rem)_minmax(0,1fr)] lg:gap-x-10"
             style={{ borderColor: 'var(--border-med)' }}
           >
-            <div className="relative h-[132px] w-[88px] overflow-hidden" style={{ border: '1px solid var(--border-med)' }}>
-              <Image src={book.cover} alt={`Cover of ${book.title}`} fill className="object-cover" sizes="88px" />
+            <div className="relative h-[108px] w-[72px] overflow-hidden sm:h-[132px] sm:w-[88px]" style={{ border: '1px solid var(--border-med)' }}>
+              <Image src={book.cover} alt={`Cover of ${book.title}`} fill className="object-cover" sizes="(min-width: 640px) 88px, 72px" />
             </div>
 
-            {/* From large screens the notes sit beside the title block instead of under it, so the row uses its full width. */}
-            <div className="min-w-0 lg:grid lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)] lg:gap-x-10">
-              <div className="min-w-0">
+            <div className="min-w-0">
               <h2
-                className="text-[clamp(1.35rem,2.6vw,1.75rem)] leading-tight tracking-[-0.025em]"
+                className="text-[clamp(1.2rem,5vw,1.35rem)] leading-tight tracking-[-0.025em] sm:text-[clamp(1.35rem,2.6vw,1.75rem)]"
                 style={{ color: 'var(--fg)', overflowWrap: 'break-word' }}
               >
                 {book.title}
@@ -174,14 +175,16 @@ export default function BooksList({ items }: { items: BookListItem[] }) {
                 {book.date && <span>Read {book.date}</span>}
                 {book.rating > 0 ? <StarRating rating={book.rating} /> : <span style={{ color: 'var(--fg-45)' }}>Unrated</span>}
               </div>
-              </div>
-
-              {book.takeaway && (
-                <div className="prose mt-5 max-w-2xl lg:mt-1" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                  {book.takeaway}
-                </div>
-              )}
             </div>
+
+            {book.takeaway && (
+              <div
+                className="prose col-span-2 max-w-2xl sm:col-span-1 sm:col-start-2 lg:col-start-3 lg:mt-1"
+                style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+              >
+                {book.takeaway}
+              </div>
+            )}
           </article>
         ))}
       </div>

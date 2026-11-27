@@ -259,16 +259,16 @@ html.reduce-transparency .contact-modal-overlay {
 }
 /* ── Mobile menu bubble animations ── */
 @keyframes item-in {
-  0%   { opacity: 0; transform: translateY(5px); }
+  0%   { opacity: 0; transform: translateY(var(--item-shift, 5px)); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes sheet-in {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(var(--sheet-shift, -8px)); }
   to   { opacity: 1; transform: none; }
 }
 @keyframes sheet-out {
   from { opacity: 1; transform: none; }
-  to   { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 0; transform: translateY(var(--sheet-exit-shift, -6px)); }
 }
 
 ::selection { background: rgba(91,163,194,0.32); color: inherit; }
@@ -604,8 +604,11 @@ html.reduce-motion .proud-link { transition: none; }
   animation-delay: calc(var(--d, 0ms) * 0.5);
 }
 @keyframes rise { to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .rise { animation: none; opacity: 1; transform: none; } }
-html.reduce-motion .rise { animation: none; opacity: 1; transform: none; }
+/* Reduce motion makes the entrance instant (a near-zero duration that ends on the final state) instead of
+   removing the animation. Removing it would make the page blank out and rise again the moment the
+   setting was switched back off, because the animation starts over when it returns. */
+@media (prefers-reduced-motion: reduce) { .rise { animation-duration: 0.001s; animation-delay: 0s; } }
+html.reduce-motion .rise { animation-duration: 0.001s; animation-delay: 0s; }
 
 /* ── Projects ledger ── */
 .ledger-filter { transition: color 0.2s ease, background-size 0.25s ease; }
@@ -653,15 +656,14 @@ html.reduce-motion .index-row .index-label { transition: none; transform: none !
    Fewer and gentler, not zero: opacity fades stay, position and scale go.
    Written twice on purpose, like the blocks above: once for the OS setting,
    once for the in-app "Reduce motion" switch. */
-@keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+/* Same idea as .rise: the animations keep their names (swapping a name restarts the animation, which made
+   the open menu flash when the setting was switched). Reduce motion zeroes the slide distance, so the
+   fade stays and the movement goes, and drops the item stagger. */
 @media (prefers-reduced-motion: reduce) {
-  /* Mobile menu: keep the fade, drop the slide and the item stagger. */
-  #mobile-menu-panel[data-state='open']    { animation-name: fade-in !important; }
-  #mobile-menu-panel[data-state='closing'] { animation-name: fade-out !important; }
+  #mobile-menu-panel { --sheet-shift: 0px; --sheet-exit-shift: 0px; --item-shift: 0px; }
   #mobile-menu-panel a,
   #mobile-menu-panel button,
-  #mobile-menu-panel [role='group'] { animation-name: fade-in !important; animation-delay: 0ms !important; }
+  #mobile-menu-panel [role='group'] { animation-delay: 0ms !important; }
   /* Contact dialog: fades in place instead of rising 14px. */
   .contact-modal-overlay [role='dialog'] { transform: none !important; }
   /* Ledger preview: fade only, no scale (keeps its centring translate). */
@@ -669,12 +671,10 @@ html.reduce-motion .index-row .index-label { transition: none; transform: none !
   /* Trio images: no hover zoom. */
   .proud-card img { transform: none !important; }
 }
-/* Mobile menu: keep the fade, drop the slide and the item stagger. */
-html.reduce-motion #mobile-menu-panel[data-state='open']    { animation-name: fade-in !important; }
-html.reduce-motion #mobile-menu-panel[data-state='closing'] { animation-name: fade-out !important; }
+html.reduce-motion #mobile-menu-panel { --sheet-shift: 0px; --sheet-exit-shift: 0px; --item-shift: 0px; }
 html.reduce-motion #mobile-menu-panel a,
 html.reduce-motion #mobile-menu-panel button,
-html.reduce-motion #mobile-menu-panel [role='group'] { animation-name: fade-in !important; animation-delay: 0ms !important; }
+html.reduce-motion #mobile-menu-panel [role='group'] { animation-delay: 0ms !important; }
 /* Contact dialog: fades in place instead of rising 14px. */
 html.reduce-motion .contact-modal-overlay [role='dialog'] { transform: none !important; }
 /* Ledger preview: fade only, no scale (keeps its centring translate). */
@@ -693,15 +693,15 @@ html.reduce-motion .proud-card img { transform: none !important; }
    A short fade and 6px settle so 23 rows becoming 7 reads as "the list
    changed" rather than a teleport. */
 @keyframes swap-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(var(--swap-shift, 6px)); }
   to   { opacity: 1; transform: none; }
 }
 .list-swap { animation: swap-in 0.18s var(--ease-out); }
 @media (prefers-reduced-motion: reduce) {
-  .list-swap { animation-name: fade-in !important; }
+  .list-swap { --swap-shift: 0px; }
   .menu-toggle { transform: none !important; }
 }
-html.reduce-motion .list-swap { animation-name: fade-in !important; }
+html.reduce-motion .list-swap { --swap-shift: 0px; }
 html.reduce-motion .menu-toggle { transform: none !important; }
 
 /* ── Star project buttons (see StarButton.tsx) ──

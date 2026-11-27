@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { setSoundMuted, useSoundMuted } from './soundPref';
 
-// Two settings a visitor can force on regardless of what their OS reports.
-// Both still respect prefers-reduced-motion/prefers-reduced-transparency as
+// Two display settings a visitor can force on regardless of what their OS reports, plus the site-wide
+// sound switch (sound is on by default; see soundPref.ts). The two display settings still respect prefers-reduced-motion/prefers-reduced-transparency as
 // the default (see globals.css) — this is a manual override layered on
 // top, not a replacement for it.
 const MOTION_KEY = 'a11y-reduce-motion';
@@ -17,6 +18,7 @@ function applyClass(className: string, on: boolean) {
 export function useAccessibilityPrefs() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [reduceTransparency, setReduceTransparency] = useState(false);
+  const muteSound = useSoundMuted();
 
   useEffect(() => {
     const read = () => {
@@ -54,5 +56,7 @@ export function useAccessibilityPrefs() {
     });
   };
 
-  return { reduceMotion, reduceTransparency, toggleMotion, toggleTransparency };
+  const toggleSound = () => setSoundMuted(!muteSound);
+
+  return { reduceMotion, reduceTransparency, muteSound, toggleMotion, toggleTransparency, toggleSound };
 }

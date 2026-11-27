@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllProjects } from '@/lib/projects';
 import { CATEGORIES } from '@/lib/categoryMeta';
+import { ARCHIVES } from '@/app/health/archive/data';
 
 const BASE_URL = 'https://arnavchandra.com';
 
@@ -31,5 +32,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...projectRoutes];
+  const archiveRoutes: MetadataRoute.Sitemap = ARCHIVES.map((a) => ({
+    url: `${BASE_URL}/health/archive/${a.slug}`,
+    changeFrequency: 'yearly',
+    priority: 0.2,
+  }));
+
+  return [...staticRoutes, ...categoryRoutes, ...projectRoutes, ...archiveRoutes];
 }

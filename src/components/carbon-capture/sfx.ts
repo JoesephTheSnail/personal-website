@@ -15,63 +15,26 @@
 //    the context is created and resumed inside the first tap / click / key
 //    press, and a silent buffer is played in that same gesture. Until then
 //    every call is a silent no-op rather than a queued burst.
-//  - Mute is remembered in localStorage.
+//  - Mute is the site-wide setting in src/lib/soundPref.ts (remembered in localStorage).
 // ---------------------------------------------------------------------------
 
-import { useSyncExternalStore } from 'react';
+import { isSoundMuted, setSoundMuted, useSoundMuted } from '@/lib/soundPref';
 
 type AudioCtor = typeof AudioContext;
 type WindowWithWebkit = Window & { webkitAudioContext?: AudioCtor };
-
-const MUTE_KEY = 'cc-sfx-muted';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let noiseBuffer: AudioBuffer | null = null;
 let unlockInstalled = false;
 
-// ---- mute state (tiny external store so React can subscribe) ---------------
+// ---- mute state ------------------------------------------------------------
+// One site-wide setting (src/lib/soundPref.ts): the speaker button in the demo and the
+// "Mute sounds" switch in the accessibility menu are the same switch.
 
-let muted = false;
-let mutedLoaded = false;
-const listeners = new Set<() => void>();
-
-function loadMuted() {
-  if (mutedLoaded || typeof window === 'undefined') return;
-  mutedLoaded = true;
-  try {
-    muted = window.localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    muted = false;
-  }
-}
-
-export function isMuted() {
-  loadMuted();
-  return muted;
-}
-
-export function setMuted(next: boolean) {
-  loadMuted();
-  muted = next;
-  try {
-    window.localStorage.setItem(MUTE_KEY, next ? '1' : '0');
-  } catch {
-    /* private mode: the choice just lasts for this visit */
-  }
-  listeners.forEach((l) => l());
-}
-
-export function useSfxMuted() {
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    isMuted,
-    () => false,
-  );
-}
+export const isMuted = isSoundMuted;
+export const setMuted = setSoundMuted;
+export const useSfxMuted = useSoundMuted;
 
 // ---- context + gesture unlock ----------------------------------------------
 
@@ -149,8 +112,7 @@ export function installAudioUnlock() {
 
 /** True once the browser has let us make sound. */
 function ready() {
-  loadMuted();
-  if (muted || !ctx || !master) return false;
+  if (isSoundMuted() || !ctx || !master) return false;
   if (typeof document !== 'undefined' && document.hidden) return false;
   if (ctx.state !== 'running') {
     void ctx.resume().catch(() => {});

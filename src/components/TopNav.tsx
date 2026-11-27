@@ -108,12 +108,16 @@ export default function TopNav({ onContactClick }: Props) {
         </div>
       </aside>
 
-      {/* ── Mobile bar: solid and full width, so page text never shows through it ── */}
+      {/* ── Mobile bar: solid and full width, so page text never shows through it.
+          The menu button sits on the left, directly before the name, so the two read as one
+          mark (menu, then who this is) and the thumb reaches it on the side most phones are
+          held from. ── */}
       <div
         data-site-chrome
-        className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b px-5 lg:hidden"
+        className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b px-5 lg:hidden"
         style={{ background: 'var(--bg)', borderColor: 'var(--border-med)' }}
       >
+        <MobileNav onContactClick={onContactClick} />
         <Link
           href="/"
           className="tap-44 flex-1 whitespace-nowrap text-[1.0625rem] font-medium tracking-[-0.02em]"
@@ -121,7 +125,6 @@ export default function TopNav({ onContactClick }: Props) {
         >
           Arnav Chandra
         </Link>
-        <MobileNav onContactClick={onContactClick} />
       </div>
     </>
   );
